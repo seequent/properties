@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-    Properties: Fancy properties for Python.
+    properties: Fancy properties for Python.
 """
 
 import numpy as np
@@ -69,7 +69,7 @@ with open("README.rst") as f:
     LONG_DESCRIPTION = ''.join(f.readlines())
 
 setup(
-    name="Properties",
+    name="properties",
     version="0.0.1",
     packages=find_packages(),
     install_requires=['numpy>=1.7',
@@ -78,7 +78,7 @@ setup(
                        ],
     author="Rowan Cockett",
     author_email="rowan@3ptscience.com",
-    description="Properties",
+    description="properties",
     long_description=LONG_DESCRIPTION,
     keywords="property",
     url="http://steno3d.com/",
