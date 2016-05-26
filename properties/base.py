@@ -248,7 +248,7 @@ class Pointer(Property):
                     return self.ptype(**value)
                 except KeyError:
                     badKeyStr = ', '.join([k for k in value.keys()])
-                    keyStr = ', '.join([k for k in self.ptype[0]._exposed if k != 'meta'])
+                    keyStr = ', '.join([k for k in self.ptype._exposed if k != 'meta'])
                     raise KeyError('Invalid input keywords [%s] for pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype.__name__,keyStr))
             else:
                 try:
