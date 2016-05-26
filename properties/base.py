@@ -228,22 +228,28 @@ class Pointer(Property):
             for pt in self.ptype:
                 if isinstance(value, pt):
                     return value
-            try:
-                if type(value) is dict:
+            if type(value) is dict:
+                try:
                     return self.ptype[0](**value)
-                else:
+                except KeyError:
+                    raise KeyError('Invalid input keywords for default pointer type %s'%self.ptype[0].__name__)
+            else:
+                try:
                     return self.ptype[0](value)
-            except KeyError:
-                raise KeyError('Invalid input parameters for default pointer type %s'%self.ptype[0].__name__)
+                except TypeError:
+                    raise TypeError('Invalid input type %s for default pointer type %s'%(value.__class__.__name__,self.ptype[0].__name__))
         if not isinstance(value, self.ptype):
-            try:
-                if type(value) is dict:
+            if type(value) is dict:
+                try:
                     #Setting a pointer from a dictionary, which are passed to %s as **kwargs.
                     return self.ptype(**value)
-                else:
+                except KeyError:
+                    raise KeyError('Invalid input keywords for pointer type %s'%self.ptype.__name__)
+            else:
+                try:
                     return self.ptype(value)
-            except KeyError:
-                raise KeyError('Invalid input paramters for pointer type %s'%self.ptype.__name__)
+                except TypeError:
+                    raise TypeError('Invalid input type %s for pointer type %s'%(value.__class__.__name__,self.ptype.__name__))
         return value
 
     def getExtraMethods(self):
