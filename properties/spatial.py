@@ -2,7 +2,10 @@ import json, numpy as np
 from base import Property
 from . import exceptions, vmath
 
-class Vector3(Property):
+class Vector(Property):
+    """
+    A vector!
+    """
     formType = 'bool-choice'
 
     @property

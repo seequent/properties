@@ -3,7 +3,9 @@ from base import Property
 from . import exceptions
 
 class String(Property):
-
+    """
+    String property
+    """
     lowercase = False
     strip     = ' '
 
@@ -103,6 +105,7 @@ class Complex(Property):
         if type(value) is not complex:
             raise ValueError('%s must be complex'%self.name)
         return value
+
 
     def asJSON(self, value):
         if value is None or np.isnan(value):
