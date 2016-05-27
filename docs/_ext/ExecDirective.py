@@ -43,17 +43,18 @@ class ExecDirective(CodeBlock):
             hl_lines = None
 
         chevron_code = code.split('\n')
+        chevron_code = [c for c in chevron_code if '#hide' not in c]
         chevron_code = '\n'.join([''.join(['>> ', line]) for line in chevron_code])
 
         if 'dedent' in self.options:
-            lines = chevron_code.split('\n')
+            lines = code.split('\n')
             lines = dedent_lines(lines, self.options['dedent'])
-            chevron_code = '\n'.join([lines])
+            code = '\n'.join([lines])
 
         lines = '\n'.join([chevron_code, text])
 
         literal = nodes.literal_block(lines, lines)
-        literal['language'] = 'python'
+        # literal['language'] = 'python'
         literal['linenos'] = 'linenos' in self.options or \
                              'lineno-start' in self.options
         literal['classes'] += self.options.get('class', [])
