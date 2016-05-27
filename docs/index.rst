@@ -1,3 +1,5 @@
+.. _properties_index:
+
 properties
 **********
 
@@ -5,10 +7,12 @@ properties
     :target: https://travis-ci.com/3ptscience/properties
 
 
-These are the generic components used to construct different resources. They can be as simple as strings, numbers, or arrays. However, every piece of UserContent can also be a property of another UserContent using pointers.
+These are the generic components used to construct different resources. They
+can be as simple as strings, numbers, or arrays. However, every piece of
+UserContent can also be a property of another UserContent using pointers.
 
 
-Contents:
+**Contents:**
 
 .. toctree::
     :maxdepth: 2
@@ -19,6 +23,7 @@ Contents:
     content/spatial
     content/pointer
     content/files
+    content/vmath
 
 
 Indices and tables
