@@ -62,19 +62,16 @@ class Array(Property):
 
         def testFunction(proposed):
             errStr=self.name
-            if type(proposed) is not list and not isinstance(proposed, np.ndarray):
-                raise ValueError('%s: Must be a list or numpy array'%errStr)
-            npProposed = np.array(proposed)
-            if typeString == 'int' and npProposed.dtype.kind != 'i':
+            if typeString == 'int' and proposed.dtype.kind != 'i':
                 raise ValueError('%s: Array type must be int'%errStr)
-            if typeString == 'float' and npProposed.dtype.kind != 'f':
+            if typeString == 'float' and proposed.dtype.kind != 'f':
                 raise ValueError('%s: Array type must be float'%errStr)
-            if typeString == 'str' and npProposed.dtype.kind != 'S':
+            if typeString == 'str' and proposed.dtype.kind != 'S':
                 raise ValueError('%s: Array type must be string'%errStr)
-            if len(sizes) != npProposed.ndim:
+            if len(sizes) != proposed.ndim:
                 raise ValueError('%s: Array must have %d dimensions (schema: %s)'%(errStr, len(sizes), self.schema))
             for i, v in enumerate(sizes):
-                if v != -1 and npProposed.shape[i] != v:
+                if v != -1 and proposed.shape[i] != v:
                     raise ValueError('%s: Array dimension %d must be length %d'%(errStr, i, v))
 
         self.__schemaFunction = testFunction
@@ -83,12 +80,11 @@ class Array(Property):
     def validator(self, instance, proposed):
         if not isinstance(proposed, np.ndarray) and type(proposed) is not list:
             raise ValueError('%s must be a list or numpy array'%self.name)
+        proposed = np.array(proposed)
         self._schemaFunction(proposed)
-        if self.dtype is None:
-            return proposed
-        if isinstance(proposed, np.ndarray):
-            return proposed.astype(self.dtype)
-        return np.array(proposed, dtype=self.dtype)
+        if self.dtype is not None:
+            proposed = proposed.astype(self.dtype)
+        return proposed
 
     def fromJSON(self, value):
         return json.loads(value)
