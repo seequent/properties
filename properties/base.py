@@ -228,22 +228,33 @@ class Pointer(Property):
             for pt in self.ptype:
                 if isinstance(value, pt):
                     return value
-            try:
-                if type(value) is dict:
+            if type(value) is dict:
+                try:
                     return self.ptype[0](**value)
-                else:
+                except KeyError:
+                    badKeyStr = ', '.join([k for k in value.keys()])
+                    keyStr = ', '.join([k for k in self.ptype[0]._exposed if k != 'meta'])
+                    raise KeyError('Invalid input keywords [%s] for default pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype[0].__name__,keyStr))
+            else:
+                try:
                     return self.ptype[0](value)
-            except KeyError:
-                raise KeyError('Invalid input parameters for default pointer type %s'%self.ptype[0].__name__)
+                except TypeError:
+                    ptypeStr = ', '.join([p.__name__ for p in self.ptype])
+                    raise TypeError('Invalid input type %s. You need to use one of the following: [%s]'%(value.__class__.__name__,ptypeStr))
         if not isinstance(value, self.ptype):
-            try:
-                if type(value) is dict:
+            if type(value) is dict:
+                try:
                     #Setting a pointer from a dictionary, which are passed to %s as **kwargs.
                     return self.ptype(**value)
-                else:
+                except KeyError:
+                    badKeyStr = ', '.join([k for k in value.keys()])
+                    keyStr = ', '.join([k for k in self.ptype._exposed if k != 'meta'])
+                    raise KeyError('Invalid input keywords [%s] for pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype.__name__,keyStr))
+            else:
+                try:
                     return self.ptype(value)
-            except KeyError:
-                raise KeyError('Invalid input paramters for pointer type %s'%self.ptype.__name__)
+                except TypeError:
+                    raise TypeError('Invalid input type %s. You need to use %s'%(value.__class__.__name__,self.ptype.__name__))
         return value
 
     def getExtraMethods(self):
