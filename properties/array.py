@@ -72,7 +72,7 @@ class Array(Property):
             if typeString == 'str' and npProposed.dtype.kind != 'S':
                 raise ValueError('%s: Array type must be string'%errStr)
             if len(sizes) != npProposed.ndim:
-                raise ValueError('%s: Array must have %d dimensions (schema: %s'%(errStr, len(sizes), self.schema))
+                raise ValueError('%s: Array must have %d dimensions (schema: %s)'%(errStr, len(sizes), self.schema))
             for i, v in enumerate(sizes):
                 if v != -1 and npProposed.shape[i] != v:
                     raise ValueError('%s: Array dimension %d must be length %d'%(errStr, i, v))
