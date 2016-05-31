@@ -21,7 +21,7 @@ class Array(Property):
         """Convert the array data to a serialized binary format"""
         if type(data.flatten()[0]) == np.float32 or type(data.flatten()[0]) == np.float64:
             useDtype = '<f4'
-            assert np.allclose(data.astype(useDtype), data), 'Converting the type should not screw things up.'
+            assert np.allclose(data.astype(useDtype), data, equal_nan=True), 'Converting the type should not screw things up.'
         elif type(data.flatten()[0]) == np.int64 or type(data.flatten()[0]) == np.int32:
             useDtype = '<i4'
             assert (data.astype(useDtype) == data).all(), 'Converting the type should not screw things up.'
