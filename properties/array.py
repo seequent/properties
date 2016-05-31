@@ -39,54 +39,40 @@ class Array(Property):
             return self.__schemaFunction
         # e.g. "array.array[2].int"
         def _parseDataString(dataString):
-            types = []
+            typeString = None
+            sizes = []
             strs = dataString.split('.')
             for ii, s in enumerate(strs):
                 if s.startswith('array') and s.endswith(']') and '[' in s:
-                    types += [('array', int(s.split('[')[1][:-1]))]
+                    sizes += [int(s.split('[')[1][:-1])]
                     continue
                 if s not in ['array','float','int','str']:
                     raise TypeError('%s: Invalid type in schema string'%s)
                 if s == 'array':
-                    types += [('array', -1)]
+                    sizes += [-1]
                 else:
-                    types += [(s,)]
+                    typeString = s
                     if ii + 1 != len(strs):
                         raise TypeError('Schema cannot have sub properties of %s'%s)
-            return types
+            return typeString, sizes
 
         if type(self.schema) is not str:
             raise TypeError('schema must be a string')
-        types = _parseDataString(self.schema)
-
-
-        def recurse(Ts, proposed, errStr=''):
-            T = Ts[0]
-
-            if T[0] == 'array':
-                if type(proposed) is not list and not isinstance(proposed, np.ndarray):
-                    raise ValueError('%s: Entry must be a list'%errStr)
-                if T[1] > -1 and not len(proposed) == T[1]:
-                    raise ValueError('%s: List must be length %d'%(errStr, T[1]))
-                if len(Ts[1:]) > 0:
-                    for ii, P in enumerate(proposed):
-                        recurse(Ts[1:], P, errStr='%s[%d]'%(errStr,ii))
-                return
-            if T[0] == 'int':
-                if not ( np.isscalar(proposed) and (proposed % 1) == 0 ):
-                    raise ValueError('%s: Entry must be an int'%errStr)
-                return
-            if T[0] == 'float':
-                if not np.isscalar(proposed):
-                    raise ValueError('%s: Entry must be an float'%errStr)
-                return
-            if T[0] == 'str':
-                if type(proposed) not in [str, unicode]:
-                    raise ValueError('%s: Entry must be an str'%errStr)
-                return
+        typeString, sizes = _parseDataString(self.schema)
 
         def testFunction(proposed):
-            recurse(types, proposed, errStr=self.name)
+            errStr=self.name
+            if typeString == 'int' and proposed.dtype.kind != 'i':
+                raise ValueError('%s: Array type must be int'%errStr)
+            if typeString == 'float' and proposed.dtype.kind != 'f':
+                raise ValueError('%s: Array type must be float'%errStr)
+            if typeString == 'str' and proposed.dtype.kind != 'S':
+                raise ValueError('%s: Array type must be string'%errStr)
+            if len(sizes) != proposed.ndim:
+                raise ValueError('%s: Array must have %d dimensions (schema: %s)'%(errStr, len(sizes), self.schema))
+            for i, v in enumerate(sizes):
+                if v != -1 and proposed.shape[i] != v:
+                    raise ValueError('%s: Array dimension %d must be length %d'%(errStr, i, v))
 
         self.__schemaFunction = testFunction
         return testFunction
@@ -94,12 +80,11 @@ class Array(Property):
     def validator(self, instance, proposed):
         if not isinstance(proposed, np.ndarray) and type(proposed) is not list:
             raise ValueError('%s must be a list or numpy array'%self.name)
+        proposed = np.array(proposed)
         self._schemaFunction(proposed)
-        if self.dtype is None:
-            return proposed
-        if isinstance(proposed, np.ndarray):
-            return proposed.astype(self.dtype)
-        return np.array(proposed, dtype=self.dtype)
+        if self.dtype is not None:
+            proposed = proposed.astype(self.dtype)
+        return proposed
 
     def fromJSON(self, value):
         return json.loads(value)
