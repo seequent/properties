@@ -13,7 +13,7 @@ before_install:
 
 # Install packages
 install:
-  - conda install --yes pip python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib nose keyring requests sphinx pil
+  - conda install --yes pip python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib nose sphinx pil
   - pip install nose-cov python-coveralls
 
 # Run test
