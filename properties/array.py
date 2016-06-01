@@ -63,20 +63,14 @@ class Array(Property):
         def testFunction(proposed):
             errStr=self.name
             if typeString == 'int' and proposed.dtype.kind != 'i':
-                try:
-                    proposed=proposed.astype('int')
-                except:
-                    raise ValueError('%s: Array type must be int'%errStr)
+                raise ValueError('%s: Array type must be int'%errStr)
             if typeString == 'float' and proposed.dtype.kind != 'f':
                 try:
                     proposed=proposed.astype('float')
                 except:
                     raise ValueError('%s: Array type must be float'%errStr)
             if typeString == 'str' and proposed.dtype.kind != 'S':
-                try:
-                    proposed=proposed.astype('string')
-                except:
-                    raise ValueError('%s: Array type must be string'%errStr)
+                raise ValueError('%s: Array type must be string'%errStr)
             if len(sizes) != proposed.ndim:
                 raise ValueError('%s: Array must have %d dimensions (schema: %s)'%(errStr, len(sizes), self.schema))
             for i, v in enumerate(sizes):
