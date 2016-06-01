@@ -21,7 +21,7 @@ class Image(File):
 
     def validator(self, instance, value):
 
-        import Image as pil_image
+        from PIL import Image as pil_image
 
         if getattr(value, '__valid__', False):
             return value
