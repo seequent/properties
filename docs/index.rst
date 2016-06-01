@@ -1,8 +1,8 @@
 properties
 **********
 
-.. image:: https://travis-ci.com/3ptscience/properties.svg
-    :target: https://travis-ci.com/3ptscience/properties
+.. image:: https://travis-ci.org/3ptscience/properties.svg
+    :target: https://travis-ci.org/3ptscience/properties
 
 
 These are the generic components used to construct different resources. They can be as simple as strings, numbers, or arrays. However, every piece of UserContent can also be a property of another UserContent using pointers.
