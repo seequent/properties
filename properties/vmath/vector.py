@@ -86,6 +86,9 @@ class Vector(np.ndarray):
         raise ZeroDivisionError('Cannot resize vector of length 0 to nonzero length')
 
     def asLength(self, l):
+        """
+        Scale the length of a vector
+        """
         V = Vector(self)
         V.length = l
         return V

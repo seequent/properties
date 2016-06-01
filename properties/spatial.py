@@ -2,12 +2,18 @@ import json, numpy as np
 from base import Property
 from . import exceptions, vmath
 
-class Vector3(Property):
+class Vector(Property):
+    """
+    A vector!
+    """
     formType = 'bool-choice'
 
     @property
     def default(self):
-        return [] if self.repeated else vmath.Vector()
+        return getattr(self, '_default', [] if self.repeated else None)
+    @default.setter
+    def default(self, value):
+        self._default = self.validator(None, value).copy()
 
     def validator(self, instance, value):
         if isinstance(value, vmath.Vector):

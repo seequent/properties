@@ -3,7 +3,7 @@ import properties
 
 
 class MyClass(properties.PropertyClass):
-    loc = properties.Vector3("My location")
+    loc = properties.Vector("My location")
 
 
 

@@ -14,6 +14,7 @@
 
 import sys
 import os
+# import properties
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -21,7 +22,7 @@ import os
 #sys.path.insert(0, os.path.abspath('.'))
 
 sys.path.insert(0, os.path.abspath('../'))
-
+sys.path.append(os.path.abspath('./_ext'))
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -36,6 +37,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'ExecDirective'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
