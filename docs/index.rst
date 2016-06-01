@@ -3,7 +3,7 @@
 properties
 **********
 
-.. image:: https://travis-ci.org/3ptscience/properties.svg
+.. image:: https://travis-ci.org/3ptscience/properties.svg?branch=master
     :target: https://travis-ci.org/3ptscience/properties
 
 
