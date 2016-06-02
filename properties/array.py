@@ -10,12 +10,12 @@ FileProp = namedtuple('FileProp', ['file', 'dtype'])
 class Array(Property):
     """Array Property"""
 
-    schema   = 'array'
-    dtype    = float
+    shape = ('*')
+    dtype = float
 
     def __init__(self, doc, **kwargs):
         super(self.__class__, self).__init__(doc, **kwargs)
-        self.doc = self.doc + ', Schema: %s'%self.schema
+        self.doc = self.doc + ', Schema: %s.%s'%(str(self.shape), dtype.__name__)
 
     def serialize(self, data):
         """Convert the array data to a serialized binary format"""
@@ -37,42 +37,27 @@ class Array(Property):
     def _schemaFunction(self):
         if getattr(self, '__schemaFunction', None) is not None:
             return self.__schemaFunction
-        # e.g. "array.array[2].int"
-        def _parseDataString(dataString):
-            typeString = None
-            sizes = []
-            strs = dataString.split('.')
-            for ii, s in enumerate(strs):
-                if s.startswith('array') and s.endswith(']') and '[' in s:
-                    sizes += [int(s.split('[')[1][:-1])]
-                    continue
-                if s not in ['array','float','int','str']:
-                    raise TypeError('%s: Invalid type in schema string'%s)
-                if s == 'array':
-                    sizes += [-1]
-                else:
-                    typeString = s
-                    if ii + 1 != len(strs):
-                        raise TypeError('Schema cannot have sub properties of %s'%s)
-            return typeString, sizes
 
-        if type(self.schema) is not str:
-            raise TypeError('schema must be a string')
-        typeString, sizes = _parseDataString(self.schema)
+        if dtype not in (int, float, None):
+            raise TypeError("%s: Invalid dtype - must be int, float, or None")
+        if type(self.shape) is not tuple:
+            raise TypeError("%s: Invalid shape - must be a tuple (e.g. ('*',3) for an array of length-3 arrays)"%str(shape))
+        for s in self.shape:
+                if s != '*' and type(s) != int:
+                    raise TypeError("%s: Invalid shape - values must be '*' or ints"%str(self.shape))
+        _checkShape(self.shape)
 
         def testFunction(proposed):
             errStr=self.name
-            if typeString == 'int' and proposed.dtype.kind != 'i':
+            if self.dtype == int and proposed.dtype.kind != 'i':
                 raise ValueError('%s: Array type must be int'%errStr)
-            if typeString == 'float' and proposed.dtype.kind != 'f':
+            if self.dtype == float and proposed.dtype.kind != 'f':
                 raise ValueError('%s: Array type must be float'%errStr)
-            if typeString == 'str' and proposed.dtype.kind != 'S':
-                raise ValueError('%s: Array type must be string'%errStr)
-            if len(sizes) != proposed.ndim:
-                raise ValueError('%s: Array must have %d dimensions (schema: %s)'%(errStr, len(sizes), self.schema))
-            for i, v in enumerate(sizes):
-                if v != -1 and proposed.shape[i] != v:
-                    raise ValueError('%s: Array dimension %d must be length %d'%(errStr, i, v))
+            if len(self.shape) != proposed.ndim:
+                raise ValueError('%s: Array must have %d dimensions (shape: %s)'%(errStr, len(self.shape), str(self.shape)))
+            for i, s in enumerate(self.shape):
+                if s != '*' and proposed.shape[i] != s:
+                    raise ValueError('%s: Array dimension %d must be length %d'%(errStr, i, s))
 
         self.__schemaFunction = testFunction
         return testFunction
