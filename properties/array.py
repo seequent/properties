@@ -65,9 +65,9 @@ class Array(Property):
             if typeString == 'int' and proposed.dtype.kind != 'i':
                 raise ValueError('%s: Array type must be int'%errStr)
             if typeString == 'float' and proposed.dtype.kind != 'f':
-                try:
+                if proposed.dtype.kind == 'i':
                     proposed=proposed.astype('float')
-                except:
+                else:
                     raise ValueError('%s: Array type must be float'%errStr)
             if typeString == 'str' and proposed.dtype.kind != 'S':
                 raise ValueError('%s: Array type must be string'%errStr)
