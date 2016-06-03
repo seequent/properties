@@ -10,7 +10,7 @@ FileProp = namedtuple('FileProp', ['file', 'dtype'])
 class Array(Property):
     """Array Property"""
 
-    shape = ('*')
+    shape = ('*',)
     dtype = float
 
     def __init__(self, doc, **kwargs):
