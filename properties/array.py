@@ -66,8 +66,6 @@ class Array(Property):
             raise ValueError('%s must be a list or numpy array'%self.name)
         proposed = np.array(proposed)
         self._schemaFunction(proposed)
-        if self.dtype is not None:
-            proposed = proposed.astype(self.dtype)
         return proposed
 
     def fromJSON(self, value):
