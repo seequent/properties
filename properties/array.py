@@ -38,14 +38,13 @@ class Array(Property):
         if getattr(self, '__schemaFunction', None) is not None:
             return self.__schemaFunction
 
-        if dtype not in (int, float, None):
-            raise TypeError("%s: Invalid dtype - must be int, float, or None")
+        if self.dtype not in (int, float, None):
+            raise TypeError("%s: Invalid dtype for %s - must be int, float, or None"%(self.dtype, self.name))
         if type(self.shape) is not tuple:
-            raise TypeError("%s: Invalid shape - must be a tuple (e.g. ('*',3) for an array of length-3 arrays)"%str(shape))
+            raise TypeError("%s: Invalid shape for %s - must be a tuple (e.g. ('*',3) for an array of length-3 arrays)"%(self.shape, self.name))
         for s in self.shape:
                 if s != '*' and type(s) != int:
-                    raise TypeError("%s: Invalid shape - values must be '*' or ints"%str(self.shape))
-        _checkShape(self.shape)
+                    raise TypeError("%s: Invalid shape for %s - values must be '*' or ints"%(self.shape, self.name))
 
         def testFunction(proposed):
             errStr=self.name
@@ -54,7 +53,7 @@ class Array(Property):
             if self.dtype == float and proposed.dtype.kind != 'f':
                 raise ValueError('%s: Array type must be float'%errStr)
             if len(self.shape) != proposed.ndim:
-                raise ValueError('%s: Array must have %d dimensions (shape: %s)'%(errStr, len(self.shape), str(self.shape)))
+                raise ValueError('%s: Array must have %d dimensions (shape: %s)'%(errStr, len(self.shape), self.shape))
             for i, s in enumerate(self.shape):
                 if s != '*' and proposed.shape[i] != s:
                     raise ValueError('%s: Array dimension %d must be length %d'%(errStr, i, s))
