@@ -15,7 +15,7 @@ class Array(Property):
 
     def __init__(self, doc, **kwargs):
         super(self.__class__, self).__init__(doc, **kwargs)
-        self.doc = self.doc + ', Schema: %s.%s'%(str(self.shape), dtype.__name__)
+        self.doc = self.doc + ', shape: %s, type: %s'%(self.shape, self.dtype)
 
     def serialize(self, data):
         """Convert the array data to a serialized binary format"""
