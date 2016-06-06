@@ -1,5 +1,11 @@
-import json, numpy as np, os, StringIO
-from base import Property
+from __future__ import absolute_import, unicode_literals, print_function, division
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+import six
+
+import json, numpy as np, os, io
+from .base import Property
 from . import exceptions
 
 class File(Property):
@@ -12,7 +18,7 @@ class File(Property):
             if prev is not None and value is not prev:
                 prev.close()
             return value
-        if type(value) in [str, unicode] and os.path.isfile(value):
+        if isinstance(value, six.string_types) and os.path.isfile(value):
             return open(value, self.mode)
         raise ValueError('The value for "%s" must be an open file or a string.'%self.name)
 
@@ -26,7 +32,7 @@ class Image(File):
         if getattr(value, '__valid__', False):
             return value
         im = pil_image.open(value)
-        output = StringIO.StringIO()
+        output = io.BytesIO()
         output.name = 'texture.png'
         output.__valid__ = True
         im.save(output)

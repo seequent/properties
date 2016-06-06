@@ -1,3 +1,8 @@
+from __future__ import division, unicode_literals, print_function, absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from past.utils import old_div
+
 import numpy as np
 from .. import exceptions
 import warnings

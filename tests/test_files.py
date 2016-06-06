@@ -1,4 +1,5 @@
-import unittest, numpy as np, os, Image
+import unittest, numpy as np, os
+from PIL import Image
 import properties
 
 

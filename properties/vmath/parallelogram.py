@@ -1,3 +1,9 @@
+from __future__ import unicode_literals, print_function, division, absolute_import
+from builtins import super
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+
 import numpy as np
 from . import Vector, Plane
 from .. import exceptions
@@ -25,23 +31,23 @@ class Parallelogram(Plane):
 
         """
 
-        if len(args) == 0:
+        if not args:
             O, U, V = Vector(), Vector(1,0,0), Vector(0,1,0)
         elif len(args) == 2:
-            u, v = map(float,args)
+            u, v = list(map(float,args))
             O, U, V = Vector(), Vector(u,0,0), Vector(0,v,0)
-        elif len(args) == 3 and np.all(map(isvector, args)):
-            O, U, V = map(Vector, args)
+        elif len(args) == 3 and np.all(list(map(isvector, args))):
+            O, U, V = list(map(Vector, args))
         elif len(args) == 3 and isinstance(args[0], Vector):
             O = Vector(args[0])
-            u, v = map(float,args[1:])
+            u, v = list(map(float,args[1:]))
             U, V = Vector(u,0,0), Vector(0,v,0)
         else:
             raise Exception('Unknown inputs. See help!')
 
         self.O, self.U, self.V = O, U, V
 
-        super(OUV, self).__init__(self.O, self.O+self.U, self.O+self.V)
+        super().__init__(self.O, self.O+self.U, self.O+self.V)
 
     def __iter__(self):
         self._current = 0
@@ -93,7 +99,7 @@ class Parallelogram(Plane):
         return ret
 
 
-    def next(self): # Python 3: def __next__(self)
+    def __next__(self):
         if self._current > 2:
             raise StopIteration
         else:

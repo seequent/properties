@@ -1,6 +1,7 @@
 import unittest
 from properties.vmath import Vector, Matrix3, Plane
 import numpy as np
+import six
 
 class TestVMathPlane(unittest.TestCase):
 
@@ -18,7 +19,10 @@ class TestVMathPlane(unittest.TestCase):
         self.assertRaises(ValueError, Plane, v3, v4, v1)
         self.assertRaises(ValueError, Plane, v4, v3)
         self.assertRaises(Exception, Plane, 3)
-        self.assertRaises(ValueError, Plane, 3, 'point')
+        if six.PY3:
+            self.assertRaises(TypeError, Plane, 3, 'point')
+        else:
+            self.assertRaises(ValueError, Plane, 3, 'point')
         self.assertRaises(Exception, Plane, 3, 'point', 'Science')
         self.assertRaises(ValueError, Plane, -181, 5)
         self.assertRaises(ValueError, Plane, 361, 5)
