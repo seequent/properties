@@ -54,7 +54,7 @@ class Array(Property):
 
         def testFunction(proposed):
             errStr=self.name
-            if self.dtype == int and proposed.dtype.kind != 'i':
+            if self.dtype in six.integer_types and proposed.dtype.kind != 'i':
                 raise ValueError('%s: Array type must be int'%errStr)
             if self.dtype == float and proposed.dtype.kind != 'f':
                 raise ValueError('%s: Array type must be float'%errStr)
