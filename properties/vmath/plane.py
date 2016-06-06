@@ -70,9 +70,9 @@ class Plane(object):
         self.normal = (b-a).cross(c-a).normalize()
 
     def _fromStrikeAndDip(self, s, d, pt):
-        if s < -180 or s > 360:
+        if not (-180 <= s <= 360):
             raise ValueError('Strike must be value between 0 and 360: %4.2f'%s)
-        if d < 0 or d > 90:
+        if not (0 <= d <= 90):
             raise ValueError('Dip must be value between 0 and 90: %4.2f'%s)
         N = Matrix3(-s,'Z')*(Matrix3(d,'Y')*Vector(0,0,1))
         self._fromNormalAndPoint(N, pt)
