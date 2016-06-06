@@ -29,7 +29,16 @@ class Property(object):
     @property
     def sphinx(self):
         """Sphinx documentation for the property"""
-        return ':param %s: %s\n:type %s: :class:`.'%(self.name, self.doc, self.name) + self.__class__.__name__ + '`'
+        prefix = ''
+        if 'properties.basic' in str(self.__class__):
+            prefix = 'properties.basic'
+        elif 'properties.spatial' in str(self.__class__):
+            prefix = 'properties.spatial'
+        elif 'properties.files' in str(self.__class__):
+            prefix = 'properties.files'
+        elif 'properties' in str(self.__class__):
+            prefix = 'properties'
+        return ':param %s: %s\n:type %s: :class:`%s <'%(self.name, self.doc, self.name, self.__class__.__name__) + prefix + '.' + self.__class__.__name__ + '>`'
 
     @property
     def _exposed(self):
