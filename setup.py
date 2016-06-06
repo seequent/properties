@@ -28,7 +28,6 @@ setup(
     packages=find_packages(),
     install_requires=['numpy>=1.7',
                       'pillow',
-                      'past',
                       'future',
                       'six',
                      ],
