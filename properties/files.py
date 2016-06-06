@@ -32,7 +32,7 @@ class Image(File):
         if getattr(value, '__valid__', False):
             return value
         im = pil_image.open(value)
-        output = io.StringIO()
+        output = io.BytesIO()
         output.name = 'texture.png'
         output.__valid__ = True
         im.save(output)
