@@ -1,6 +1,12 @@
+from __future__ import absolute_import, unicode_literals, print_function, division
+from builtins import super, int, str
+from future import standard_library
+standard_library.install_aliases()
+import six
+
 import json, tempfile, numpy as np
 from collections import namedtuple
-from base import Property
+from .base import Property
 from . import exceptions
 
 
@@ -14,15 +20,15 @@ class Array(Property):
     dtype    = float
 
     def __init__(self, doc, **kwargs):
-        super(self.__class__, self).__init__(doc, **kwargs)
+        super().__init__(doc, **kwargs)
         self.doc = self.doc + ', Schema: %s'%self.schema
 
     def serialize(self, data):
         """Convert the array data to a serialized binary format"""
-        if type(data.flatten()[0]) == np.float32 or type(data.flatten()[0]) == np.float64:
+        if isinstance(data.flatten()[0], np.floating):
             useDtype = '<f4'
             assert np.allclose(data.astype(useDtype), data, equal_nan=True), 'Converting the type should not screw things up.'
-        elif type(data.flatten()[0]) == np.int64 or type(data.flatten()[0]) == np.int32:
+        elif isinstance(data.flatten()[0], np.integer):
             useDtype = '<i4'
             assert (data.astype(useDtype) == data).all(), 'Converting the type should not screw things up.'
         else:
@@ -56,7 +62,7 @@ class Array(Property):
                         raise TypeError('Schema cannot have sub properties of %s'%s)
             return typeString, sizes
 
-        if type(self.schema) is not str:
+        if not isinstance(self.schema, six.string_types):
             raise TypeError('schema must be a string')
         typeString, sizes = _parseDataString(self.schema)
 
@@ -87,7 +93,7 @@ class Array(Property):
         return testFunction
 
     def validator(self, instance, proposed):
-        if not isinstance(proposed, np.ndarray) and type(proposed) is not list:
+        if not isinstance(proposed, (list, np.ndarray)):
             raise ValueError('%s must be a list or numpy array'%self.name)
         proposed = np.array(proposed)
         self._schemaFunction(proposed)

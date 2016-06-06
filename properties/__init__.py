@@ -1,8 +1,12 @@
+from __future__ import absolute_import, unicode_literals, print_function, division
+from future import standard_library
+standard_library.install_aliases()
+
 from .base import Property, PropertyClass, Pointer, validator, classproperty
 from .basic import *
 from .files import *
 from .array import *
-import vmath
+from . import vmath
 from .spatial import *
 
 

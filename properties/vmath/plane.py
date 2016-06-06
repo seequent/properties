@@ -1,3 +1,8 @@
+from __future__ import division, unicode_literals, print_function, absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
+
 import numpy as np
 from . import Vector, Matrix3
 from .. import exceptions
@@ -89,10 +94,10 @@ class Plane(object):
 
     def dist(self, pt, tol=1e-6):
         dist = self.normal.dot(pt) - self.D
-        if type(pt.x) is float:
+        if isinstance(pt.x, float):
             if(np.abs(dist) < tol):
                 dist = 0
-        elif type(pt.x) is np.ndarray:
+        elif isinstance(pt.x, np.ndarray):
             dist[np.abs(dist) < tol] = 0
         return dist
 

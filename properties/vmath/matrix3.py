@@ -1,3 +1,7 @@
+from __future__ import unicode_literals, print_function, division, absolute_import
+from future import standard_library
+standard_library.install_aliases()
+
 import numpy as np
 from . import Vector
 from .. import exceptions
@@ -24,7 +28,7 @@ class Matrix3(np.ndarray):
     def __new__(cls, M=None, axis=None):
         if M is None and axis is None:
             M = np.identity(3)
-        elif type(M) is list and axis is None:
+        elif isinstance(M, list) and axis is None:
             M = np.array(M)
         elif M is not None and axis is None:
             pass

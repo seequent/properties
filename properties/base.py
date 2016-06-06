@@ -1,6 +1,14 @@
+from __future__ import unicode_literals, print_function, division, absolute_import
+from builtins import super
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range, object
+import six
+
 from . import exceptions
 import numpy as np, json
 from functools import wraps
+from future.utils import with_metaclass
 
 class classproperty(property):
     """Class decorator to enable property behaviour in classmethods"""
@@ -115,8 +123,9 @@ class Property(object):
             pre = getattr(self, '_p_' + scope.name, scope.default)
 
             if scope.repeated:
-                if type(val) is not list: val = [val]
-                val_out = range(len(val))
+                if not isinstance(val, list):
+                    val = [val]
+                val_out = list(range(len(val)))
                 for ii, v in enumerate(val):
                     post = scope.validator(self, v)
                     if post is None: post = v
@@ -161,16 +170,15 @@ class Pointer(Property):
     formType = None
 
     def __init__(self, doc, **kwargs):
-        super(self.__class__, self).__init__(doc, **kwargs)
+        super().__init__(doc, **kwargs)
         if self.ptype is None:
             pass
-        elif type(self.ptype) in (list, tuple):
+        elif isinstance(self.ptype, (list, tuple)):
             self.doc = self.doc + ', Pointer to :class:`.' + self.ptype[0].__name__ + '` (default)'
             for s in self.ptype[1:]:
                 self.doc = self.doc + ', :class:`.' + s.__name__ + '`'
         else:
             self.doc = self.doc + ', Pointer to :class:`.' + self.ptype.__name__ + '`'
-
 
     @property
     def ptype(self):
@@ -180,7 +188,7 @@ class Pointer(Property):
         return getattr(self, '_ptype', None)
     @ptype.setter
     def ptype(self, val):
-        if type(val) in (list, tuple):
+        if isinstance(val, (list, tuple)):
             for v in val:
                 if not issubclass(v, PropertyClass):
                     raise AttributeError('ptype must be a list of PropertyClasses')
@@ -193,10 +201,10 @@ class Pointer(Property):
         return getattr(self, '_expose', [])
     @expose.setter
     def expose(self, val):
-        if type(val) is not list:
+        if not isinstance(val, list):
             raise AttributeError('exposed values must be lists')
         for v in val:
-            if type(v) is not str:
+            if not isinstance(v, six.string_types):
                 raise AttributeError('exposed values must be lists of strings')
         self._expose = val
 
@@ -208,23 +216,22 @@ class Pointer(Property):
     @property
     def sphinx(self):
         """Sphinx documentation for the property"""
-        if type(self.ptype) not in (list, tuple):
+        if not isinstance(self.ptype, (list, tuple)):
             # return ':param %s %s: %s'%(self.ptype.__name__, self.name, self.doc)
             return ':param %s: %s\n:type %s: :class:`.%s`'%(self.name, self.doc, self.name, self.ptype.__name__)
         return ':param %s: %s\n:type %s: :class:`.'%(self.name, self.doc, self.name) + '`, :class:`.'.join([p.__name__ for p in self.ptype]) + '`'
         #:class:`...`
 
-
     @property
     def default(self):
         if self.repeated:
             return []
-        if type(self.ptype) in (list, tuple):
+        if isinstance(self.ptype, (list, tuple)):
             return self.ptype[0]()
         return self.ptype()
 
     def validate(self, scope):
-        super(Pointer, self).validate(scope)
+        super().validate(scope)
         P = getattr(scope, self.name)
         if self.repeated:
             for p in P:
@@ -233,11 +240,11 @@ class Pointer(Property):
             P.validate()
 
     def validator(self, instance, value):
-        if type(self.ptype) in (list, tuple):
+        if isinstance(self.ptype, (list, tuple)):
             for pt in self.ptype:
                 if isinstance(value, pt):
                     return value
-            if type(value) is dict:
+            if isinstance(value, dict):
                 try:
                     return self.ptype[0](**value)
                 except KeyError:
@@ -251,7 +258,7 @@ class Pointer(Property):
                     ptypeStr = ', '.join([p.__name__ for p in self.ptype])
                     raise TypeError('Invalid input type %s. You need to use one of the following: [%s]'%(value.__class__.__name__,ptypeStr))
         if not isinstance(value, self.ptype):
-            if type(value) is dict:
+            if isinstance(value, dict):
                 try:
                     #Setting a pointer from a dictionary, which are passed to %s as **kwargs.
                     return self.ptype(**value)
@@ -272,11 +279,13 @@ class Pointer(Property):
 
         scope = self
         def getProp(propName):
-            def fget(self):return getattr(getattr(self, scope.name), propName)
-            def fset(self, val):return setattr(getattr(self, scope.name), propName, val)
+            def fget(self):
+                return getattr(getattr(self, scope.name), propName)
+            def fset(self, val):
+                return setattr(getattr(self, scope.name), propName, val)
             return property(fget=fget, fset=fset, doc='Exposed property for %s'%propName)
 
-        return{k:getProp(k) for k in self.expose}
+        return{k: getProp(k) for k in self.expose}
 
     def fromJSON(self, value):
         return json.loads(value)
@@ -325,8 +334,8 @@ class _PropertyMetaClass(type):
 
         # The doc string
         docStr = attrs.get('__doc__', '')
-        required = {key: value for key, value in _properties.iteritems() if value.required}
-        optional = {key: value for key, value in _properties.iteritems() if not value.required}
+        required = {key: value for key, value in _properties.items() if value.required}
+        optional = {key: value for key, value in _properties.items() if not value.required}
         if required:
             docStr += '\n\nRequired:\n\n' + '\n'.join((required[key].sphinx for key in required))
         if optional:
@@ -335,19 +344,17 @@ class _PropertyMetaClass(type):
 
         # Figure out what is the set of properties that is exposed.
         _exposed = []
-        for k, p in _properties.iteritems():
+        for k, p in _properties.items():
             _exposed += p._exposed
         attrs['_exposed'] = set(_exposed)
 
-        newClass = super(_PropertyMetaClass, cls).__new__(cls, name, bases, attrs)
+        newClass = super().__new__(cls, name, bases, attrs)
         _REGISTRY[name] = newClass
 
         return newClass
 
 
-class PropertyClass(object):
-    __metaclass__ = _PropertyMetaClass
-
+class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
     def __init__(self, **kwargs):
         self.set(**kwargs)
 
