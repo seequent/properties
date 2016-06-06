@@ -44,7 +44,7 @@ class Array(Property):
         if getattr(self, '__schemaFunction', None) is not None:
             return self.__schemaFunction
 
-        if self.dtype not in (int, float, None):
+        if not (self.dtype in six.integer_types or self.dtype in (int, float, None)):
             raise TypeError("%s: Invalid dtype for %s - must be int, float, or None"%(self.dtype, self.name))
         if not isinstance(self.shape, tuple):
             raise TypeError("%s: Invalid shape for %s - must be a tuple (e.g. ('*',3) for an array of length-3 arrays)"%(self.shape, self.name))
