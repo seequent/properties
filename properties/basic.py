@@ -101,7 +101,7 @@ class Color(Property):
         if len(value) != 3:
             raise ValueError('%s: Color must be length 3'%(value,))
         for v in value:
-            if not isinstance(v, six.integer_types) or v < 0 or v > 255:
+            if not isinstance(v, six.integer_types) or not (0 <= v <= 255):
                 raise ValueError('%s: Color values must be ints 0-255.'%(value,))
         return tuple(value)
 
