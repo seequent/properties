@@ -53,7 +53,7 @@ class String(Property):
             for k, v in self.choices.items():
                 if value.upper() in [_.upper() for _ in v]:
                     return k.lower() if self.lowercase else k
-            raise ValueError('value must be in ["%s"]'%('","'.join(self.choices.keys())))
+            raise ValueError('%s: value must be in ["%s"]'%(self.name, ('","'.join(self.choices.keys()))))
         return value.lower() if self.lowercase else value
 
 class Object(Property):
