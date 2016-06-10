@@ -27,16 +27,25 @@ class Image(File):
 
     def validator(self, instance, value):
 
-        from PIL import Image as pil_image
+        import png
 
         if getattr(value, '__valid__', False):
             return value
-        im = pil_image.open(value)
+
+        reader = png.Reader(value)
+        reader.validate_signature()
+
         output = io.BytesIO()
         output.name = 'texture.png'
         output.__valid__ = True
-        im.save(output)
+        if hasattr(value, 'read'):
+            fp = value
+            fp.seek(0)
+        else:
+            fp = open(value, 'rb')
+        output.write(fp.read())
         output.seek(0)
-        if hasattr(value, 'close'):
-            value.close()
+
+        fp.close()
+
         return output

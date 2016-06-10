@@ -1,5 +1,5 @@
 import unittest, numpy as np, os
-from PIL import Image
+# from PIL import Image
 import properties
 
 
