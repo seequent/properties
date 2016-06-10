@@ -22,6 +22,10 @@ script:
 # Calculate coverage
 after_success:
   - coveralls
+  - openssl aes-256-cbc -K $encrypted_d9740cb7b868_key -iv $encrypted_d9740cb7b868_iv -in .pypirc.enc -out ~/.pypirc -d
+  - if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then
+      make publish;
+    fi
 
 notifications:
  slack: 3point:n4uGopqXrpbYFbslpV5z0tyO
