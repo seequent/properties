@@ -10,10 +10,9 @@ addons:
   apt:
     packages:
       - python-numpy
-      - python-sphinx
 
 install:
-  - pip install nose-cov python-coveralls
+  - pip install nose-cov python-coveralls sphinx
   - pip install -r requirements.txt
 
 # Run test
