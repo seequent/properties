@@ -1,4 +1,4 @@
-from __future__ import absolute_import, unicode_literals, print_function, division
+from __future__ import absolute_import, print_function, division
 from builtins import open
 from future import standard_library
 standard_library.install_aliases()
@@ -27,13 +27,18 @@ class Image(File):
 
     def validator(self, instance, value):
 
+
+
         import png
 
         if getattr(value, '__valid__', False):
             return value
 
-        reader = png.Reader(value)
-        reader.validate_signature()
+        if hasattr(value, 'read'):
+            png.Reader(value).validate_signature()
+        else:
+            with open(value, 'rb') as v:
+                png.Reader(v).validate_signature()
 
         output = io.BytesIO()
         output.name = 'texture.png'
