@@ -123,7 +123,7 @@ class Property(object):
             pre = getattr(self, '_p_' + scope.name, scope.default)
 
             if scope.repeated:
-                if not isinstance(val, list):
+                if not isinstance(val, (list, tuple)):
                     val = [val]
                 val_out = list(range(len(val)))
                 for ii, v in enumerate(val):
