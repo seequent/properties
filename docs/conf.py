@@ -318,8 +318,8 @@ intersphinx_mapping = {'https://docs.python.org/': None,
 import sphinx.environment
 from docutils.utils import get_source_line
 
-def _supress_nonlocal_image_warn(self, msg, node):
+def _supress_nonlocal_image_warn(self, msg, node, **kwargs):
     if not msg.startswith('nonlocal image URI found:'):
-        self._warnfunc(msg, '%s:%s' % get_source_line(node))
+        self._warnfunc(msg, '%s:%s' % get_source_line(node), **kwargs)
 
 sphinx.environment.BuildEnvironment.warn_node = _supress_nonlocal_image_warn

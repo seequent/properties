@@ -63,3 +63,6 @@ target/
 classes_properties.pdf
 packages_properties.pdf
 pylint.html
+
+# credential storage
+credentials
