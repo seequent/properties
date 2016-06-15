@@ -126,7 +126,8 @@ class Property(object):
                 val_out = list(range(len(val)))
                 for ii, v in enumerate(val):
                     post = scope.validator(self, v)
-                    if post is None: post = v
+                    if post is None:
+                        post = v
                     val_out[ii] = post
                 setattr(self, '_p_' + scope.name, val_out)
                 return
@@ -174,16 +175,22 @@ class classproperty(property):
 def validator(func):
     @wraps(func)
     def func_wrapper(self):
+        self._getting_validated = True
+        print(self._getting_validated)
         for k in self._properties:
-            prop = self._properties[k]
-            prop.validate(self)
-            val = getattr(self, prop.name)
-            if prop.required or val is not None:
-                if prop.repeated:
-                    for v in val:
-                        prop.validator(self, v)
-                else:
-                    prop.validator(self, val)
+            if getattr(self, '_getting_validated', None):
+                continue
+            else:
+                prop = self._properties[k]
+                prop.validate(self)
+                val = getattr(self, prop.name)
+                if prop.required or val is not None:
+                    if prop.repeated:
+                        for v in val:
+                            prop.validator(self, v)
+                    else:
+                        prop.validator(self, val)
+        self._getting_validated = False
         return func(self)
     return func_wrapper
 
@@ -348,7 +355,7 @@ class Pointer(Property):
         return self.ptype()
 
     def validate(self, scope):
-        super().validate(scope)
+        super(Pointer, self).validate(scope)
         P = getattr(scope, self.name)
         if self.repeated:
             for p in P:
