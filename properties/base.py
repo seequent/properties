@@ -118,7 +118,7 @@ class Property(object):
             setattr(self, '_p_' + scope.name, default)
             return default
         def fset(self, val):
-            pre = getattr(self, '_p_' + scope.name, scope.default)
+            # pre = getattr(self, '_p_' + scope.name, scope.default)
 
             if scope.repeated:
                 if not isinstance(val, (list, tuple)):
@@ -257,11 +257,15 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
 
 class Pointer(Property):
     formType = None
-    _resolved = False
+    _resolved = True
+
+    def __init__(self, doc, autogen=False, **kwargs):
+        self.autogen = autogen
+        super(Pointer, self).__init__(doc, **kwargs)
 
     @classmethod
-    def resolve_pointers(cls):
-        cls._resolved = True
+    def resolve(cls, resolved=True):
+        cls._resolved = resolved
 
     @property
     def doc(self):
@@ -293,9 +297,13 @@ class Pointer(Property):
     def ptype(self, val):
         if isinstance(val, (list, tuple)):
             for v in val:
-                if not (isinstance(v, string_types) or issubclass(v, PropertyClass)):
+                if isinstance(v, string_types):
+                    self.resolve(False)
+                elif not issubclass(v, PropertyClass):
                     raise AttributeError('ptype must be a list of PropertyClasses')
-        elif not (isinstance(val, string_types) or issubclass(val, PropertyClass)):
+        elif isinstance(val, string_types):
+            self.resolve(False)
+        elif not issubclass(val, PropertyClass):
             raise AttributeError('ptype must be a list or a PropertyClass')
         self._ptype = val
 
@@ -329,10 +337,12 @@ class Pointer(Property):
 
     @property
     def default(self):
-        if not self._resolved:
-            raise AttributeError('Default is not accessible until pointers are resolved')
         if self.repeated:
             return []
+        if not self.autogen:
+            return None
+        if not self._resolved:
+            raise AttributeError("Pointers are must be resolved with 'Pointers.resolve()' before proceeding")
         if isinstance(self.ptype, (list, tuple)):
             return self.ptype[0]()
         return self.ptype()
@@ -348,7 +358,7 @@ class Pointer(Property):
 
     def validator(self, instance, value):
         if not self._resolved:
-            raise AttributeError('Pointers have not been resolved')
+            raise AttributeError("Pointers are must be resolved with 'Pointers.resolve()' before proceeding")
         if isinstance(self.ptype, (list, tuple)):
             for pt in self.ptype:
                 if isinstance(value, pt):
