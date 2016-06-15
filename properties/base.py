@@ -3,18 +3,12 @@ from builtins import super
 from future import standard_library
 standard_library.install_aliases()
 from builtins import range, object
-import six
 
 from . import exceptions
 import numpy as np, json
 from functools import wraps
 from future.utils import with_metaclass
-
-class classproperty(property):
-    """Class decorator to enable property behaviour in classmethods"""
-
-    def __get__(self, cls, owner):
-        return self.fget.__get__(None, owner)()
+from six import string_types
 
 
 class Property(object):
@@ -25,7 +19,7 @@ class Property(object):
     parent = None #: For sub-properties
 
     def __init__(self, doc, **kwargs):
-        self.doc  = doc
+        self._base_doc  = doc
 
         for key in kwargs:
             if key[0] == '_':
@@ -33,6 +27,10 @@ class Property(object):
             if not hasattr(self, key):
                 raise AttributeError('Unknown key for property: "%s".'%key)
             setattr(self, key, kwargs[key])
+
+    @property
+    def doc(self):
+        return self._base_doc
 
     @property
     def sphinx(self):
@@ -166,129 +164,11 @@ class Property(object):
         return None
 
 
-class Pointer(Property):
-    formType = None
+class classproperty(property):
+    """Class decorator to enable property behaviour in classmethods"""
 
-    def __init__(self, doc, **kwargs):
-        super().__init__(doc, **kwargs)
-        if self.ptype is None:
-            pass
-        elif isinstance(self.ptype, (list, tuple)):
-            self.doc = self.doc + ', Pointer to :class:`.' + self.ptype[0].__name__ + '` (default)'
-            for s in self.ptype[1:]:
-                self.doc = self.doc + ', :class:`.' + s.__name__ + '`'
-        else:
-            self.doc = self.doc + ', Pointer to :class:`.' + self.ptype.__name__ + '`'
-
-    @property
-    def ptype(self):
-        """
-            Pointer to a PropertyClass
-        """
-        return getattr(self, '_ptype', None)
-    @ptype.setter
-    def ptype(self, val):
-        if isinstance(val, (list, tuple)):
-            for v in val:
-                if not issubclass(v, PropertyClass):
-                    raise AttributeError('ptype must be a list of PropertyClasses')
-        elif not issubclass(val, PropertyClass):
-            raise AttributeError('ptype must be a list or a PropertyClass')
-        self._ptype = val
-
-    @property
-    def expose(self):
-        return getattr(self, '_expose', [])
-    @expose.setter
-    def expose(self, val):
-        if not isinstance(val, list):
-            raise AttributeError('exposed values must be lists')
-        for v in val:
-            if not isinstance(v, six.string_types):
-                raise AttributeError('exposed values must be lists of strings')
-        self._expose = val
-
-    @property
-    def _exposed(self):
-        """The properties that exposed on the class."""
-        return [self.name] + self.expose
-
-    @property
-    def sphinx(self):
-        """Sphinx documentation for the property"""
-        if not isinstance(self.ptype, (list, tuple)):
-            # return ':param %s %s: %s'%(self.ptype.__name__, self.name, self.doc)
-            return ':param %s: %s\n:type %s: :class:`.%s`'%(self.name, self.doc, self.name, self.ptype.__name__)
-        return ':param %s: %s\n:type %s: :class:`.'%(self.name, self.doc, self.name) + '`, :class:`.'.join([p.__name__ for p in self.ptype]) + '`'
-        #:class:`...`
-
-    @property
-    def default(self):
-        if self.repeated:
-            return []
-        if isinstance(self.ptype, (list, tuple)):
-            return self.ptype[0]()
-        return self.ptype()
-
-    def validate(self, scope):
-        super().validate(scope)
-        P = getattr(scope, self.name)
-        if self.repeated:
-            for p in P:
-                p.validate()
-        else:
-            P.validate()
-
-    def validator(self, instance, value):
-        if isinstance(self.ptype, (list, tuple)):
-            for pt in self.ptype:
-                if isinstance(value, pt):
-                    return value
-            if isinstance(value, dict):
-                try:
-                    return self.ptype[0](**value)
-                except KeyError:
-                    badKeyStr = ', '.join([k for k in value.keys()])
-                    keyStr = ', '.join([k for k in self.ptype[0]._exposed if k != 'meta'])
-                    raise KeyError('Invalid input keywords [%s] for default pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype[0].__name__,keyStr))
-            else:
-                try:
-                    return self.ptype[0](value)
-                except TypeError:
-                    ptypeStr = ', '.join([p.__name__ for p in self.ptype])
-                    raise TypeError('Invalid input type %s. You need to use one of the following: [%s]'%(value.__class__.__name__,ptypeStr))
-        if not isinstance(value, self.ptype):
-            if isinstance(value, dict):
-                try:
-                    #Setting a pointer from a dictionary, which are passed to %s as **kwargs.
-                    return self.ptype(**value)
-                except KeyError:
-                    badKeyStr = ', '.join([k for k in value.keys()])
-                    keyStr = ', '.join([k for k in self.ptype._exposed if k != 'meta'])
-                    raise KeyError('Invalid input keywords [%s] for pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype.__name__,keyStr))
-            else:
-                try:
-                    return self.ptype(value)
-                except TypeError:
-                    raise TypeError('Invalid input type %s. You need to use %s'%(value.__class__.__name__,self.ptype.__name__))
-        return value
-
-    def getExtraMethods(self):
-        if len(self.expose) > 0 and self.repeated:
-            raise AttributeError('Pointer cannot have repeated model with exposures.')
-
-        scope = self
-        def getProp(propName):
-            def fget(self):
-                return getattr(getattr(self, scope.name), propName)
-            def fset(self, val):
-                return setattr(getattr(self, scope.name), propName, val)
-            return property(fget=fget, fset=fset, doc='Exposed property for %s'%propName)
-
-        return{k: getProp(k) for k in self.expose}
-
-    def fromJSON(self, value):
-        return json.loads(value)
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
 
 
 def validator(func):
@@ -374,3 +254,147 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+
+class Pointer(Property):
+    formType = None
+    _resolved = False
+
+    @classmethod
+    def resolve_pointers(cls):
+        cls._resolved = True
+
+    @property
+    def doc(self):
+        if getattr(self, '_doc', None) is None:
+            if self.ptype is None:
+                self._doc = self._base_doc
+            elif isinstance(self.ptype, (list, tuple)):
+                self._doc = self._base_doc + ', Pointer to :class:`.'
+                self._doc += (self.ptype[0] if isinstance(self.ptype[0], string_types) else self.ptype[0].__name__)
+                self._doc += '` (default)'
+                for s in self.ptype[1:]:
+                    self._doc += ', :class:`.' + (s if isinstance(s, string_types) else s.__name__) + '`'
+            else:
+                self._doc = self._base_doc + ', Pointer to :class:`.'
+                self._doc += (self.ptype if isinstance(self.ptype, string_types) else self.ptype.__name__) + '`'
+        return self._doc
+
+    @property
+    def ptype(self):
+        """
+            Pointer to a PropertyClass
+        """
+        if self._resolved:
+            ptype = getattr(self, '_ptype', None)
+            if isinstance(ptype, string_types):
+                self._ptype = _REGISTRY[ptype]
+        return getattr(self, '_ptype', None)
+    @ptype.setter
+    def ptype(self, val):
+        if isinstance(val, (list, tuple)):
+            for v in val:
+                if not (isinstance(v, string_types) or issubclass(v, PropertyClass)):
+                    raise AttributeError('ptype must be a list of PropertyClasses')
+        elif not (isinstance(val, string_types) or issubclass(val, PropertyClass)):
+            raise AttributeError('ptype must be a list or a PropertyClass')
+        self._ptype = val
+
+    @property
+    def expose(self):
+        return getattr(self, '_expose', [])
+    @expose.setter
+    def expose(self, val):
+        if not isinstance(val, list):
+            raise AttributeError('exposed values must be lists')
+        for v in val:
+            if not isinstance(v, string_types):
+                raise AttributeError('exposed values must be lists of strings')
+        self._expose = val
+
+    @property
+    def _exposed(self):
+        """The properties that exposed on the class."""
+        return [self.name] + self.expose
+
+    @property
+    def sphinx(self):
+        """Sphinx documentation for the property"""
+        if not isinstance(self.ptype, (list, tuple)):
+            cname = (self.ptype if isinstance(self.ptype, string_types) else self.ptype.__name__)
+            # return ':param %s %s: %s'%(self.ptype.__name__, self.name, self.doc)
+            return ':param %s: %s\n:type %s: :class:`.%s`'%(self.name, self.doc, self.name, cname)
+        cname = [p if isinstance(p, string_types) else p.__name__ for p in self.ptype]
+        return ':param %s: %s\n:type %s: :class:`.'%(self.name, self.doc, self.name) + '`, :class:`.'.join(cname) + '`'
+        #:class:`...`
+
+    @property
+    def default(self):
+        if not self._resolved:
+            raise AttributeError('Default is not accessible until pointers are resolved')
+        if self.repeated:
+            return []
+        if isinstance(self.ptype, (list, tuple)):
+            return self.ptype[0]()
+        return self.ptype()
+
+    def validate(self, scope):
+        super().validate(scope)
+        P = getattr(scope, self.name)
+        if self.repeated:
+            for p in P:
+                p.validate()
+        else:
+            P.validate()
+
+    def validator(self, instance, value):
+        if not self._resolved:
+            raise AttributeError('Pointers have not been resolved')
+        if isinstance(self.ptype, (list, tuple)):
+            for pt in self.ptype:
+                if isinstance(value, pt):
+                    return value
+            if isinstance(value, dict):
+                try:
+                    return self.ptype[0](**value)
+                except KeyError:
+                    badKeyStr = ', '.join([k for k in value.keys()])
+                    keyStr = ', '.join([k for k in self.ptype[0]._exposed if k != 'meta'])
+                    raise KeyError('Invalid input keywords [%s] for default pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype[0].__name__,keyStr))
+            else:
+                try:
+                    return self.ptype[0](value)
+                except TypeError:
+                    ptypeStr = ', '.join([p.__name__ for p in self.ptype])
+                    raise TypeError('Invalid input type %s. You need to use one of the following: [%s]'%(value.__class__.__name__,ptypeStr))
+        if not isinstance(value, self.ptype):
+            if isinstance(value, dict):
+                try:
+                    #Setting a pointer from a dictionary, which are passed to %s as **kwargs.
+                    return self.ptype(**value)
+                except KeyError:
+                    badKeyStr = ', '.join([k for k in value.keys()])
+                    keyStr = ', '.join([k for k in self.ptype._exposed if k != 'meta'])
+                    raise KeyError('Invalid input keywords [%s] for pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype.__name__,keyStr))
+            else:
+                try:
+                    return self.ptype(value)
+                except TypeError:
+                    raise TypeError('Invalid input type %s. You need to use %s'%(value.__class__.__name__,self.ptype.__name__))
+        return value
+
+    def getExtraMethods(self):
+        if len(self.expose) > 0 and self.repeated:
+            raise AttributeError('Pointer cannot have repeated model with exposures.')
+
+        scope = self
+        def getProp(propName):
+            def fget(self):
+                return getattr(getattr(self, scope.name), propName)
+            def fset(self, val):
+                return setattr(getattr(self, scope.name), propName, val)
+            return property(fget=fget, fset=fset, doc='Exposed property for %s'%propName)
+
+        return{k: getProp(k) for k in self.expose}
+
+    def fromJSON(self, value):
+        return json.loads(value)

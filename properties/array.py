@@ -20,9 +20,11 @@ class Array(Property):
     shape = ('*',)
     dtype = float
 
-    def __init__(self, doc, **kwargs):
-        super().__init__(doc, **kwargs)
-        self.doc = self.doc + ', shape: %s, type: %s'%(self.shape, self.dtype)
+    @property
+    def doc(self):
+        if getattr(self, '_doc', None) is None:
+            self._doc = self._base_doc + ', shape: %s, type: %s'%(self.shape, self.dtype)
+        return self._doc
 
     def serialize(self, data):
         """Convert the array data to a serialized binary format"""
