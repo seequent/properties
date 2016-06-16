@@ -77,6 +77,8 @@ class TestBasic(unittest.TestCase):
         assert P.sub_surfs[1] is S1
         assert P.sub_surfs[2] is S2
 
+        P.validate()
+
 
 
 

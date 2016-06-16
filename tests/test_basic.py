@@ -19,15 +19,31 @@ class APrimitive(properties.PropertyClass):
 class SomeOptions(APrimitive):
     color = properties.Color("My color")
 
+class ReqOptions(APrimitive):
+    color = properties.Color("My color", required=True)
+
+class ReqDefOptions(APrimitive):
+    color = properties.Color("My color", required=True, default='red')
+
+class DefaultColorOptions(APrimitive):
+    color = properties.Color("This color is random", default='random')
+
 class MySurface(properties.PropertyClass):
-    opts = properties.Pointer("My options", ptype=SomeOptions, expose=['color'])
+    opts = properties.Pointer("My options", ptype=SomeOptions, expose=['color'], autogen=True)
 
 
 class TestBasic(unittest.TestCase):
 
     def test_color(self):
 
+        opts = ReqOptions()
+        self.assertRaises(properties.exceptions.RequiredPropertyError, lambda: opts.validate())
+
+        opts = ReqDefOptions()
+        opts.validate()
+
         opts = SomeOptions(color='red')
+        opts.validate()
 
         # Test options
         assert opts.color == (255,0,0)
@@ -37,6 +53,8 @@ class TestBasic(unittest.TestCase):
         assert opts.color == (255,255,255)
         opts.color = [50, 50, 50]
         assert opts.color == (50, 50, 50)
+        opts.color = 'random'
+        assert len(opts.color) == 3
         self.assertRaises(ValueError, lambda: setattr(opts,'color', 'SunburnRed'))
         self.assertRaises(ValueError, lambda: setattr(opts,'color', '#00112233'))
         self.assertRaises(ValueError, lambda: setattr(opts,'color', '#CDEFGH'))
@@ -44,6 +62,9 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(ValueError, lambda: setattr(opts,'color', (1.3, 5.3, 100.6)))
         self.assertRaises(ValueError, lambda: setattr(opts,'color', [5, 100]))
         self.assertRaises(ValueError, lambda: setattr(opts,'color', [-10, 0, 0]))
+
+        opts = DefaultColorOptions()
+        assert len(opts.color) == 3
 
     def test_range(self):
 
