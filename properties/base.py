@@ -114,12 +114,14 @@ class Property(object):
 
             if val is not None:
                 return val
-            default = scope.default
+            if scope.default not in (None, []):
+                default = scope.validator(self, scope.default)
+            else:
+                default = scope.default
             setattr(self, '_p_' + scope.name, default)
             return default
         def fset(self, val):
             # pre = getattr(self, '_p_' + scope.name, scope.default)
-
             if scope.repeated:
                 if not isinstance(val, (list, tuple)):
                     val = [val]
@@ -175,13 +177,12 @@ class classproperty(property):
 def validator(func):
     @wraps(func)
     def func_wrapper(self):
-        self._getting_validated = True
-        print(self._getting_validated)
         for k in self._properties:
-            if getattr(self, '_getting_validated', None):
+            prop = self._properties[k]
+            if getattr(prop, '_getting_validated', None):
                 continue
             else:
-                prop = self._properties[k]
+                setattr(prop, '_getting_validated', True)
                 prop.validate(self)
                 val = getattr(self, prop.name)
                 if prop.required or val is not None:
@@ -190,7 +191,7 @@ def validator(func):
                             prop.validator(self, v)
                     else:
                         prop.validator(self, val)
-        self._getting_validated = False
+                delattr(prop, '_getting_validated')
         return func(self)
     return func_wrapper
 
