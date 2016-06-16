@@ -177,12 +177,12 @@ class classproperty(property):
 def validator(func):
     @wraps(func)
     def func_wrapper(self):
-        for k in self._properties:
-            prop = self._properties[k]
-            if getattr(prop, '_getting_validated', None):
-                continue
-            else:
-                setattr(prop, '_getting_validated', True)
+        if not getattr(self, '_getting_validated', None):
+            print('self' + str(self))
+            setattr(self, '_getting_validated', True)
+            for k in self._properties:
+                prop = self._properties[k]
+                print('prop' + prop.name)
                 prop.validate(self)
                 val = getattr(self, prop.name)
                 if prop.required or val is not None:
@@ -191,7 +191,7 @@ def validator(func):
                             prop.validator(self, v)
                     else:
                         prop.validator(self, val)
-                delattr(prop, '_getting_validated')
+            delattr(self, '_getting_validated')
         return func(self)
     return func_wrapper
 
@@ -358,6 +358,8 @@ class Pointer(Property):
     def validate(self, scope):
         super(Pointer, self).validate(scope)
         P = getattr(scope, self.name)
+        if P in (None, []) and not self.required:
+            return True
         if self.repeated:
             for p in P:
                 p.validate()
