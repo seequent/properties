@@ -15,6 +15,13 @@ class MyShape(properties.PropertyClass):
     sub_surfs = properties.Pointer("The sub-surface", ptype=MySurface, repeated=True)
     opts = properties.Pointer("My other options", ptype=SomeOptions, autogen=True)
 
+class OneOfMany(properties.PropertyClass):
+    prop = properties.Pointer("Some Prop", ptype=[SomeOptions, MySurface, MyShape])
+
+class ManyOfMany(properties.PropertyClass):
+    prop = properties.Pointer("Some Prop", ptype=[MySurface, MyShape], repeated=True)
+
+
 
 class TestBasic(unittest.TestCase):
 
@@ -78,6 +85,36 @@ class TestBasic(unittest.TestCase):
         assert P.sub_surfs[2] is S2
 
         P.validate()
+
+    def test_list_ptype(self):
+        class SomeStringPtypes(properties.PropertyClass):
+            prop = properties.Pointer("Some Prop", ptype=[SomeOptions, 'MySurface', 'MyShape'])
+        properties.Pointer.resolve()
+
+        OOM = OneOfMany()
+        MOM = ManyOfMany()
+        SSP = SomeStringPtypes()
+
+        shp = MyShape()
+        sfc = MySurface()
+        opt = SomeOptions()
+
+        OOM.prop = shp
+        OOM.prop = opt
+        self.assertRaises(TypeError, lambda: setattr(OOM, 'prop', MOM))
+
+        MOM.prop = shp
+        MOM.prop = [shp, sfc]
+        self.assertRaises(TypeError, lambda: setattr(MOM, 'prop', [shp, sfc, opt]))
+
+        SSP.prop = shp
+        SSP.prop = opt
+        self.assertRaises(TypeError, lambda: setattr(SSP, 'prop', MOM))
+
+
+
+
+
 
 
 

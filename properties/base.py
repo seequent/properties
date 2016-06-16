@@ -178,11 +178,9 @@ def validator(func):
     @wraps(func)
     def func_wrapper(self):
         if not getattr(self, '_getting_validated', None):
-            print('self' + str(self))
             setattr(self, '_getting_validated', True)
             for k in self._properties:
                 prop = self._properties[k]
-                print('prop' + prop.name)
                 prop.validate(self)
                 val = getattr(self, prop.name)
                 if prop.required or val is not None:
@@ -298,7 +296,9 @@ class Pointer(Property):
         """
         if self._resolved:
             ptype = getattr(self, '_ptype', None)
-            if isinstance(ptype, string_types):
+            if isinstance(ptype, (list, tuple)):
+                self._ptype = [_REGISTRY[p] if isinstance(p, string_types) else p for p in ptype]
+            elif isinstance(ptype, string_types):
                 self._ptype = _REGISTRY[ptype]
         return getattr(self, '_ptype', None)
     @ptype.setter
