@@ -9,11 +9,22 @@ class SomeOptions(properties.PropertyClass):
 class MySurface(properties.PropertyClass):
     opts = properties.Pointer("My options", ptype=SomeOptions, expose=['color'])
 
+class MyInitSurface(MySurface):
+    def __init__(self, opts, **kwargs):
+        self.opts = opts
+        super(MyInitSurface, self).__init__(**kwargs)
+
+class MyShapeAutoTrue(properties.PropertyClass):
+    surf = properties.Pointer("Init sfc", ptype=MyInitSurface)
+
+class MyShapeAutoFalse(properties.PropertyClass):
+    surf = properties.Pointer("Init sfc", ptype=MyInitSurface, auto_create=False)
+
 
 class MyShape(properties.PropertyClass):
     surf = properties.Pointer("The surface", ptype=MySurface, required=True)
     sub_surfs = properties.Pointer("The sub-surface", ptype=MySurface, repeated=True)
-    opts = properties.Pointer("My other options", ptype=SomeOptions, autogen=True)
+    opts = properties.Pointer("My other options", ptype=SomeOptions)
 
 class OneOfMany(properties.PropertyClass):
     prop = properties.Pointer("Some Prop", ptype=[SomeOptions, MySurface, MyShape])
@@ -23,13 +34,14 @@ class ManyOfMany(properties.PropertyClass):
 
 
 
+
 class TestBasic(unittest.TestCase):
 
     def test_resolve(self):
         class MyShapeStrPt(properties.PropertyClass):
             surf = properties.Pointer("The surface", ptype='MySurface', required=True)
             sub_surfs = properties.Pointer("The sub-surface", ptype='MySurface', repeated=True)
-            opts = properties.Pointer("My other options", ptype=SomeOptions, autogen=True)
+            opts = properties.Pointer("My other options", ptype=SomeOptions, auto_create=True)
 
         shp = MyShapeStrPt()
         sfc = MySurface()
@@ -46,18 +58,24 @@ class TestBasic(unittest.TestCase):
         assert opts.color is sfc.color
 
 
-    def test_autogen(self):
+    def test_auto_create(self):
         shp = MyShape()
         sfc = MySurface()
+        assert isinstance(shp.surf, MySurface)
         shp.surf = sfc
         assert getattr(shp, 'opts', None) is not None
         assert isinstance(shp.opts, SomeOptions)
-        assert getattr(sfc, 'opts', None) is None
+
+        shp_t = MyShapeAutoTrue()
+        self.assertRaises(AttributeError, lambda: shp_t.surf)
+
+        shp_f = MyShapeAutoFalse()
+        assert shp_f.surf is None
 
     def test_parent_child(self):
         class MyPossiblyEmptyShape(properties.PropertyClass):
             sub_surfs = properties.Pointer("The sub-surface", ptype='MySurfaceWithParent', repeated=True)
-            opts = properties.Pointer("My other options", ptype='SomeOptions', autogen=True)
+            opts = properties.Pointer("My other options", ptype='SomeOptions', auto_create=True)
 
 
         class MySurfaceWithParent(properties.PropertyClass):

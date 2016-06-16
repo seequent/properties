@@ -92,7 +92,6 @@ class Property(object):
         return self.name[0].upper() + self.name[1:]
 
     def validate(self, scope):
-
         if getattr(scope, self.name, None) is None and self.required:
             raise exceptions.RequiredPropertyError(self.name)
 
@@ -107,21 +106,18 @@ class Property(object):
 
         def fget(self):
             val = getattr(self, '_p_' + scope.name, None)
-
             if scope.repeated and val is not None:
                 # clone the list
                 val = [v for v in val]
-
             if val is not None:
                 return val
-            if scope.default not in (None, []):
-                default = scope.validator(self, scope.default)
-            else:
+            if scope.default is None or scope.default == []:
                 default = scope.default
+            else:
+                default = scope.validator(self, scope.default)
             setattr(self, '_p_' + scope.name, default)
             return default
         def fset(self, val):
-            # pre = getattr(self, '_p_' + scope.name, scope.default)
             if scope.repeated:
                 if not isinstance(val, (list, tuple)):
                     val = [val]
@@ -177,8 +173,10 @@ class classproperty(property):
 def validator(func):
     @wraps(func)
     def func_wrapper(self):
-        if not getattr(self, '_getting_validated', None):
-            setattr(self, '_getting_validated', True)
+        if getattr(self, '_validating', False):
+            return
+        self._validating = True
+        try:
             for k in self._properties:
                 prop = self._properties[k]
                 prop.validate(self)
@@ -189,7 +187,8 @@ def validator(func):
                             prop.validator(self, v)
                     else:
                         prop.validator(self, val)
-            delattr(self, '_getting_validated')
+        finally:
+            self._validating = False
         return func(self)
     return func_wrapper
 
@@ -265,8 +264,8 @@ class Pointer(Property):
     formType = None
     _resolved = True
 
-    def __init__(self, doc, autogen=False, **kwargs):
-        self.autogen = autogen
+    def __init__(self, doc, auto_create=True, **kwargs):
+        self.auto_create = auto_create
         super(Pointer, self).__init__(doc, **kwargs)
 
     @classmethod
@@ -347,18 +346,23 @@ class Pointer(Property):
     def default(self):
         if self.repeated:
             return []
-        if not self.autogen:
+        if not self.auto_create:
             return None
         if not self._resolved:
             raise AttributeError("Pointers are must be resolved with 'Pointers.resolve()' before proceeding")
         if isinstance(self.ptype, (list, tuple)):
-            return self.ptype[0]()
-        return self.ptype()
+            pdef = self.ptype[0]
+        else:
+            pdef = self.ptype
+        try:
+            return pdef()
+        except TypeError:
+            raise AttributeError("Cannot set default property of class {name}. Set 'auto_create=False' for pointers of this type".format(name=pdef.__name__))
 
     def validate(self, scope):
         super(Pointer, self).validate(scope)
         P = getattr(scope, self.name)
-        if P in (None, []) and not self.required:
+        if not self.required and (P is None or P == []):
             return True
         if self.repeated:
             for p in P:
