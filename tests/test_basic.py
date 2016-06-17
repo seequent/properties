@@ -29,7 +29,7 @@ class DefaultColorOptions(APrimitive):
     color = properties.Color("This color is random", default='random')
 
 class MySurface(properties.PropertyClass):
-    opts = properties.Pointer("My options", ptype=SomeOptions, expose=['color'], autogen=True)
+    opts = properties.Pointer("My options", ptype=SomeOptions, expose=['color'])
 
 
 class TestBasic(unittest.TestCase):
