@@ -18,9 +18,17 @@ class String(Property):
     strip     = ' '
 
     @property
+    def clone_args(self):
+        cargs = super(String, self).clone_args
+        cargs['lowercase'] = self.lowercase
+        cargs['strip'] = self.strip
+        cargs['choices'] = self.choices
+        return cargs
+
+    @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
-            if self.choices is not None:
+            if self.choices is not None and self.choices != []:
                 self._doc = self._base_doc + ', Choices: ' + ', '.join(self.choices.keys())
             else:
                 self._doc = self._base_doc
@@ -28,7 +36,7 @@ class String(Property):
 
     @property
     def choices(self):
-        return getattr(self, '_choices', None)
+        return getattr(self, '_choices', [])
     @choices.setter
     def choices(self, value):
         if not isinstance(value, (list, tuple, dict)):
@@ -51,7 +59,7 @@ class String(Property):
             raise ValueError('%s must be a string'%self.name)
         if self.strip is not None:
             value = value.strip(self.strip)
-        if self.choices is not None:
+        if self.choices is not None and self.choices != []:
             if value.upper() in [k.upper() for k in self.choices.keys()]:
                 return value.lower() if self.lowercase else value.upper()
             for k, v in self.choices.items():
@@ -173,6 +181,13 @@ class Range(Float):
     minValue = None # minimum value
 
     @property
+    def clone_args(self):
+        cargs = super(Range, self).clone_args
+        cargs['maxValue'] = self.maxValue
+        cargs['minValue'] = self.minValue
+        return cargs
+
+    @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
             if self.minValue is None:
@@ -203,6 +218,12 @@ class RangeInt(Int, Range):
 class DateTime(Property):
 
     shortDate = False
+
+    @property
+    def clone_args(self):
+        cargs = super(DateTime, self).clone_args
+        cargs['shortDate'] = self.shortDate
+        return cargs
 
     def asJSON(self, value):
         if value is None: return
