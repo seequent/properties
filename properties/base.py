@@ -243,7 +243,7 @@ class _PropertyMetaClass(type):
 
 class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
     def __init__(self, **kwargs):
-        self._dirty_props = set()#self._properties)
+        self._dirty_props = set()
         self.set(**kwargs)
 
     @validator
@@ -259,8 +259,6 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
         keys = [k for k in self._properties if
                 isinstance(self._properties[k], Pointer)]
         for key in keys:
-            # if key in self._dirty_props:
-            #     continue
             if self._properties[key].repeated:
                 for prop in getattr(self, key):
                     if len(prop._dirty) > 0:
@@ -275,7 +273,6 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
     def _mark_dirty(self, name):
         assert name in self._properties, \
             '{name} not in properties'.format(name=name)
-        # assert that it is in the props
         self._dirty_props.add(name)
         self._on_property_change(name)
 
@@ -394,8 +391,6 @@ class Pointer(Property):
 
     @property
     def default(self):
-        # if getattr(self, '_default', None) is not None:
-        #     return self._default
         if self.repeated:
             return []
         if not self.auto_create:
@@ -410,28 +405,6 @@ class Pointer(Property):
             return pdef()
         except TypeError:
             raise AttributeError("Cannot set default property of class {name}. Set 'auto_create=False' for pointers of this type".format(name=pdef.__name__))
-
-    # @default.setter
-    # def default(self, value):
-    #     if value is None or value == []:
-    #         self._default = None
-    #         return
-    #     if isinstance(self.ptype, string_types):
-    #         raise AttributeError('Cannot set default, pointers not yet resolved')
-    #     if isinstance(self.ptype, (list, tuple)):
-    #         for p in self.ptype:
-    #             if isinstance(p, string_types):
-    #                 raise AttributeError('Cannot set default, pointers not yet resolved')
-
-    #     if isinstance(value, (list, tuple)):
-    #         if not self.repeated:
-    #             raise AttributeError('Default cannot be repeated')
-    #         for v in value:
-    #             if not issubclass(type(v), tuple(ptype)):
-    #                 raise AttributeError("Default value must be in {ptype}".format(ptype=self.ptype))
-    #     if not issubclass(type(value), tuple(ptype)):
-    #         raise AttributeError('Default value must be in {ptype}'.format(ptype=self.ptype))
-    #     self._default = value
 
     def validate(self, scope):
         super(Pointer, self).validate(scope)
