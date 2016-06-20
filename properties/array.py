@@ -21,13 +21,6 @@ class Array(Property):
     dtype = float
 
     @property
-    def clone_args(self):
-        cargs = super(Array, self).clone_args
-        cargs['shape'] = self.shape
-        cargs['dtype'] = self.dtype
-        return cargs
-
-    @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
             self._doc = self._base_doc + ', shape: %s, type: %s'%(self.shape, self.dtype)

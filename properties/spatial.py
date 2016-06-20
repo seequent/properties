@@ -14,12 +14,6 @@ class Vector(Property):
     formType = 'bool-choice'
 
     @property
-    def clone_args(self):
-        cargs = super(Vector, self).clone_args
-        cargs['formType'] = self.formType
-        return cargs
-
-    @property
     def default(self):
         return getattr(self, '_default', [] if self.repeated else None)
     @default.setter

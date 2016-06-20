@@ -29,13 +29,6 @@ class Property(object):
             setattr(self, key, kwargs[key])
 
     @property
-    def clone_args(self):
-        return {'name':self.name, 'doc':self._base_doc, 'className':self.className, 'required':self.required, 'repeated':self.repeated, 'default':self.default}
-
-    def clone(self):
-        return self.__class__(**self.clone_args)
-
-    @property
     def doc(self):
         return self._base_doc
 
@@ -144,14 +137,19 @@ class Property(object):
                         post = v
                     val_out[ii] = post
                 setattr(self, '_p_' + scope.name, val_out)
-                scope.dirty = True
+                self._dirties += [scope.name]
+                self.on_property_change(scope.name)
+                # scope.dirty = True
                 return
 
             post = scope.validator(self, val)
             if post is None:
                 post = val
             setattr(self, '_p_' + scope.name, post)
-            scope.dirty = True
+            print(self)
+            print(scope.name)
+            self._dirties += [scope.name]
+            self.on_property_change(scope.name)
 
         attrs[self.name] = property(fget=fget, fset=fset, doc=scope.doc)
 
@@ -217,10 +215,8 @@ class _PropertyMetaClass(type):
     def __new__(cls, name, bases, attrs):
         _properties = {}
         for base in reversed(bases):
-            # print(base)
             for baseProp in getattr(base, '_properties', {}):
-                # print(base._properties[baseProp].clone_args)
-                _properties[baseProp] = base._properties[baseProp].clone()
+                _properties[baseProp] = base._properties[baseProp]
 
         keys = [key for key in attrs]
 
@@ -236,6 +232,7 @@ class _PropertyMetaClass(type):
 
 
         attrs['_properties'] = _properties
+        attrs['_dirties'] = list(_properties)
         attrs['_className']     = name
 
         # The doc string
@@ -259,7 +256,6 @@ class _PropertyMetaClass(type):
 
         return newClass
 
-# TAB = ''
 class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
     def __init__(self, **kwargs):
         self.set(**kwargs)
@@ -270,30 +266,21 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
 
     @property
     def dirties(self):
-        # global TAB
-        dirties = []
+        return self.recurse_dirties(dict())
+
+    def recurse_dirties(self, dirties):
+        dirties[self] = self._dirties
         if getattr(self, '_sweeping', False):
-            return []
+            return
         self._sweeping = True
-        # print(TAB + 'in ' + str(self))
-        # TAB += '   '
         for key in self._properties:
             if isinstance(self._properties[key], Pointer):
-                # print(TAB + '... recursing into ' + key)
-                pt_dirties = []
                 if self._properties[key].repeated:
                     for prop in getattr(self, key):
-                        pt_dirties += prop.dirties
+                        prop.recurse_dirties(dirties)
                 else:
-                    pt_dirties += getattr(self, key).dirties
-                if len(pt_dirties) > 0:
-                    self._properties[key].dirty = True
-                dirties += pt_dirties
-            if self._properties[key].dirty:
-                # print(TAB + '... adding ' + key)
-                # print(TAB + str(getattr(self, key)))
-                dirties += [self._properties[key]]
-        # TAB = TAB[:-3]
+                    prop = getattr(self, key)
+                    prop.recurse_dirties(dirties)
         self._sweeping = False
         return dirties
 
@@ -303,7 +290,10 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
 
     def make_clean(self):
         for prop in self.dirties:
-            prop.dirty = False
+            prop._dirties = []
+
+    def on_property_change(self, key):
+        print("Property " + key + " changed of " + str(self))
 
     def set(self, **kwargs):
         errors = []
@@ -329,17 +319,6 @@ class Pointer(Property):
     @classmethod
     def resolve(cls, resolved=True):
         cls._resolved = resolved
-
-    @property
-    def clone_args(self):
-        cargs = super(Pointer, self).clone_args
-        cargs.pop('default')
-        cargs['auto_create'] = self.auto_create
-        cargs['ptype'] = self.ptype
-        cargs['expose'] = self.expose
-        return cargs
-
-
 
     @property
     def doc(self):

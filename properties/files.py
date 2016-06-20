@@ -12,12 +12,6 @@ class File(Property):
 
     mode = 'r' #: mode for opening the file.
 
-    @property
-    def clone_args(self):
-        cargs = super(File, self).clone_args
-        cargs['mode'] = self.mode
-        return cargs
-
     def validator(self, instance, value):
         if hasattr(value, 'read'):
             prev = getattr(self, '_p_' + self.name, None)
