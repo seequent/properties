@@ -118,6 +118,7 @@ class Property(object):
             setattr(self, '_p_' + scope.name, default)
             return default
         def fset(self, val):
+            pre = getattr(self, '_p_' + scope.name, None)
             if scope.repeated:
                 if not isinstance(val, (list, tuple)):
                     val = [val]
@@ -129,6 +130,7 @@ class Property(object):
                     val_out[ii] = post
                 setattr(self, '_p_' + scope.name, val_out)
                 self._mark_dirty(scope.name)
+                self._on_property_change(scope.name, pre, val_out)
                 return
 
             post = scope.validator(self, val)
@@ -136,6 +138,7 @@ class Property(object):
                 post = val
             setattr(self, '_p_' + scope.name, post)
             self._mark_dirty(scope.name)
+            self._on_property_change(scope.name, pre, post)
 
         attrs[self.name] = property(fget=fget, fset=fset, doc=scope.doc)
 
@@ -274,7 +277,6 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
         assert name in self._properties, \
             '{name} not in properties'.format(name=name)
         self._dirty_props.add(name)
-        self._on_property_change(name)
 
     def _mark_clean(self, recurse=True):
         self._dirty_props = set()
@@ -291,7 +293,7 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
                 getattr(self, key)._mark_clean()
         self._inside_clean = False
 
-    def _on_property_change(self, key):
+    def _on_property_change(self, key, pre, post):
         pass
 
     def set(self, **kwargs):
