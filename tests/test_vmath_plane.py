@@ -3,6 +3,7 @@ from properties.vmath import Vector, Matrix3, Plane
 import numpy as np
 import six
 
+
 class TestVMathPlane(unittest.TestCase):
 
     def test_init_exceptions(self):
@@ -28,7 +29,6 @@ class TestVMathPlane(unittest.TestCase):
         self.assertRaises(ValueError, Plane, 361, 5)
         self.assertRaises(ValueError, Plane, 5, -1)
         self.assertRaises(ValueError, Plane, 5, 91)
-
 
     def test_init_fromNormalAndPoint(self):
         v1 = Vector([1, 0, 0])
@@ -64,19 +64,19 @@ class TestVMathPlane(unittest.TestCase):
 
     def test_init_fromStrikeAndDip(self):
         P1 = Plane(0, 0)
-        self.assertTrue(np.array_equal(P1.normal, Vector(0,0,1)))
+        self.assertTrue(np.array_equal(P1.normal, Vector(0, 0, 1)))
         self.assertTrue(np.array_equal(P1.centroid, Vector()))
         v1 = [1, 2, 3]
         P2 = Plane(0, 0, v1)
-        self.assertTrue(np.array_equal(P2.normal, Vector(0,0,1)))
+        self.assertTrue(np.array_equal(P2.normal, Vector(0, 0, 1)))
         self.assertTrue(np.array_equal(P2.centroid, Vector(v1)))
         P3 = Plane(90, 0)
-        self.assertTrue(np.allclose(P3.normal, Vector(0,0,1)))
+        self.assertTrue(np.allclose(P3.normal, Vector(0, 0, 1)))
         self.assertTrue(np.array_equal(P3.centroid, Vector()))
         P4 = Plane(0, 90)
-        self.assertTrue(np.allclose(P4.normal, Vector(1,0,0)))
+        self.assertTrue(np.allclose(P4.normal, Vector(1, 0, 0)))
         P5 = Plane(90, 90)
-        self.assertTrue(np.allclose(P5.normal, Vector(0,-1,0)))
+        self.assertTrue(np.allclose(P5.normal, Vector(0, -1, 0)))
         P6 = Plane(0, 45)
         self.assertTrue(np.allclose(P6.normal, Vector(1, 0, 1).asUnit()))
         P7 = Plane(12.44, 90)
@@ -94,7 +94,6 @@ class TestVMathPlane(unittest.TestCase):
     #     P1 = Plane([1, 0, 0])
     #     self.assertAlmostEqual(P1.strike, 0)
     #     self.assertAlmostEqual(P1.dip, 90)
-
 
 
 if __name__ == '__main__':

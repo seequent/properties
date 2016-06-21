@@ -1,4 +1,17 @@
-from __future__ import absolute_import, unicode_literals, print_function, division
+"""Properties
+
+Giving structure (and documentation!) to the properties you use in your
+code avoids confusion and allows users to interact flexibly and provide
+multiple styles of input, have those inputs validated, and allow you as a
+developer to set expectations for what you want to work with.
+
+import properties
+class Profile(properties.PropertyClass):
+    myName = properties.String('What is your name!', required=True)
+
+"""
+from __future__ import (absolute_import, unicode_literals,
+                        print_function, division)
 from future import standard_library
 standard_library.install_aliases()
 

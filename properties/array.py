@@ -1,4 +1,5 @@
-from __future__ import absolute_import, unicode_literals, print_function, division
+from __future__ import (absolute_import, unicode_literals,
+                        print_function, division)
 from builtins import super, int
 from future import standard_library
 standard_library.install_aliases()
@@ -23,7 +24,8 @@ class Array(Property):
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc + ', shape: %s, type: %s'%(self.shape, self.dtype)
+            self._doc = '{}, shape: {}, type: {}'.format(
+                        self._base_doc, self.shape, self.dtype)
         return self._doc
 
     def serialize(self, data):
@@ -35,7 +37,7 @@ class Array(Property):
             useDtype = '<i4'
             assert (data.astype(useDtype) == data).all(), 'Converting the type should not screw things up.'
         else:
-            raise Exception('Must be a float or an int: %s'%data.dtype)
+            raise Exception('Must be a float or an int: {}'.format(data.dtype))
 
         dataFile = tempfile.NamedTemporaryFile('rb+', suffix='.dat')
         dataFile.write(data.astype(useDtype).tobytes())
@@ -48,31 +50,31 @@ class Array(Property):
             return self.__schemaFunction
 
         if not (self.dtype in six.integer_types or self.dtype in (float, None)):
-            raise TypeError("%s: Invalid dtype for %s - must be int, float, or None"%(self.dtype, self.name))
+            raise TypeError("{}: Invalid dtype for {} - must be int, float, or None".format(self.dtype, self.name))
         if not isinstance(self.shape, tuple):
-            raise TypeError("%s: Invalid shape for %s - must be a tuple (e.g. ('*',3) for an array of length-3 arrays)"%(self.shape, self.name))
+            raise TypeError("{}: Invalid shape for {} - must be a tuple (e.g. ('*',3) for an array of length-3 arrays)".format(self.shape, self.name))
         for s in self.shape:
                 if s != '*' and not isinstance(s, six.integer_types):
-                    raise TypeError("%s: Invalid shape for %s - values must be '*' or ints"%(self.shape, self.name))
+                    raise TypeError("{}: Invalid shape for {} - values must be '*' or ints".format(self.shape, self.name))
 
         def testFunction(proposed):
-            errStr=self.name
+            errStr = self.name
             if self.dtype in six.integer_types and proposed.dtype.kind != 'i':
-                raise ValueError('%s: Array type must be int'%errStr)
+                raise ValueError('{}: Array type must be int'.format(errStr))
             if self.dtype == float and proposed.dtype.kind != 'f':
-                raise ValueError('%s: Array type must be float'%errStr)
+                raise ValueError('{}: Array type must be float'.format(errStr))
             if len(self.shape) != proposed.ndim:
-                raise ValueError('%s: Array must have %d dimensions (shape: %s)'%(errStr, len(self.shape), self.shape))
+                raise ValueError('{}: Array must have {:d} dimensions (shape: {})'.format(errStr, len(self.shape), self.shape))
             for i, s in enumerate(self.shape):
                 if s != '*' and proposed.shape[i] != s:
-                    raise ValueError('%s: Array dimension %d must be length %d'%(errStr, i, s))
+                    raise ValueError('{}: Array dimension {:d} must be length {:d}'.format(errStr, i, s))
 
         self.__schemaFunction = testFunction
         return testFunction
 
     def validator(self, instance, proposed):
         if not isinstance(proposed, (list, np.ndarray)):
-            raise ValueError('%s must be a list or numpy array'%self.name)
+            raise ValueError('{} must be a list or numpy array'.format(self.name))
         proposed = np.array(proposed)
         self._schemaFunction(proposed)
         return proposed
