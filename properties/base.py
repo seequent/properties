@@ -138,12 +138,14 @@ class Property(object):
                         post = v
                     val_out[ii] = post
                 setattr(self, '_p_' + scope.name, val_out)
+                self._mark_dirty(scope.name)
                 return
 
             post = scope.validator(self, val)
             if post is None:
                 post = val
             setattr(self, '_p_' + scope.name, post)
+            self._mark_dirty(scope.name)
 
         attrs[self.name] = property(fget=fget, fset=fset, doc=scope.doc)
 
@@ -255,14 +257,58 @@ class _PropertyMetaClass(type):
 
         return newClass
 
-
 class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
     def __init__(self, **kwargs):
+        self._dirty_props = set()
         self.set(**kwargs)
 
     @validator
     def validate(self):
         return True
+
+    @property
+    def _dirty(self):
+        if getattr(self, '_inside_dirty', False):
+            return set()
+        dirty_pointers = set()
+        self._inside_dirty = True
+        keys = [k for k in self._properties if
+                isinstance(self._properties[k], Pointer)]
+        for key in keys:
+            if self._properties[key].repeated:
+                for prop in getattr(self, key):
+                    if len(prop._dirty) > 0:
+                        dirty_pointers.add(key)
+            else:
+                prop = getattr(self, '_p_' + key, None)
+                if prop is not None and len(prop._dirty) > 0:
+                    dirty_pointers.add(key)
+        self._inside_dirty = False
+        return self._dirty_props.union(dirty_pointers)
+
+    def _mark_dirty(self, name):
+        assert name in self._properties, \
+            '{name} not in properties'.format(name=name)
+        self._dirty_props.add(name)
+        self._on_property_change(name)
+
+    def _mark_clean(self, recurse=True):
+        self._dirty_props = set()
+        if not recurse or getattr(self, '_inside_clean', False):
+            return
+        self._inside_clean = True
+        keys = [k for k in self._dirty if
+                isinstance(self._properties[k], Pointer)]
+        for key in keys:
+            if self._properties[key].repeated:
+                for prop in getattr(self, key):
+                    prop._mark_clean()
+            else:
+                getattr(self, key)._mark_clean()
+        self._inside_clean = False
+
+    def _on_property_change(self, key):
+        pass
 
     def set(self, **kwargs):
         errors = []

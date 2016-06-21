@@ -22,15 +22,15 @@ class String(Property):
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc
-            if self.choices is not None:
-                self._doc += ', Choices: ' + ', '.join(self.choices.keys())
+            if self.choices is not None and len(self.choices) != 0:
+                self._doc = self._base_doc + ', Choices: ' + ', '.join(self.choices.keys())
+            else:
+                self._doc = self._base_doc
         return self._doc
 
     @property
     def choices(self):
-        return getattr(self, '_choices', None)
-
+        return getattr(self, '_choices', {})
     @choices.setter
     def choices(self, value):
         if not isinstance(value, (list, tuple, dict)):
@@ -53,7 +53,7 @@ class String(Property):
             raise ValueError('{} must be a string'.format(self.name))
         if self.strip is not None:
             value = value.strip(self.strip)
-        if self.choices is not None:
+        if self.choices is not None and len(self.choices) != 0:
             if value.upper() in [k.upper() for k in self.choices.keys()]:
                 return value.lower() if self.lowercase else value.upper()
             for k, v in self.choices.items():

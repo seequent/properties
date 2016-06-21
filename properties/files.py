@@ -30,7 +30,11 @@ class Image(File):
 
     def validator(self, instance, value):
 
-        import png
+
+        try:
+            import png
+        except:
+            raise ImportError("Error importing png module: `pip install pypng`")
 
         if getattr(value, '__valid__', False):
             return value

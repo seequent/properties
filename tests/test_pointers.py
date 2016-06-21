@@ -15,8 +15,8 @@ class MySurface(properties.PropertyClass):
 
 class MyInitSurface(MySurface):
     def __init__(self, opts, **kwargs):
-        self.opts = opts
         super(MyInitSurface, self).__init__(**kwargs)
+        self.opts = opts
 
 
 class MyShapeAutoTrue(properties.PropertyClass):
@@ -102,9 +102,9 @@ class TestBasic(unittest.TestCase):
             def __init__(self, parent=None, **kwargs):
                 if parent is None:
                     raise TypeError('You must provide parent')
+                super(MySurfaceWithParent, self).__init__(**kwargs)
                 self.parent = parent
                 self.parent.sub_surfs += [self]
-                super(MySurfaceWithParent, self).__init__(**kwargs)
 
         properties.Pointer.resolve()
         P = MyPossiblyEmptyShape()
@@ -125,10 +125,8 @@ class TestBasic(unittest.TestCase):
     def test_list_ptype(self):
 
         class SomeStringPtypes(properties.PropertyClass):
-            prop = properties.Pointer("Some Prop",
-                                      ptype=[SomeOptions,
-                                             'MySurface',
-                                             'MyShape'])
+            prop = properties.Pointer("Some Prop", ptype=[SomeOptions, 'MySurface', 'MyShape'])
+
         properties.Pointer.resolve()
 
         OOM = OneOfMany()
@@ -153,6 +151,93 @@ class TestBasic(unittest.TestCase):
         SSP.prop = opt
         self.assertRaises(TypeError,
                           lambda: setattr(SSP, 'prop', MOM))
+
+    def test_dirty(self):
+        class MyShapeZero(properties.PropertyClass):
+            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            opts = properties.Pointer("Shape options", ptype=SomeOptions)
+            shp1 = properties.Pointer("Shape 1", ptype='MyShapeOne')
+
+        class MyShapeOne(properties.PropertyClass):
+            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            opts = properties.Pointer("Shape options", ptype=SomeOptions)
+            shp2 = properties.Pointer("Shape 2", ptype='MyShapeTwo')
+
+        class MyShapeTwo(properties.PropertyClass):
+            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            opts = properties.Pointer("Shape options", ptype=SomeOptions)
+            shp0 = properties.Pointer("Shape 0", ptype='MyShapeZero')
+
+        properties.Pointer.resolve()
+
+        S0 = MyShapeZero()
+        S1 = MyShapeOne()
+        S2 = MyShapeTwo()
+
+        O0 = SomeOptions()
+        O1 = SomeOptions()
+        O2 = SomeOptions()
+
+        sA = MySurface()
+        sB = MySurface()
+        sC = MySurface()
+
+        OA = SomeOptions()
+        OB = SomeOptions()
+        OC = SomeOptions()
+
+        assert len(O0._dirty) == 0#1
+        # assert O0._dirty.issuperset(['color'])
+
+        O0._mark_clean()
+        assert len(O0._dirty) == 0
+
+        S0.opts = O0
+        assert len(O0._dirty) == 0
+        assert len(S0._dirty) == 1
+        O0.color = 'red'
+        assert len(S0._dirty) == 1
+        assert len(O0._dirty) == 1
+        S0._mark_clean()
+        assert len(S0._dirty) == 0
+        assert len(O0._dirty) == 0
+
+        S1.opts = O1
+        assert len(S1._dirty) == 1
+        assert len(O1._dirty) == 0
+        O1.color = 'red'
+        S1._mark_clean(False)
+        assert len(S1._dirty) == 1
+        assert len(O1._dirty) == 1
+
+        S2.opts = O2
+        S0.shp1 = S1
+        S1.shp2 = S2
+        S2.shp0 = S0
+
+        assert len(S2._dirty) == 2
+        assert len(S1._dirty) == 2
+        assert len(S0._dirty) == 1
+
+        sA.opts = OA
+        sB.opts = OB
+        sC.opts = OC
+
+        S0.surf = [sA, sB, sC]
+        S1.surf = [sA, sB, sC]
+        S2.surf = [sA, sB, sC]
+
+        O0.color = 'blue'
+        assert len(S0._dirty) == 3
+        assert len(S1._dirty) == 3
+        assert len(S2._dirty) == 3
+
+        S0._mark_clean()
+        assert len(S0._dirty) == 0
+        assert len(S1._dirty) == 0
+        assert len(S2._dirty) == 0
+
+
 
 
 if __name__ == '__main__':
