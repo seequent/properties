@@ -125,7 +125,8 @@ class TestBasic(unittest.TestCase):
     def test_list_ptype(self):
 
         class SomeStringPtypes(properties.PropertyClass):
-            prop = properties.Pointer("Some Prop", ptype=[SomeOptions, 'MySurface', 'MyShape'])
+            prop = properties.Pointer("Some Prop", ptype=[
+                SomeOptions, 'MySurface', 'MyShape'])
 
         properties.Pointer.resolve()
 
@@ -154,17 +155,20 @@ class TestBasic(unittest.TestCase):
 
     def test_dirty(self):
         class MyShapeZero(properties.PropertyClass):
-            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            surf = properties.Pointer("The surface", ptype=MySurface,
+                                      repeated=True)
             opts = properties.Pointer("Shape options", ptype=SomeOptions)
             shp1 = properties.Pointer("Shape 1", ptype='MyShapeOne')
 
         class MyShapeOne(properties.PropertyClass):
-            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            surf = properties.Pointer("The surface", ptype=MySurface,
+                                      repeated=True)
             opts = properties.Pointer("Shape options", ptype=SomeOptions)
             shp2 = properties.Pointer("Shape 2", ptype='MyShapeTwo')
 
         class MyShapeTwo(properties.PropertyClass):
-            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            surf = properties.Pointer("The surface", ptype=MySurface,
+                                      repeated=True)
             opts = properties.Pointer("Shape options", ptype=SomeOptions)
             shp0 = properties.Pointer("Shape 0", ptype='MyShapeZero')
 
