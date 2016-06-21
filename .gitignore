@@ -66,3 +66,6 @@ pylint.html
 
 # credential storage
 credentials
+
+# unused vmath
+vmath_ignore/
