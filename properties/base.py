@@ -13,19 +13,21 @@ from six import string_types
 
 class Property(object):
 
-    name      = ''
+    name = ''
     className = ''
 
-    parent = None #: For sub-properties
+    parent = None   #: For sub-properties
 
     def __init__(self, doc, **kwargs):
-        self._base_doc  = doc
+        self._base_doc = doc
 
         for key in kwargs:
             if key[0] == '_':
-                raise AttributeError('Cannot set private property: "%s".'%key)
+                raise AttributeError(
+                    'Cannot set private property: "{}".'.format(key))
             if not hasattr(self, key):
-                raise AttributeError('Unknown key for property: "%s".'%key)
+                raise AttributeError(
+                    'Unknown key for property: "{}".'.format(key))
             setattr(self, key, kwargs[key])
 
     @property
@@ -44,7 +46,9 @@ class Property(object):
             prefix = 'properties.files'
         elif 'properties' in str(self.__class__):
             prefix = 'properties'
-        return ':param %s: %s\n:type %s: :class:`%s <'%(self.name, self.doc, self.name, self.__class__.__name__) + prefix + '.' + self.__class__.__name__ + '>`'
+        return ':param {}: {}\n:type {}: :class:`{} <'.format(
+            self.name, self.doc, self.name, self.__class__.__name__) + \
+            prefix + '.' + self.__class__.__name__ + '>`'
 
     @property
     def _exposed(self):
@@ -54,6 +58,7 @@ class Property(object):
     @property
     def default(self):
         return getattr(self, '_default', [] if self.repeated else None)
+
     @default.setter
     def default(self, value):
         self._default = value
@@ -61,6 +66,7 @@ class Property(object):
     @property
     def required(self):
         return getattr(self, '_required', False)
+
     @required.setter
     def required(self, value):
         self._required = value
@@ -68,21 +74,24 @@ class Property(object):
     @property
     def repeated(self):
         return getattr(self, '_repeated', False)
+
     @repeated.setter
     def repeated(self, value):
         self._repeated = value
 
     @property
     def niceName(self):
-        if self.name == '': return ''
+        if self.name == '':
+            return ''
         import string
         name = self.name[0].upper()
         for n in self.name[1:]:
             if n in string.ascii_uppercase:
-                name += ' %s'%n
+                name += ' {}'.format(n)
             else:
                 name += n
         return getattr(self, '_niceName', name)
+
     @niceName.setter
     def niceName(self, value):
         self._niceName = value
@@ -117,6 +126,7 @@ class Property(object):
                 default = scope.validator(self, scope.default)
             setattr(self, '_p_' + scope.name, default)
             return default
+
         def fset(self, val):
             if scope.repeated:
                 if not isinstance(val, (list, tuple)):
@@ -131,7 +141,8 @@ class Property(object):
                 return
 
             post = scope.validator(self, val)
-            if post is None: post = val
+            if post is None:
+                post = val
             setattr(self, '_p_' + scope.name, post)
 
         attrs[self.name] = property(fget=fget, fset=fset, doc=scope.doc)
@@ -192,7 +203,9 @@ def validator(func):
         return func(self)
     return func_wrapper
 
+
 _REGISTRY = {}
+
 
 class _PropertyMetaClass(type):
     def __new__(cls, name, bases, attrs):
@@ -208,23 +221,27 @@ class _PropertyMetaClass(type):
             prop = attrs[attr]
 
             if isinstance(prop, Property):
-                assert not attr.startswith('_'), "Cannot start a property name with '_'."
-                prop.name      = attr
+                assert not attr.startswith('_'), \
+                    "Cannot start a property name with '_'."
+                prop.name = attr
                 prop.className = name
                 prop._setPropertyMeta(attrs, _properties)
 
-
         attrs['_properties'] = _properties
-        attrs['_className']     = name
+        attrs['_className'] = name
 
         # The doc string
         docStr = attrs.get('__doc__', '')
-        required = {key: value for key, value in _properties.items() if value.required}
-        optional = {key: value for key, value in _properties.items() if not value.required}
+        required = {key: value for key, value in _properties.items()
+                    if value.required}
+        optional = {key: value for key, value in _properties.items()
+                    if not value.required}
         if required:
-            docStr += '\n\nRequired:\n\n' + '\n'.join((required[key].sphinx for key in required))
+            docStr += '\n\nRequired:\n\n' + '\n'.join(
+                (required[key].sphinx for key in required))
         if optional:
-            docStr += '\n\nOptional:\n\n' + '\n'.join((optional[key].sphinx for key in optional))
+            docStr += '\n\nOptional:\n\n' + '\n'.join(
+                (optional[key].sphinx for key in optional))
         attrs['__doc__'] = docStr.strip()
 
         # Figure out what is the set of properties that is exposed.
@@ -251,11 +268,13 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
         errors = []
         for key in kwargs:
             if key[0] == '_':
-                errors += ['"%s": Cannot set private properties.'%key]
+                errors += ['"{}": Cannot set private properties.'.format(key)]
             elif key not in self._exposed:
-                errors += ['"%s": Property name not found.'%key]
+                errors += ['"{}": Property name not found.'.format(key)]
         if len(errors) > 0:
-            raise KeyError('Property Class could not set keys for: \n    %s'%('\n    '.join(errors)))
+            raise KeyError(
+                'Property Class could not set keys for: \n    {}'.format(
+                    '\n    '.join(errors)))
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
@@ -279,13 +298,16 @@ class Pointer(Property):
                 self._doc = self._base_doc
             elif isinstance(self.ptype, (list, tuple)):
                 self._doc = self._base_doc + ', Pointer to :class:`.'
-                self._doc += (self.ptype[0] if isinstance(self.ptype[0], string_types) else self.ptype[0].__name__)
+                self._doc += (self.ptype[0] if isinstance(
+                    self.ptype[0], string_types) else self.ptype[0].__name__)
                 self._doc += '` (default)'
                 for s in self.ptype[1:]:
-                    self._doc += ', :class:`.' + (s if isinstance(s, string_types) else s.__name__) + '`'
+                    self._doc += ', :class:`.' + (s if isinstance(
+                        s, string_types) else s.__name__) + '`'
             else:
                 self._doc = self._base_doc + ', Pointer to :class:`.'
-                self._doc += (self.ptype if isinstance(self.ptype, string_types) else self.ptype.__name__) + '`'
+                self._doc += (self.ptype if isinstance(
+                    self.ptype, string_types) else self.ptype.__name__) + '`'
         return self._doc
 
     @property
@@ -296,10 +318,14 @@ class Pointer(Property):
         if self._resolved:
             ptype = getattr(self, '_ptype', None)
             if isinstance(ptype, (list, tuple)):
-                self._ptype = [_REGISTRY[p] if isinstance(p, string_types) else p for p in ptype]
+                self._ptype = [
+                    _REGISTRY[p] if isinstance(p, string_types) else p
+                    for p in ptype
+                ]
             elif isinstance(ptype, string_types):
                 self._ptype = _REGISTRY[ptype]
         return getattr(self, '_ptype', None)
+
     @ptype.setter
     def ptype(self, val):
         if isinstance(val, (list, tuple)):
@@ -307,7 +333,8 @@ class Pointer(Property):
                 if isinstance(v, string_types):
                     self.resolve(False)
                 elif not issubclass(v, PropertyClass):
-                    raise AttributeError('ptype must be a list of PropertyClasses')
+                    raise AttributeError(
+                        'ptype must be a list of PropertyClasses')
         elif isinstance(val, string_types):
             self.resolve(False)
         elif not issubclass(val, PropertyClass):
@@ -317,6 +344,7 @@ class Pointer(Property):
     @property
     def expose(self):
         return getattr(self, '_expose', [])
+
     @expose.setter
     def expose(self, val):
         if not isinstance(val, list):
@@ -335,12 +363,15 @@ class Pointer(Property):
     def sphinx(self):
         """Sphinx documentation for the property"""
         if not isinstance(self.ptype, (list, tuple)):
-            cname = (self.ptype if isinstance(self.ptype, string_types) else self.ptype.__name__)
-            # return ':param %s %s: %s'%(self.ptype.__name__, self.name, self.doc)
-            return ':param %s: %s\n:type %s: :class:`.%s`'%(self.name, self.doc, self.name, cname)
-        cname = [p if isinstance(p, string_types) else p.__name__ for p in self.ptype]
-        return ':param %s: %s\n:type %s: :class:`.'%(self.name, self.doc, self.name) + '`, :class:`.'.join(cname) + '`'
-        #:class:`...`
+            cname = (self.ptype if isinstance(self.ptype, string_types)
+                     else self.ptype.__name__)
+            return ':param {}: {}\n:type {}: :class:`.{}`'.format(
+                self.name, self.doc, self.name, cname)
+        cname = [p if isinstance(p, string_types) else p.__name__
+                 for p in self.ptype]
+        cnamestr = ':class:`.{}`'.format('`, :class:`.'.join(cname))
+        return ':param {}: {}\n:type {}: {}'.format(
+            self.name, self.doc, self.name, cnamestr)
 
     @property
     def default(self):
@@ -349,7 +380,9 @@ class Pointer(Property):
         if not self.auto_create:
             return None
         if not self._resolved:
-            raise AttributeError("Pointers are must be resolved with 'Pointers.resolve()' before proceeding")
+            raise AttributeError(
+                "Pointers are must be resolved with "
+                "'Pointers.resolve()' before proceeding")
         if isinstance(self.ptype, (list, tuple)):
             pdef = self.ptype[0]
         else:
@@ -357,7 +390,10 @@ class Pointer(Property):
         try:
             return pdef()
         except TypeError:
-            raise AttributeError("Cannot set default property of class {name}. Set 'auto_create=False' for pointers of this type".format(name=pdef.__name__))
+            raise AttributeError(
+                "Cannot set default property of class {name}. "
+                "Set 'auto_create=False' for pointers of this type".format(
+                    name=pdef.__name__))
 
     def validate(self, scope):
         super(Pointer, self).validate(scope)
@@ -372,7 +408,9 @@ class Pointer(Property):
 
     def validator(self, instance, value):
         if not self._resolved:
-            raise AttributeError("Pointers are must be resolved with 'Pointers.resolve()' before proceeding")
+            raise AttributeError(
+                'Pointers are must be resolved with '
+                "'Pointers.resolve()' before proceeding")
         if isinstance(self.ptype, (list, tuple)):
             for pt in self.ptype:
                 if isinstance(value, pt):
@@ -381,42 +419,62 @@ class Pointer(Property):
                 try:
                     return self.ptype[0](**value)
                 except KeyError:
-                    badKeyStr = ', '.join([k for k in value.keys()])
-                    keyStr = ', '.join([k for k in self.ptype[0]._exposed if k != 'meta'])
-                    raise KeyError('Invalid input keywords [%s] for default pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype[0].__name__,keyStr))
+                    badKeyStr = ', '.join(
+                        [k for k in value.keys()])
+                    keyStr = ', '.join(
+                        [k for k in self.ptype[0]._exposed if k != 'meta'])
+                    raise KeyError(
+                        'Invalid input keywords [{}] for default pointer '
+                        'type {}. The following are available: [{}]'.format(
+                            badKeyStr, self.ptype[0].__name__, keyStr))
             else:
                 try:
                     return self.ptype[0](value)
                 except TypeError:
                     ptypeStr = ', '.join([p.__name__ for p in self.ptype])
-                    raise TypeError('Invalid input type %s. You need to use one of the following: [%s]'%(value.__class__.__name__,ptypeStr))
+                    raise TypeError(
+                        'Invalid input type {}. You need to use one '
+                        'of the following: [{}]'.format(
+                            value.__class__.__name__, ptypeStr))
         if not isinstance(value, self.ptype):
             if isinstance(value, dict):
                 try:
-                    #Setting a pointer from a dictionary, which are passed to %s as **kwargs.
+                    # Setting a pointer from a dictionary,
+                    # which are passed to %s as **kwargs.
                     return self.ptype(**value)
                 except KeyError:
-                    badKeyStr = ', '.join([k for k in value.keys()])
-                    keyStr = ', '.join([k for k in self.ptype._exposed if k != 'meta'])
-                    raise KeyError('Invalid input keywords [%s] for pointer type %s. The following are available: [%s]'%(badKeyStr,self.ptype.__name__,keyStr))
+                    badKeyStr = ', '.join(
+                        [k for k in value.keys()])
+                    keyStr = ', '.join(
+                        [k for k in self.ptype._exposed if k != 'meta'])
+                    raise KeyError(
+                        'Invalid input keywords [{}] for pointer type {}. '
+                        'The following are available: [{}]'.format(
+                            badKeyStr, self.ptype.__name__, keyStr))
             else:
                 try:
                     return self.ptype(value)
                 except TypeError:
-                    raise TypeError('Invalid input type %s. You need to use %s'%(value.__class__.__name__,self.ptype.__name__))
+                    raise TypeError(
+                        'Invalid input type {}. You need to use {}'.format(
+                            value.__class__.__name__, self.ptype.__name__))
         return value
 
     def getExtraMethods(self):
         if len(self.expose) > 0 and self.repeated:
-            raise AttributeError('Pointer cannot have repeated model with exposures.')
+            raise AttributeError(
+                'Pointer cannot have repeated model with exposures.')
 
         scope = self
+
         def getProp(propName):
             def fget(self):
                 return getattr(getattr(self, scope.name), propName)
+
             def fset(self, val):
                 return setattr(getattr(self, scope.name), propName, val)
-            return property(fget=fget, fset=fset, doc='Exposed property for %s'%propName)
+            return property(fget=fget, fset=fset,
+                            doc='Exposed property for {}'.format(propName))
 
         return{k: getProp(k) for k in self.expose}
 

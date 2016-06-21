@@ -8,9 +8,10 @@ import json, numpy as np, os, io
 from .base import Property
 from . import exceptions
 
+
 class File(Property):
 
-    mode = 'r' #: mode for opening the file.
+    mode = 'r'   #: mode for opening the file.
 
     def validator(self, instance, value):
         if hasattr(value, 'read'):
@@ -20,14 +21,14 @@ class File(Property):
             return value
         if isinstance(value, six.string_types) and os.path.isfile(value):
             return open(value, self.mode)
-        raise ValueError('The value for "%s" must be an open file or a string.'%self.name)
+        raise ValueError(
+            'The value for "{}" must be an open file or a string.'.format(
+                self.name))
 
 
 class Image(File):
 
     def validator(self, instance, value):
-
-
 
         import png
 
