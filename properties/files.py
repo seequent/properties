@@ -12,12 +12,17 @@ from .base import Property
 
 
 class File(Property):
+    """class properties.File
+
+    File property
+    """
 
     mode = 'r'   # mode for opening the file.
 
     _sphinx_prefix = 'properties.files'
 
     def validator(self, instance, value):
+        """check that the file exists and is open"""
         if hasattr(value, 'read'):
             prev = getattr(self, '_p_' + self.name, None)
             if prev is not None and value is not prev:
@@ -31,10 +36,15 @@ class File(Property):
 
 
 class Image(File):
+    """class properties.Image
+
+    PNG image file property
+    """
 
     _sphinx_prefix = 'properties.files'
 
     def validator(self, instance, value):
+        """checks that image file is PNG and gets a copy"""
         try:
             import png
         except:

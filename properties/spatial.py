@@ -10,7 +10,10 @@ from . import vmath
 
 
 class Vector(Property):
-    """A vector!"""
+    """class properties.Vector
+
+    Vector property, using properties.vmath.Vector
+    """
 
     _sphinx_prefix = 'properties.spatial'
 
@@ -23,6 +26,7 @@ class Vector(Property):
         self._default = self.validator(None, value).copy()
 
     def validator(self, instance, value):
+        """return a Vector based on input if input is valid"""
         if isinstance(value, vmath.Vector):
             return value
         if isinstance(value, six.string_types):

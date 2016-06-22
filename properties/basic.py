@@ -18,7 +18,10 @@ from . import exceptions
 
 
 class String(Property):
-    """String property"""
+    """class properties.String
+
+    String property, may be limited to certain choices
+    """
     lowercase = False
     strip = ' '
 
@@ -54,6 +57,7 @@ class String(Property):
         self._choices = value
 
     def validator(self, instance, value):
+        """check that input is string and in choices, if applicable"""
         if not isinstance(value, six.string_types):
             raise ValueError('{} must be a string'.format(self.name))
         if self.strip is not None:
@@ -71,6 +75,10 @@ class String(Property):
 
 
 class Object(Property):
+    """class properties.Object
+
+    basic JSON object property
+    """
 
     _sphinx_prefix = 'properties.basic'
 
@@ -79,6 +87,10 @@ class Object(Property):
 
 
 class Bool(Property):
+    """class properties.Bool
+
+    Boolean property, true or false
+    """
 
     _sphinx_prefix = 'properties.basic'
 
@@ -98,7 +110,11 @@ class Bool(Property):
 
 
 class Color(Property):
-    """RBG, hex, named color, or random color"""
+    """class properties.Color
+
+    Color property, allowed inputs are RBG, hex, named color, or
+    'random' for random color. This property converts all these to RBG.
+    """
 
     _sphinx_prefix = 'properties.basic'
 
@@ -110,6 +126,7 @@ class Color(Property):
         return self._doc
 
     def validator(self, instance, value):
+        """check if input is valid color and converts to RBG"""
         if isinstance(value, six.string_types):
             if value in COLORS_NAMED:
                 value = COLORS_NAMED[value]
@@ -129,7 +146,6 @@ class Color(Property):
             except ValueError as e:
                 raise ValueError(
                     '{}: Hex color must be base 16 (0-F)'.format(value))
-
         if not isinstance(value, (list, tuple)):
             raise ValueError(
                 '{}: Color must be a list or tuple of length 3'.format(value))
@@ -144,6 +160,10 @@ class Color(Property):
 
 
 class Complex(Property):
+    """class properties.Complex
+
+    Complex number property
+    """
 
     _sphinx_prefix = 'properties.basic'
 
@@ -164,6 +184,10 @@ class Complex(Property):
 
 
 class Float(Property):
+    """class properties.Float
+
+    Float property
+    """
 
     _sphinx_prefix = 'properties.basic'
 
@@ -184,6 +208,10 @@ class Float(Property):
 
 
 class Int(Property):
+    """class properties.Int
+
+    Integer property
+    """
 
     _sphinx_prefix = 'properties.basic'
 
@@ -205,6 +233,11 @@ class Int(Property):
 
 
 class BaseRange(Property):
+    """class properties.BaseRange
+
+    Base range property. Sets a lower and upper bound for any
+    comparable values.
+    """
 
     _sphinx_prefix = 'properties.basic'
 
@@ -226,6 +259,8 @@ class BaseRange(Property):
         return self._doc
 
     def validator(self, instance, value):
+        """check that value is in range in addition to other value validation
+        """
         super().validator(instance, value)
         if self.max_value is not None:
             if value > self.max_value:
@@ -242,13 +277,25 @@ class BaseRange(Property):
 
 
 class Range(BaseRange, Float):
+    """class properties.Range
+
+    Range property for floats
+    """
     pass
 
 class RangeInt(BaseRange, Int):
+    """class properties.RangeInt
+
+    Range property for ints
+    """
     pass
 
 
 class DateTime(Property):
+    """class properties.DateTime
+
+    DateTime property using 'datetime.datetime'
+    """
 
     short_date = False
 
