@@ -111,7 +111,8 @@ class Property(object):
 
     def validate(self, scope):
         """validates the property attributes"""
-        if getattr(scope, self.name, None) is None and self.required:
+        attr = getattr(scope, self.name, None)
+        if (attr is None or attr == []) and self.required:
             raise exceptions.RequiredPropertyError(self.name)
 
     def validator(self, instance, value):
