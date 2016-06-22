@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import numpy as np
 
+
 class Vector(np.ndarray):
     """Primitive vectors, or list of primitive vectors, defined from the origin
     """

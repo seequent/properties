@@ -15,14 +15,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-__version__ = '0.1.3'
-__author__ = '3point Science, Inc.'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2016 3point Science, Inc.'
-
 from .array import *
 from .base import Property, PropertyClass, Pointer, validator, classproperty
 from .basic import *
 from .files import *
 from .spatial import *
 from . import vmath
+
+__version__ = '0.1.3'
+__author__ = '3point Science, Inc.'
+__license__ = 'MIT'
+__copyright__ = 'Copyright 2016 3point Science, Inc.'

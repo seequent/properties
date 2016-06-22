@@ -68,7 +68,7 @@ class TestPropertiesArray(unittest.TestCase):
     def test_array_init(self):
         def f(shape, dtype):
             class MyBadClass(properties.PropertyClass):
-                bad_array=properties.Array(
+                bad_array = properties.Array(
                     "Uh oh",
                     shape=shape,
                     dtype=dtype

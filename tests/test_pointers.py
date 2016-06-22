@@ -8,6 +8,7 @@ import unittest
 from properties import exceptions
 import properties
 
+
 class SomeOptions(properties.PropertyClass):
     color = properties.Color("My color")
 
@@ -39,6 +40,7 @@ class MyShape(properties.PropertyClass):
                                    ptype=MySurface, repeated=True)
     opts = properties.Pointer("My other options",
                               ptype=SomeOptions)
+
 
 class ReqRep(properties.PropertyClass):
     rrprop = properties.Pointer("something", ptype=SomeOptions,
@@ -198,8 +200,7 @@ class TestBasic(unittest.TestCase):
         OB = SomeOptions()
         OC = SomeOptions()
 
-        assert len(O0._dirty) == 0#1
-        # assert O0._dirty.issuperset(['color'])
+        assert len(O0._dirty) == 0
 
         O0._mark_clean()
         assert len(O0._dirty) == 0

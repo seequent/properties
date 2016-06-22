@@ -14,6 +14,7 @@ class FileClass(properties.PropertyClass):
     dat = properties.File("My file")
     img = properties.Image("My image")
 
+
 class TestPropertiesFiles(unittest.TestCase):
 
     test_fname = 'test'
@@ -36,11 +37,9 @@ class TestPropertiesFiles(unittest.TestCase):
         w = f.write('hello')
         f.close()
 
-
     def tearDown(self):
         os.remove(self.png_fname)
         os.remove(self.txt_fname)
-
 
     def test_files(self):
         f = FileClass()

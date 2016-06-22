@@ -41,5 +41,5 @@ class Vector(Property):
         except Exception:
             raise ValueError('{} must be a Vector'.format(self.name))
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return vmath.Vector(*value)

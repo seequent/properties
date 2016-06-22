@@ -88,6 +88,7 @@ class Property(object):
 
     @property
     def nice_name(self):
+        """get name with spaces instead of underscores/camelCase"""
         if self.name == '':
             return ''
         from string import ascii_uppercase
@@ -123,8 +124,8 @@ class Property(object):
         """establishes access of property values"""
 
         _properties[self.name] = self
-
         scope = self
+
         def fget(self):
             val = getattr(self, '_p_' + scope.name, None)
             if scope.repeated and val is not None:
@@ -178,10 +179,10 @@ class Property(object):
             for attr in keys:
                 attrs[attr] = extras[attr]
 
-    def as_JSON(self, value):
+    def as_json(self, value):
         return value
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return value
 
     def get_extra_properties(self):
@@ -270,6 +271,7 @@ class _PropertyMetaClass(type):
         _REGISTRY[name] = new_class
 
         return new_class
+
 
 class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
     """class properties.PropertyClass
@@ -543,14 +545,17 @@ class Pointer(Property):
         scope = self
 
         def get_prop(prop_name):
+
             def fget(self):
                 return getattr(getattr(self, scope.name), prop_name)
+
             def fset(self, val):
                 return setattr(getattr(self, scope.name), prop_name, val)
+
             return property(fget=fget, fset=fset,
                             doc='Exposed property for {}'.format(prop_name))
 
         return {k: get_prop(k) for k in self.expose}
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return json.loads(value)

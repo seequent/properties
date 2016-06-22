@@ -6,15 +6,15 @@ from __future__ import unicode_literals
 from builtins import super, dict, int
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str, range
+from builtins import str, range                                 # nopep8
 # ^-- NB: Order matters here; don't rearrange to group builtins --^
-from datetime import datetime
-import json
-import numpy as np
-import six
+from datetime import datetime                                   # nopep8
+import json                                                     # nopep8
+import numpy as np                                              # nopep8
+import six                                                      # nopep8
 
-from .base import Property
-from . import exceptions
+from .base import Property                                      # nopep8
+from . import exceptions                                        # nopep8
 
 
 class String(Property):
@@ -82,7 +82,7 @@ class Object(Property):
 
     _sphinx_prefix = 'properties.basic'
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return json.loads(value)
 
 
@@ -105,7 +105,7 @@ class Bool(Property):
             raise ValueError('{} must be a bool'.format(self.name))
         return value
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return str(value).upper() in ['TRUE', 'ON', 'YES']
 
 
@@ -174,12 +174,12 @@ class Complex(Property):
             raise ValueError('{} must be complex'.format(self.name))
         return value
 
-    def as_JSON(self, value):
+    def as_json(self, value):
         if value is None or np.isnan(value):
             return None
         return value
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return complex(str(value))
 
 
@@ -198,12 +198,12 @@ class Float(Property):
             raise ValueError('{} must be a float'.format(self.name))
         return value
 
-    def as_JSON(self, value):
+    def as_json(self, value):
         if value is None or np.isnan(value):
             return None
         return value
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return float(str(value))
 
 
@@ -223,12 +223,12 @@ class Int(Property):
         value = int(value)
         return value
 
-    def as_JSON(self, value):
+    def as_json(self, value):
         if value is None or np.isnan(value):
             return None
         return int(np.round(value))
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return int(str(value))
 
 
@@ -262,18 +262,15 @@ class BaseRange(Property):
         """check that value is in range in addition to other value validation
         """
         super().validator(instance, value)
-        if self.max_value is not None:
-            if value > self.max_value:
-                raise ValueError(
-                    '{} must be less than {}'.format(
-                        self.name, self.max_value))
-        if self.min_value is not None:
-            if value < self.min_value:
-                raise ValueError(
-                    '{} must be greater than {}'.format(
-                        self.name, self.min_value))
+        if self.max_value is not None and value > self.max_value:
+            raise ValueError(
+                '{} must be less than {}'.format(
+                    self.name, self.max_value))
+        if self.min_value is not None and value < self.min_value:
+            raise ValueError(
+                '{} must be greater than {}'.format(
+                    self.name, self.min_value))
         return value
-
 
 
 class Range(BaseRange, Float):
@@ -282,6 +279,7 @@ class Range(BaseRange, Float):
     Range property for floats
     """
     pass
+
 
 class RangeInt(BaseRange, Int):
     """class properties.RangeInt
@@ -301,14 +299,14 @@ class DateTime(Property):
 
     _sphinx_prefix = 'properties.basic'
 
-    def as_JSON(self, value):
+    def as_json(self, value):
         if value is None:
             return
         if self.short_date:
             return value.strftime("%Y/%m/%d")
         return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         if value is None or value == 'None':
             return None
         if len(value) == 10:

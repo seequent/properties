@@ -113,5 +113,5 @@ class Array(Property):
                                  'length {:d}'.format(self.name, i, s))
         return proposed
 
-    def from_JSON(self, value):
+    def from_json(self, value):
         return json.loads(value)
