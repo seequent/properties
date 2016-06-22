@@ -114,7 +114,6 @@ class Property(object):
         _properties[self.name] = self
 
         scope = self
-
         def fget(self):
             val = getattr(self, '_p_' + scope.name, None)
             if scope.repeated and val is not None:
@@ -228,7 +227,7 @@ class _PropertyMetaClass(type):
                 assert not attr.startswith('_'), \
                     "Cannot start a property name with '_'."
                 prop.name = attr
-                prop.className = name
+                prop.class_name = name
                 prop._set_property_meta(attrs, _properties)
 
         attrs['_properties'] = _properties
