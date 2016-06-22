@@ -30,6 +30,11 @@ class APrimitive(properties.PropertyClass):
     color = properties.Float("Not a color!")
 
 
+class AnotherPrimitive(properties.PropertyClass):
+    myrangeint = properties.RangeInt('int range', default=0,
+                                     min_value=0, max_value=10)
+
+
 class SomeOptions(APrimitive):
     color = properties.Color("My color")
 
@@ -110,6 +115,22 @@ class TestBasic(unittest.TestCase):
 
         opts.opacity = .1
         assert opts.opacity == .1
+
+        prim = AnotherPrimitive(myrangeint=5)
+        print(AnotherPrimitive.myrangeint.doc)
+        assert prim.myrangeint == 5
+        prim.myrangeint = 10.0
+        assert prim.myrangeint == 10
+        self.assertRaises(ValueError,
+                          lambda: setattr(prim, 'myrangeint', 1.5))
+        self.assertRaises(ValueError,
+                          lambda: setattr(prim, 'myrangeint', -1))
+        self.assertRaises(ValueError,
+                          lambda: setattr(prim, 'myrangeint', 11))
+        self.assertRaises(ValueError,
+                          lambda: setattr(prim, 'myrangeint', 'numbah!'))
+        self.assertRaises(ValueError,
+                          lambda: setattr(prim, 'myrangeint', [4, 5]))
 
     def test_inheritance(self):
 
