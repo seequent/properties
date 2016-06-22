@@ -326,7 +326,6 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
 
 
 class Pointer(Property):
-    form_type = None
     _resolved = True
 
     def __init__(self, doc, auto_create=True, **kwargs):

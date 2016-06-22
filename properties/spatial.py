@@ -11,7 +11,6 @@ from . import vmath
 
 class Vector(Property):
     """A vector!"""
-    form_type = 'bool-choice'
 
     @property
     def default(self):
