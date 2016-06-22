@@ -92,6 +92,7 @@ class Bool(Property):
 
 
 class Color(Property):
+    """RBG, hex, named color, or random color"""
 
     @property
     def doc(self):
@@ -129,7 +130,8 @@ class Color(Property):
         for v in value:
             if not isinstance(v, six.integer_types) or not (0 <= v <= 255):
                 raise ValueError(
-                    '{}: Color values must be ints 0-255.'.format(value))
+                    '{}: Color values must be ints 0-255.'.format(value)
+                )
         return tuple(value)
 
 
