@@ -1,40 +1,50 @@
-from __future__ import absolute_import, unicode_literals, print_function, division
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from builtins import super, dict, int
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str, range
+from builtins import str, range                                 # nopep8
 # ^-- NB: Order matters here; don't rearrange to group builtins --^
-import six
+from datetime import datetime                                   # nopep8
+import json                                                     # nopep8
+import numpy as np                                              # nopep8
+import six                                                      # nopep8
 
-import json, numpy as np
-from .base import Property
-from . import exceptions
+from .base import Property                                      # nopep8
+from . import exceptions                                        # nopep8
+
 
 class String(Property):
-    """
-    String property
+    """class properties.String
+
+    String property, may be limited to certain choices
     """
     lowercase = False
-    strip     = ' '
+    strip = ' '
+
+    _sphinx_prefix = 'properties.basic'
 
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
+            self._doc = self._base_doc
             if self.choices is not None and len(self.choices) != 0:
-                self._doc = self._base_doc + ', Choices: ' + ', '.join(self.choices.keys())
-            else:
-                self._doc = self._base_doc
+                self._doc += ', Choices: ' + ', '.join(self.choices)
         return self._doc
 
     @property
     def choices(self):
         return getattr(self, '_choices', {})
+
     @choices.setter
     def choices(self, value):
         if not isinstance(value, (list, tuple, dict)):
             raise AttributeError('choices must be a list, tuple, or dict')
         if isinstance(value, (list, tuple)):
-            value = {c:c for c in value}
+            value = {c: c for c in value}
         for k, v in value.items():
             if not isinstance(v, (list, tuple)):
                 value[k] = [v]
@@ -47,25 +57,42 @@ class String(Property):
         self._choices = value
 
     def validator(self, instance, value):
+        """check that input is string and in choices, if applicable"""
         if not isinstance(value, six.string_types):
-            raise ValueError('%s must be a string'%self.name)
+            raise ValueError('{} must be a string'.format(self.name))
         if self.strip is not None:
             value = value.strip(self.strip)
         if self.choices is not None and len(self.choices) != 0:
-            if value.upper() in [k.upper() for k in self.choices.keys()]:
+            if value.upper() in [k.upper() for k in self.choices]:
                 return value.lower() if self.lowercase else value.upper()
             for k, v in self.choices.items():
                 if value.upper() in [_.upper() for _ in v]:
                     return k.lower() if self.lowercase else k
-            raise ValueError('%s: value must be in ["%s"]'%(self.name, ('","'.join(self.choices.keys()))))
+            raise ValueError(
+                '{}: value must be in ["{}"]'.format(
+                    self.name, ('","'.join(self.choices))))
         return value.lower() if self.lowercase else value
 
-class Object(Property):
 
-    def fromJSON(self, value):
+class Object(Property):
+    """class properties.Object
+
+    basic JSON object property
+    """
+
+    _sphinx_prefix = 'properties.basic'
+
+    def from_json(self, value):
         return json.loads(value)
 
+
 class Bool(Property):
+    """class properties.Bool
+
+    Boolean property, true or false
+    """
+
+    _sphinx_prefix = 'properties.basic'
 
     @property
     def doc(self):
@@ -75,21 +102,31 @@ class Bool(Property):
 
     def validator(self, instance, value):
         if not isinstance(value, bool):
-            raise ValueError('%s must be a bool'%self.name)
+            raise ValueError('{} must be a bool'.format(self.name))
         return value
 
-    def fromJSON(self, value):
+    def from_json(self, value):
         return str(value).upper() in ['TRUE', 'ON', 'YES']
 
+
 class Color(Property):
+    """class properties.Color
+
+    Color property, allowed inputs are RBG, hex, named color, or
+    'random' for random color. This property converts all these to RBG.
+    """
+
+    _sphinx_prefix = 'properties.basic'
 
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc + ', Format: RGB, hex, or predefined color'
+            self._doc = self._base_doc
+            self._doc += ', Format: RGB, hex, or predefined color'
         return self._doc
 
     def validator(self, instance, value):
+        """check if input is valid color and converts to RBG"""
         if isinstance(value, six.string_types):
             if value in COLORS_NAMED:
                 value = COLORS_NAMED[value]
@@ -99,123 +136,182 @@ class Color(Property):
             if len(value) == 3:
                 value = ''.join(v*2 for v in value)
             if len(value) != 6:
-                raise ValueError('%s: Color must be known name or a hex with 6 digits. e.g. "#FF0000"'%value)
+                raise ValueError(
+                    '{}: Color must be known name or a hex with '
+                    '6 digits. e.g. "#FF0000"'.format(value))
             try:
-                value = [int(value[i:i + 6 // 3], 16) for i in range(0, 6, 6 // 3)]
+                value = [
+                    int(value[i:i + 6 // 3], 16) for i in range(0, 6, 6 // 3)
+                ]
             except ValueError as e:
-                raise ValueError('%s: Hex color must be base 16 (0-F)'%value)
-
+                raise ValueError(
+                    '{}: Hex color must be base 16 (0-F)'.format(value))
         if not isinstance(value, (list, tuple)):
-            raise ValueError('%s: Color must be a list or tuple of length 3'%value)
+            raise ValueError(
+                '{}: Color must be a list or tuple of length 3'.format(value))
         if len(value) != 3:
-            raise ValueError('%s: Color must be length 3'%(value,))
+            raise ValueError('{}: Color must be length 3'.format(value))
         for v in value:
             if not isinstance(v, six.integer_types) or not (0 <= v <= 255):
-                raise ValueError('%s: Color values must be ints 0-255.'%(value,))
+                raise ValueError(
+                    '{}: Color values must be ints 0-255.'.format(value)
+                )
         return tuple(value)
 
+
 class Complex(Property):
+    """class properties.Complex
+
+    Complex number property
+    """
+
+    _sphinx_prefix = 'properties.basic'
 
     def validator(self, instance, value):
         if isinstance(value, (six.integer_types, float)):
             value = complex(value)
         if not isinstance(value, complex):
-            raise ValueError('%s must be complex'%self.name)
+            raise ValueError('{} must be complex'.format(self.name))
         return value
 
-
-    def asJSON(self, value):
+    def as_json(self, value):
         if value is None or np.isnan(value):
             return None
         return value
 
-    def fromJSON(self, value):
+    def from_json(self, value):
         return complex(str(value))
 
+
 class Float(Property):
+    """class properties.Float
+
+    Float property
+    """
+
+    _sphinx_prefix = 'properties.basic'
 
     def validator(self, instance, value):
         if isinstance(value, six.integer_types):
             value = float(value)
         if not isinstance(value, float):
-            raise ValueError('%s must be a float'%self.name)
+            raise ValueError('{} must be a float'.format(self.name))
         return value
 
-    def asJSON(self, value):
+    def as_json(self, value):
         if value is None or np.isnan(value):
             return None
         return value
 
-    def fromJSON(self, value):
+    def from_json(self, value):
         return float(str(value))
 
+
 class Int(Property):
+    """class properties.Int
+
+    Integer property
+    """
+
+    _sphinx_prefix = 'properties.basic'
 
     def validator(self, instance, value):
-        if isinstance(value, float):
+        if isinstance(value, float) and np.isclose(value, int(value)):
             value = int(value)
         if not isinstance(value, six.integer_types):
-            raise ValueError('%s must be a int'%self.name)
+            raise ValueError('{} must be a int'.format(self.name))
         value = int(value)
         return value
 
-    def asJSON(self, value):
+    def as_json(self, value):
         if value is None or np.isnan(value):
             return None
         return int(np.round(value))
 
-    def fromJSON(self, value):
+    def from_json(self, value):
         return int(str(value))
 
-class Range(Float):
 
-    maxValue = None # maximum value
-    minValue = None # minimum value
+class BaseRange(Property):
+    """class properties.BaseRange
+
+    Base range property. Sets a lower and upper bound for any
+    comparable values.
+    """
+
+    _sphinx_prefix = 'properties.basic'
+
+    max_value = None   #: maximum value
+    min_value = None   #: minimum value
 
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
-            if self.minValue is None:
-                self._doc = self._base_doc + ', Range: [-inf, '
+            self._doc = self._base_doc + ', Range: ['
+            if self.min_value is None:
+                self._doc += '-inf, '
             else:
-                self._doc = self._base_doc + ', Range: [%4.2f, '%self.minValue
-            if self.maxValue is None:
-                self._doc = self._doc + 'inf]'
+                self._doc += '{}, '.format(self.min_value)
+            if self.max_value is None:
+                self._doc += 'inf]'
             else:
-                self._doc = self._doc + '%4.2f]'%self.maxValue
+                self._doc += '{}]'.format(self.max_value)
         return self._doc
 
-
     def validator(self, instance, value):
+        """check that value is in range in addition to other value validation
+        """
         super().validator(instance, value)
-        if self.maxValue is not None:
-            if value > self.maxValue:
-                raise ValueError('%s must be less than %e'%(self.name, self.maxValue))
-        if self.minValue is not None:
-            if value < self.minValue:
-                raise ValueError('%s must be greater than %e'%(self.name, self.minValue))
+        if self.max_value is not None and value > self.max_value:
+            raise ValueError(
+                '{} must be less than {}'.format(
+                    self.name, self.max_value))
+        if self.min_value is not None and value < self.min_value:
+            raise ValueError(
+                '{} must be greater than {}'.format(
+                    self.name, self.min_value))
         return value
 
-class RangeInt(Int, Range):
+
+class Range(BaseRange, Float):
+    """class properties.Range
+
+    Range property for floats
+    """
+    pass
+
+
+class RangeInt(BaseRange, Int):
+    """class properties.RangeInt
+
+    Range property for ints
+    """
     pass
 
 
 class DateTime(Property):
+    """class properties.DateTime
 
-    shortDate = False
+    DateTime property using 'datetime.datetime'
+    """
 
-    def asJSON(self, value):
-        if value is None: return
-        if self.shortDate:
+    short_date = False
+
+    _sphinx_prefix = 'properties.basic'
+
+    def as_json(self, value):
+        if value is None:
+            return
+        if self.short_date:
             return value.strftime("%Y/%m/%d")
         return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def fromJSON(self, value):
+    def from_json(self, value):
         if value is None or value == 'None':
             return None
         if len(value) == 10:
             return datetime.strptime(value, "%Y/%m/%d")
-        return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
 COLORS_20 = [

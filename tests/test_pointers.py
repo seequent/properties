@@ -1,4 +1,11 @@
-import unittest, numpy as np, os
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import unittest
+
+from properties import exceptions
 import properties
 
 
@@ -7,41 +14,59 @@ class SomeOptions(properties.PropertyClass):
 
 
 class MySurface(properties.PropertyClass):
-    opts = properties.Pointer("My options", ptype=SomeOptions, expose=['color'])
+    opts = properties.Pointer("My options",
+                              ptype=SomeOptions, expose=['color'])
+
 
 class MyInitSurface(MySurface):
     def __init__(self, opts, **kwargs):
         super(MyInitSurface, self).__init__(**kwargs)
         self.opts = opts
 
+
 class MyShapeAutoTrue(properties.PropertyClass):
     surf = properties.Pointer("Init sfc", ptype=MyInitSurface)
 
+
 class MyShapeAutoFalse(properties.PropertyClass):
-    surf = properties.Pointer("Init sfc", ptype=MyInitSurface, auto_create=False)
+    surf = properties.Pointer("Init sfc",
+                              ptype=MyInitSurface, auto_create=False)
 
 
 class MyShape(properties.PropertyClass):
-    surf = properties.Pointer("The surface", ptype=MySurface, required=True)
-    sub_surfs = properties.Pointer("The sub-surface", ptype=MySurface, repeated=True)
-    opts = properties.Pointer("My other options", ptype=SomeOptions)
+    surf = properties.Pointer("The surface",
+                              ptype=MySurface, required=True)
+    sub_surfs = properties.Pointer("The sub-surface",
+                                   ptype=MySurface, repeated=True)
+    opts = properties.Pointer("My other options",
+                              ptype=SomeOptions)
+
+
+class ReqRep(properties.PropertyClass):
+    rrprop = properties.Pointer("something", ptype=SomeOptions,
+                                required=True, repeated=True)
+
 
 class OneOfMany(properties.PropertyClass):
-    prop = properties.Pointer("Some Prop", ptype=[SomeOptions, MySurface, MyShape])
+    prop = properties.Pointer("Some Prop",
+                              ptype=[SomeOptions, MySurface, MyShape])
+
 
 class ManyOfMany(properties.PropertyClass):
-    prop = properties.Pointer("Some Prop", ptype=[MySurface, MyShape], repeated=True)
-
-
+    prop = properties.Pointer("Some Prop",
+                              ptype=[MySurface, MyShape], repeated=True)
 
 
 class TestBasic(unittest.TestCase):
 
     def test_resolve(self):
         class MyShapeStrPt(properties.PropertyClass):
-            surf = properties.Pointer("The surface", ptype='MySurface', required=True)
-            sub_surfs = properties.Pointer("The sub-surface", ptype='MySurface', repeated=True)
-            opts = properties.Pointer("My other options", ptype=SomeOptions, auto_create=True)
+            surf = properties.Pointer("The surface",
+                                      ptype='MySurface', required=True)
+            sub_surfs = properties.Pointer("The sub-surface",
+                                           ptype='MySurface', repeated=True)
+            opts = properties.Pointer("My other options",
+                                      ptype=SomeOptions, auto_create=True)
 
         shp = MyShapeStrPt()
         sfc = MySurface()
@@ -56,7 +81,6 @@ class TestBasic(unittest.TestCase):
         sfc = MySurface(opts=opts)
         assert sfc.color is sfc.opts.color
         assert opts.color is sfc.color
-
 
     def test_auto_create(self):
         shp = MyShape()
@@ -74,12 +98,16 @@ class TestBasic(unittest.TestCase):
 
     def test_parent_child(self):
         class MyPossiblyEmptyShape(properties.PropertyClass):
-            sub_surfs = properties.Pointer("The sub-surface", ptype='MySurfaceWithParent', repeated=True)
-            opts = properties.Pointer("My other options", ptype='SomeOptions', auto_create=True)
-
+            sub_surfs = properties.Pointer("The sub-surface",
+                                           ptype='MySurfaceWithParent',
+                                           repeated=True)
+            opts = properties.Pointer("My other options",
+                                      ptype='SomeOptions', auto_create=True)
 
         class MySurfaceWithParent(properties.PropertyClass):
-            parent = properties.Pointer("Parent Shape", ptype='MyPossiblyEmptyShape', required=True)
+            parent = properties.Pointer("Parent Shape",
+                                        ptype='MyPossiblyEmptyShape',
+                                        required=True)
 
             def __init__(self, parent=None, **kwargs):
                 if parent is None:
@@ -105,8 +133,10 @@ class TestBasic(unittest.TestCase):
         P.validate()
 
     def test_list_ptype(self):
+
         class SomeStringPtypes(properties.PropertyClass):
-            prop = properties.Pointer("Some Prop", ptype=[SomeOptions, 'MySurface', 'MyShape'])
+            prop = properties.Pointer("Some Prop", ptype=[
+                SomeOptions, 'MySurface', 'MyShape'])
 
         properties.Pointer.resolve()
 
@@ -120,29 +150,35 @@ class TestBasic(unittest.TestCase):
 
         OOM.prop = shp
         OOM.prop = opt
-        self.assertRaises(TypeError, lambda: setattr(OOM, 'prop', MOM))
+        self.assertRaises(TypeError,
+                          lambda: setattr(OOM, 'prop', MOM))
 
         MOM.prop = shp
         MOM.prop = [shp, sfc]
-        self.assertRaises(TypeError, lambda: setattr(MOM, 'prop', [shp, sfc, opt]))
+        self.assertRaises(TypeError,
+                          lambda: setattr(MOM, 'prop', [shp, sfc, opt]))
 
         SSP.prop = shp
         SSP.prop = opt
-        self.assertRaises(TypeError, lambda: setattr(SSP, 'prop', MOM))
+        self.assertRaises(TypeError,
+                          lambda: setattr(SSP, 'prop', MOM))
 
     def test_dirty(self):
         class MyShapeZero(properties.PropertyClass):
-            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            surf = properties.Pointer("The surface", ptype=MySurface,
+                                      repeated=True)
             opts = properties.Pointer("Shape options", ptype=SomeOptions)
             shp1 = properties.Pointer("Shape 1", ptype='MyShapeOne')
 
         class MyShapeOne(properties.PropertyClass):
-            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            surf = properties.Pointer("The surface", ptype=MySurface,
+                                      repeated=True)
             opts = properties.Pointer("Shape options", ptype=SomeOptions)
             shp2 = properties.Pointer("Shape 2", ptype='MyShapeTwo')
 
         class MyShapeTwo(properties.PropertyClass):
-            surf = properties.Pointer("The surface", ptype=MySurface, repeated=True)
+            surf = properties.Pointer("The surface", ptype=MySurface,
+                                      repeated=True)
             opts = properties.Pointer("Shape options", ptype=SomeOptions)
             shp0 = properties.Pointer("Shape 0", ptype='MyShapeZero')
 
@@ -164,8 +200,7 @@ class TestBasic(unittest.TestCase):
         OB = SomeOptions()
         OC = SomeOptions()
 
-        assert len(O0._dirty) == 0#1
-        # assert O0._dirty.issuperset(['color'])
+        assert len(O0._dirty) == 0
 
         O0._mark_clean()
         assert len(O0._dirty) == 0
@@ -215,7 +250,10 @@ class TestBasic(unittest.TestCase):
         assert len(S1._dirty) == 0
         assert len(S2._dirty) == 0
 
-
+    def test_reqrep(self):
+        rrclass = ReqRep()
+        self.assertRaises(exceptions.RequiredPropertyError,
+                          lambda: rrclass.validate())
 
 
 if __name__ == '__main__':
