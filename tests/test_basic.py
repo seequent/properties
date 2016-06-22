@@ -117,7 +117,6 @@ class TestBasic(unittest.TestCase):
         assert opts.opacity == .1
 
         prim = AnotherPrimitive(myrangeint=5)
-        print(AnotherPrimitive.myrangeint.doc)
         assert prim.myrangeint == 5
         prim.myrangeint = 10.0
         assert prim.myrangeint == 10
