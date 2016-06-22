@@ -188,7 +188,7 @@ class Int(Property):
     _sphinx_prefix = 'properties.basic'
 
     def validator(self, instance, value):
-        if isinstance(value, float):
+        if isinstance(value, float) and np.isclose(value, int(value)):
             value = int(value)
         if not isinstance(value, six.integer_types):
             raise ValueError('{} must be a int'.format(self.name))
@@ -204,7 +204,7 @@ class Int(Property):
         return int(str(value))
 
 
-class Range(Float):
+class BaseRange(Property):
 
     _sphinx_prefix = 'properties.basic'
 
@@ -218,11 +218,11 @@ class Range(Float):
             if self.min_value is None:
                 self._doc += '-inf, '
             else:
-                self._doc += '{:4.2f}, '.format(self.min_value)
+                self._doc += '{}, '.format(self.min_value)
             if self.max_value is None:
                 self._doc += 'inf]'
             else:
-                self._doc += '{:4.2f}]'.format(self.max_value)
+                self._doc += '{}]'.format(self.max_value)
         return self._doc
 
     def validator(self, instance, value):
@@ -230,19 +230,22 @@ class Range(Float):
         if self.max_value is not None:
             if value > self.max_value:
                 raise ValueError(
-                    '{} must be less than {:e}'.format(
+                    '{} must be less than {}'.format(
                         self.name, self.max_value))
         if self.min_value is not None:
             if value < self.min_value:
                 raise ValueError(
-                    '{} must be greater than {:e}'.format(
+                    '{} must be greater than {}'.format(
                         self.name, self.min_value))
         return value
 
 
-class RangeInt(Int, Range):
 
-    _sphinx_prefix = 'properties.basic'
+class Range(BaseRange, Float):
+    pass
+
+class RangeInt(BaseRange, Int):
+    pass
 
 
 class DateTime(Property):
