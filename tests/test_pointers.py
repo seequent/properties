@@ -3,9 +3,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import properties
 import unittest
 
+from properties import exceptions
+import properties
 
 class SomeOptions(properties.PropertyClass):
     color = properties.Color("My color")
@@ -38,6 +39,10 @@ class MyShape(properties.PropertyClass):
                                    ptype=MySurface, repeated=True)
     opts = properties.Pointer("My other options",
                               ptype=SomeOptions)
+
+class ReqRep(properties.PropertyClass):
+    rrprop = properties.Pointer("something", ptype=SomeOptions,
+                                required=True, repeated=True)
 
 
 class OneOfMany(properties.PropertyClass):
@@ -243,6 +248,11 @@ class TestBasic(unittest.TestCase):
         assert len(S0._dirty) == 0
         assert len(S1._dirty) == 0
         assert len(S2._dirty) == 0
+
+    def test_reqrep(self):
+        rrclass = ReqRep()
+        self.assertRaises(exceptions.RequiredPropertyError,
+                          lambda: rrclass.validate())
 
 
 if __name__ == '__main__':
