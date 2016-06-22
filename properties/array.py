@@ -16,10 +16,13 @@ FileProp = namedtuple('FileProp', ['file', 'dtype'])
 
 
 class Array(Property):
-    """Array Property"""
+    """Array Property with specified shape and type.
 
-    shape = ('*',)
-    dtype = float
+    Currently only float and int arrays are supported.
+    """
+
+    _shape = ('*',)
+    _dtype = (float, int)
 
     _sphinx_prefix = 'properties'
 
@@ -28,7 +31,8 @@ class Array(Property):
         if getattr(self, '_doc', None) is None:
             self._doc = '{doc}, shape: {shp}, type: {dtype}'.format(
                 doc=self._base_doc,
-                shp='(' + ','.join([str(s) for s in self.shape]) + ')',
+                shp='(' + ', '.join(['\*' if s == '*' else str(s)
+                                     for s in self.shape]) + ')',
                 dtype=self.dtype
             )
         return self._doc
@@ -52,30 +56,49 @@ class Array(Property):
         return FileProp(data_file, use_dtype)
 
     @property
+    def shape(self):
+        return self._shape
+
+    @shape.setter
+    def shape(self, value):
+        if not isinstance(value, tuple):
+            raise TypeError("{}: Invalid shape - must be a tuple "
+                            "(e.g. ('*',3) for an array of length-3 "
+                            "arrays)".format(value, self.name))
+        for s in value:
+            if s != '*' and not isinstance(s, six.integer_types):
+                raise TypeError("{}: Invalid shape - values "
+                                "must be '*' or int".format(
+                                    value, self.name
+                                ))
+        self._shape = value
+
+    @property
+    def dtype(self):
+        return self._dtype
+
+    @dtype.setter
+    def dtype(self, value):
+        if not isinstance(value, (list, tuple)):
+            value = (value,)
+        if (float not in value and
+                len(set(value).intersection(six.integer_types)) == 0):
+            raise TypeError("{}: Invalid dtype - must be int "
+                            "and/or float".format(value, self.name))
+        self._dtype = value
+
+
+    @property
     def _schema_function(self):
         if getattr(self, '__schema_function', None) is not None:
             return self.__schema_function
 
-        if not (self.dtype in six.integer_types or
-                self.dtype in (float, None)):
-            raise TypeError("{}: Invalid dtype for {} - must be int, "
-                            "float, or None".format(self.dtype, self.name))
-        if not isinstance(self.shape, tuple):
-            raise TypeError("{}: Invalid shape for {} - must be a tuple "
-                            "(e.g. ('*',3) for an array of length-3 "
-                            "arrays)".format(self.shape, self.name))
-        for s in self.shape:
-                if s != '*' and not isinstance(s, six.integer_types):
-                    raise TypeError("{}: Invalid shape for {} - values "
-                                    "must be '*' or ints".format(
-                                        self.shape, self.name
-                                    ))
-
         def test_function(proposed):
             err_str = self.name
-            if self.dtype in six.integer_types and proposed.dtype.kind != 'i':
+            if (proposed.dtype.kind == 'i' and
+                    len(set(self.dtype).intersection(six.integer_types)) == 0):
                 raise ValueError('{}: Array type must be int'.format(err_str))
-            if self.dtype == float and proposed.dtype.kind != 'f':
+            if proposed.dtype.kind == 'f' and float not in self.dtype:
                 raise ValueError('{}: Array type must be '
                                  'float'.format(err_str))
             if len(self.shape) != proposed.ndim:
