@@ -87,40 +87,27 @@ class Array(Property):
                             "and/or float".format(value, self.name))
         self._dtype = value
 
-
-    @property
-    def _schema_function(self):
-        if getattr(self, '__schema_function', None) is not None:
-            return self.__schema_function
-
-        def test_function(proposed):
-            err_str = self.name
-            if (proposed.dtype.kind == 'i' and
-                    len(set(self.dtype).intersection(six.integer_types)) == 0):
-                raise ValueError('{}: Array type must be int'.format(err_str))
-            if proposed.dtype.kind == 'f' and float not in self.dtype:
-                raise ValueError('{}: Array type must be '
-                                 'float'.format(err_str))
-            if len(self.shape) != proposed.ndim:
-                raise ValueError(
-                    '{}: Array must have {:d} dimensions ''(shape: {})'.format(
-                        err_str, len(self.shape), self.shape
-                    ))
-            for i, s in enumerate(self.shape):
-                if s != '*' and proposed.shape[i] != s:
-                    raise ValueError('{}: Array dimension {:d} must be '
-                                     'length {:d}'.format(err_str, i, s))
-
-        self.__schema_function = test_function
-        return test_function
-
     def validator(self, instance, proposed):
         if not isinstance(proposed, (list, np.ndarray)):
             raise ValueError('{} must be a list or numpy array'.format(
                 self.name
             ))
         proposed = np.array(proposed)
-        self._schema_function(proposed)
+        if (proposed.dtype.kind == 'i' and
+                len(set(self.dtype).intersection(six.integer_types)) == 0):
+            raise ValueError('{}: Array type must be int'.format(self.name))
+        if proposed.dtype.kind == 'f' and float not in self.dtype:
+            raise ValueError('{}: Array type must be '
+                             'float'.format(self.name))
+        if len(self.shape) != proposed.ndim:
+            raise ValueError(
+                '{}: Array must have {:d} dimensions ''(shape: {})'.format(
+                    self.name, len(self.shape), self.shape
+                ))
+        for i, s in enumerate(self.shape):
+            if s != '*' and proposed.shape[i] != s:
+                raise ValueError('{}: Array dimension {:d} must be '
+                                 'length {:d}'.format(self.name, i, s))
         return proposed
 
     def from_JSON(self, value):
