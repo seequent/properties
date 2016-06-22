@@ -1,26 +1,25 @@
-from __future__ import unicode_literals, print_function, division, absolute_import
-from builtins import super
-from future import standard_library
-standard_library.install_aliases()
-from builtins import range, object
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
-from . import exceptions
-import numpy as np, json
+from builtins import super
+from builtins import range
 from functools import wraps
 from future.utils import with_metaclass
+import json
 from six import string_types
+
+from . import exceptions
 
 
 class Property(object):
 
     name = ''
-    className = ''
-
-    parent = None   #: For sub-properties
+    class_name = ''
 
     def __init__(self, doc, **kwargs):
         self._base_doc = doc
-
         for key in kwargs:
             if key[0] == '_':
                 raise AttributeError(
@@ -32,7 +31,9 @@ class Property(object):
 
     @property
     def doc(self):
-        return self._base_doc
+        if getattr(self, '_doc', None) is None:
+            self._doc = self._base_doc
+        return self._doc
 
     @property
     def sphinx(self):
@@ -80,24 +81,26 @@ class Property(object):
         self._repeated = value
 
     @property
-    def niceName(self):
+    def nice_name(self):
         if self.name == '':
             return ''
-        import string
+        from string import ascii_uppercase
         name = self.name[0].upper()
         for n in self.name[1:]:
-            if n in string.ascii_uppercase:
+            if n in ascii_uppercase:
                 name += ' {}'.format(n)
+            elif n == '_':
+                name += ' '
             else:
                 name += n
-        return getattr(self, '_niceName', name)
+        return getattr(self, '_nice_name', name)
 
-    @niceName.setter
-    def niceName(self, value):
-        self._niceName = value
+    @nice_name.setter
+    def nice_name(self, value):
+        self._nice_name = value
 
     @property
-    def camelCaseName(self):
+    def camel_case_name(self):
         return self.name[0].upper() + self.name[1:]
 
     def validate(self, scope):
@@ -107,7 +110,7 @@ class Property(object):
     def validator(self, instance, value):
         pass
 
-    def _setPropertyMeta(self, attrs, _properties):
+    def _set_property_meta(self, attrs, _properties):
 
         _properties[self.name] = self
 
@@ -149,30 +152,30 @@ class Property(object):
 
         attrs[self.name] = property(fget=fget, fset=fset, doc=scope.doc)
 
-        extras = self.getExtraProperties()
+        extras = self.get_extra_properties()
         if extras is not None:
-            keys = [key for key in extras]
+            keys = [k for k in extras]
             for attr in keys:
                 prop = extras[attr]
                 prop.name = attr
-                prop._setPropertyMeta(attrs, _properties)
+                prop._set_property_meta(attrs, _properties)
 
-        extras = self.getExtraMethods()
+        extras = self.get_extra_methods()
         if extras is not None:
-            keys = [key for key in extras]
+            keys = [k for k in extras]
             for attr in keys:
                 attrs[attr] = extras[attr]
 
-    def asJSON(self, value):
+    def as_JSON(self, value):
         return value
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return value
 
-    def getExtraProperties(self):
+    def get_extra_properties(self):
         return None
 
-    def getExtraMethods(self):
+    def get_extra_methods(self):
         return None
 
 
@@ -213,38 +216,35 @@ class _PropertyMetaClass(type):
     def __new__(cls, name, bases, attrs):
         _properties = {}
         for base in reversed(bases):
-            for baseProp in getattr(base, '_properties', {}):
-                _properties[baseProp] = base._properties[baseProp]
+            for base_prop in getattr(base, '_properties', {}):
+                _properties[base_prop] = base._properties[base_prop]
 
-        keys = [key for key in attrs]
-
+        keys = [k for k in attrs]
         for attr in keys:
-
             prop = attrs[attr]
-
             if isinstance(prop, Property):
                 assert not attr.startswith('_'), \
                     "Cannot start a property name with '_'."
                 prop.name = attr
                 prop.className = name
-                prop._setPropertyMeta(attrs, _properties)
+                prop._set_property_meta(attrs, _properties)
 
         attrs['_properties'] = _properties
-        attrs['_className'] = name
+        attrs['_class_name'] = name
 
         # The doc string
-        docStr = attrs.get('__doc__', '')
+        doc_str = attrs.get('__doc__', '')
         required = {key: value for key, value in _properties.items()
                     if value.required}
         optional = {key: value for key, value in _properties.items()
                     if not value.required}
         if required:
-            docStr += '\n\nRequired:\n\n' + '\n'.join(
+            doc_str += '\n\nRequired:\n\n' + '\n'.join(
                 (required[key].sphinx for key in required))
         if optional:
-            docStr += '\n\nOptional:\n\n' + '\n'.join(
+            doc_str += '\n\nOptional:\n\n' + '\n'.join(
                 (optional[key].sphinx for key in optional))
-        attrs['__doc__'] = docStr.strip()
+        attrs['__doc__'] = doc_str.strip()
 
         # Figure out what is the set of properties that is exposed.
         _exposed = []
@@ -252,10 +252,10 @@ class _PropertyMetaClass(type):
             _exposed += p._exposed
         attrs['_exposed'] = set(_exposed)
 
-        newClass = super().__new__(cls, name, bases, attrs)
-        _REGISTRY[name] = newClass
+        new_class = super().__new__(cls, name, bases, attrs)
+        _REGISTRY[name] = new_class
 
-        return newClass
+        return new_class
 
 class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
     def __init__(self, **kwargs):
@@ -326,12 +326,12 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
 
 
 class Pointer(Property):
-    formType = None
+    form_type = None
     _resolved = True
 
     def __init__(self, doc, auto_create=True, **kwargs):
         self.auto_create = auto_create
-        super(Pointer, self).__init__(doc, **kwargs)
+        super().__init__(doc, **kwargs)
 
     @classmethod
     def resolve(cls, resolved=True):
@@ -358,9 +358,7 @@ class Pointer(Property):
 
     @property
     def ptype(self):
-        """
-            Pointer to a PropertyClass
-        """
+        """Type of PropertyClass the Pointer points to"""
         if self._resolved:
             ptype = getattr(self, '_ptype', None)
             if isinstance(ptype, (list, tuple)):
@@ -442,7 +440,7 @@ class Pointer(Property):
                     name=pdef.__name__))
 
     def validate(self, scope):
-        super(Pointer, self).validate(scope)
+        super().validate(scope)
         P = getattr(scope, self.name)
         if not self.required and (P is None or P == []):
             return True
@@ -465,23 +463,22 @@ class Pointer(Property):
                 try:
                     return self.ptype[0](**value)
                 except KeyError:
-                    badKeyStr = ', '.join(
-                        [k for k in value.keys()])
-                    keyStr = ', '.join(
+                    bad_key_str = ', '.join(value)
+                    key_str = ', '.join(
                         [k for k in self.ptype[0]._exposed if k != 'meta'])
                     raise KeyError(
                         'Invalid input keywords [{}] for default pointer '
                         'type {}. The following are available: [{}]'.format(
-                            badKeyStr, self.ptype[0].__name__, keyStr))
+                            bad_key_str, self.ptype[0].__name__, key_str))
             else:
                 try:
                     return self.ptype[0](value)
                 except TypeError:
-                    ptypeStr = ', '.join([p.__name__ for p in self.ptype])
+                    ptype_str = ', '.join([p.__name__ for p in self.ptype])
                     raise TypeError(
                         'Invalid input type {}. You need to use one '
                         'of the following: [{}]'.format(
-                            value.__class__.__name__, ptypeStr))
+                            value.__class__.__name__, ptype_str))
         if not isinstance(value, self.ptype):
             if isinstance(value, dict):
                 try:
@@ -489,14 +486,13 @@ class Pointer(Property):
                     # which are passed to %s as **kwargs.
                     return self.ptype(**value)
                 except KeyError:
-                    badKeyStr = ', '.join(
-                        [k for k in value.keys()])
-                    keyStr = ', '.join(
+                    bad_key_str = ', '.join(value)
+                    key_str = ', '.join(
                         [k for k in self.ptype._exposed if k != 'meta'])
                     raise KeyError(
                         'Invalid input keywords [{}] for pointer type {}. '
                         'The following are available: [{}]'.format(
-                            badKeyStr, self.ptype.__name__, keyStr))
+                            bad_key_str, self.ptype.__name__, key_str))
             else:
                 try:
                     return self.ptype(value)
@@ -506,23 +502,24 @@ class Pointer(Property):
                             value.__class__.__name__, self.ptype.__name__))
         return value
 
-    def getExtraMethods(self):
+    def get_extra_methods(self):
         if len(self.expose) > 0 and self.repeated:
             raise AttributeError(
                 'Pointer cannot have repeated model with exposures.')
 
         scope = self
 
-        def getProp(propName):
+        def get_prop(prop_name):
             def fget(self):
-                return getattr(getattr(self, scope.name), propName)
+                return getattr(getattr(self, scope.name), prop_name)
 
             def fset(self, val):
-                return setattr(getattr(self, scope.name), propName, val)
+                return setattr(getattr(self, scope.name), prop_name, val)
+
             return property(fget=fget, fset=fset,
-                            doc='Exposed property for {}'.format(propName))
+                            doc='Exposed property for {}'.format(prop_name))
 
-        return{k: getProp(k) for k in self.expose}
+        return {k: get_prop(k) for k in self.expose}
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return json.loads(value)

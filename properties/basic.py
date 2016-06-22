@@ -1,21 +1,24 @@
-from __future__ import (absolute_import, unicode_literals,
-                        print_function, division)
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from builtins import super, dict, int
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str, range
 # ^-- NB: Order matters here; don't rearrange to group builtins --^
-import six
+from datetime import datetime
 import json
 import numpy as np
+import six
+
 from .base import Property
 from . import exceptions
 
 
 class String(Property):
-    """
-    String property
-    """
+    """String property"""
     lowercase = False
     strip = ' '
 
@@ -24,7 +27,7 @@ class String(Property):
         if getattr(self, '_doc', None) is None:
             self._doc = self._base_doc
             if self.choices is not None and len(self.choices) != 0:
-                self._doc += ', Choices: ' + ', '.join(self.choices.keys())
+                self._doc += ', Choices: ' + ', '.join(self.choices)
         return self._doc
 
     @property
@@ -54,20 +57,20 @@ class String(Property):
         if self.strip is not None:
             value = value.strip(self.strip)
         if self.choices is not None and len(self.choices) != 0:
-            if value.upper() in [k.upper() for k in self.choices.keys()]:
+            if value.upper() in [k.upper() for k in self.choices]:
                 return value.lower() if self.lowercase else value.upper()
             for k, v in self.choices.items():
                 if value.upper() in [_.upper() for _ in v]:
                     return k.lower() if self.lowercase else k
             raise ValueError(
                 '{}: value must be in ["{}"]'.format(
-                    self.name, ('","'.join(self.choices.keys()))))
+                    self.name, ('","'.join(self.choices))))
         return value.lower() if self.lowercase else value
 
 
 class Object(Property):
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return json.loads(value)
 
 
@@ -84,7 +87,7 @@ class Bool(Property):
             raise ValueError('{} must be a bool'.format(self.name))
         return value
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return str(value).upper() in ['TRUE', 'ON', 'YES']
 
 
@@ -139,12 +142,12 @@ class Complex(Property):
             raise ValueError('{} must be complex'.format(self.name))
         return value
 
-    def asJSON(self, value):
+    def as_JSON(self, value):
         if value is None or np.isnan(value):
             return None
         return value
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return complex(str(value))
 
 
@@ -157,12 +160,12 @@ class Float(Property):
             raise ValueError('{} must be a float'.format(self.name))
         return value
 
-    def asJSON(self, value):
+    def as_JSON(self, value):
         if value is None or np.isnan(value):
             return None
         return value
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return float(str(value))
 
 
@@ -176,46 +179,46 @@ class Int(Property):
         value = int(value)
         return value
 
-    def asJSON(self, value):
+    def as_JSON(self, value):
         if value is None or np.isnan(value):
             return None
         return int(np.round(value))
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return int(str(value))
 
 
 class Range(Float):
 
-    maxValue = None   #: maximum value
-    minValue = None   #: minimum value
+    max_value = None   #: maximum value
+    min_value = None   #: minimum value
 
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
             self._doc = self._base_doc + ', Range: ['
-            if self.minValue is None:
+            if self.min_value is None:
                 self._doc += '-inf, '
             else:
-                self._doc += '{:4.2f}, '.format(self.minValue)
-            if self.maxValue is None:
+                self._doc += '{:4.2f}, '.format(self.min_value)
+            if self.max_value is None:
                 self._doc += 'inf]'
             else:
-                self._doc += '{:4.2f}]'.format(self.maxValue)
+                self._doc += '{:4.2f}]'.format(self.max_value)
         return self._doc
 
     def validator(self, instance, value):
         super().validator(instance, value)
-        if self.maxValue is not None:
-            if value > self.maxValue:
+        if self.max_value is not None:
+            if value > self.max_value:
                 raise ValueError(
                     '{} must be less than {:e}'.format(
-                        self.name, self.maxValue))
-        if self.minValue is not None:
-            if value < self.minValue:
+                        self.name, self.max_value))
+        if self.min_value is not None:
+            if value < self.min_value:
                 raise ValueError(
                     '{} must be greater than {:e}'.format(
-                        self.name, self.minValue))
+                        self.name, self.min_value))
         return value
 
 
@@ -225,21 +228,21 @@ class RangeInt(Int, Range):
 
 class DateTime(Property):
 
-    shortDate = False
+    short_date = False
 
-    def asJSON(self, value):
+    def as_JSON(self, value):
         if value is None:
             return
-        if self.shortDate:
+        if self.short_date:
             return value.strftime("%Y/%m/%d")
         return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         if value is None or value == 'None':
             return None
         if len(value) == 10:
             return datetime.strptime(value, "%Y/%m/%d")
-        return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
 COLORS_20 = [

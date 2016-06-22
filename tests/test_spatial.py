@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import numpy as np
-import os
 import properties
 import unittest
 
@@ -28,6 +32,7 @@ class TestPropertiesSpatial(unittest.TestCase):
                           lambda: setattr(opts, 'loc', 5))
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'loc', [5, 100]))
+
 
 if __name__ == '__main__':
     unittest.main()

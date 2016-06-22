@@ -1,5 +1,8 @@
-import numpy as np
-import os
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import properties
 import unittest
 
@@ -240,8 +243,6 @@ class TestBasic(unittest.TestCase):
         assert len(S0._dirty) == 0
         assert len(S1._dirty) == 0
         assert len(S2._dirty) == 0
-
-
 
 
 if __name__ == '__main__':

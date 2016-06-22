@@ -17,11 +17,11 @@ class Vector(np.ndarray):
                 X = np.atleast_2d(X)
                 return cls(X.x.copy(), X.y.copy(), X.z.copy())
 
-            if isinstance(X, [list, tuple]) and X is not None:
+            if isinstance(X, (list, tuple)) and X is not None:
                 X = np.array(X)
-            if isinstance(Y, [list, tuple]) and Y is not None:
+            if isinstance(Y, (list, tuple)) and Y is not None:
                 Y = np.array(Y)
-            if isinstance(Z, [list, tuple]) and Z is not None:
+            if isinstance(Z, (list, tuple)) and Z is not None:
                 Z = np.array(Z)
 
             if isinstance(X, np.ndarray) and Y is None and Z is None:
@@ -135,6 +135,7 @@ class Vector(np.ndarray):
         if self.nV == 1:
             return self[0, 0]
         return self[:, 0].view(np.ndarray)
+
     @x.setter
     def x(self, value):
         self[:, 0] = value
@@ -144,6 +145,7 @@ class Vector(np.ndarray):
         if self.nV == 1:
             return self[0, 1]
         return self[:, 1].view(np.ndarray)
+
     @y.setter
     def y(self, value):
         self[:, 1] = value
@@ -153,6 +155,7 @@ class Vector(np.ndarray):
         if self.nV == 1:
             return self[0, 2]
         return self[:, 2].view(np.ndarray)
+
     @z.setter
     def z(self, value):
         self[:, 2] = value

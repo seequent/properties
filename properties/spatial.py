@@ -1,18 +1,17 @@
-from __future__ import absolute_import, unicode_literals, print_function, division
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import six
 
-import json, numpy as np
 from .base import Property
-from . import exceptions, vmath
+from . import vmath
 
 
 class Vector(Property):
-    """
-    A vector!
-    """
-    formType = 'bool-choice'
+    """A vector!"""
+    form_type = 'bool-choice'
 
     @property
     def default(self):
@@ -34,10 +33,8 @@ class Vector(Property):
                 return vmath.Vector(0, 0, 1)
         try:
             return vmath.Vector(value)
-        except Exception as e:
+        except Exception:
             raise ValueError('{} must be a Vector'.format(self.name))
 
-    def fromJSON(self, value):
+    def from_JSON(self, value):
         return vmath.Vector(*value)
-
-del Property

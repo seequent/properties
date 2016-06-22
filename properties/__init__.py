@@ -10,20 +10,19 @@ class Profile(properties.PropertyClass):
     myName = properties.String('What is your name!', required=True)
 
 """
-from __future__ import (absolute_import, unicode_literals,
-                        print_function, division)
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
+__version__ = '0.1.3'
+__author__ = '3point Science, Inc.'
+__license__ = 'MIT'
+__copyright__ = 'Copyright 2016 3point Science, Inc.'
+
+from .array import *
 from .base import Property, PropertyClass, Pointer, validator, classproperty
 from .basic import *
 from .files import *
-from .array import *
-from . import vmath
 from .spatial import *
-
-
-__version__   = '0.1.3'
-__author__    = '3point Science, Inc.'
-__license__   = 'MIT'
-__copyright__ = 'Copyright 2016 3point Science, Inc.'
+from . import vmath

@@ -1,17 +1,19 @@
-from __future__ import absolute_import, print_function, division
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from builtins import open
-from future import standard_library
-standard_library.install_aliases()
+import io
+import os
 import six
 
-import json, numpy as np, os, io
 from .base import Property
-from . import exceptions
 
 
 class File(Property):
 
-    mode = 'r'   #: mode for opening the file.
+    mode = 'r'   # mode for opening the file.
 
     def validator(self, instance, value):
         if hasattr(value, 'read'):
@@ -29,12 +31,11 @@ class File(Property):
 class Image(File):
 
     def validator(self, instance, value):
-
-
         try:
             import png
         except:
-            raise ImportError("Error importing png module: `pip install pypng`")
+            raise ImportError("Error importing png module: "
+                              "`pip install pypng`")
 
         if getattr(value, '__valid__', False):
             return value
@@ -55,7 +56,5 @@ class Image(File):
             fp = open(value, 'rb')
         output.write(fp.read())
         output.seek(0)
-
         fp.close()
-
         return output

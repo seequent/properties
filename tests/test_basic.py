@@ -1,5 +1,8 @@
-import numpy as np
-import os
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import properties
 import unittest
 
@@ -22,7 +25,7 @@ class StrPrimitive(properties.PropertyClass):
 
 class APrimitive(properties.PropertyClass):
     opacity = properties.Range("My range", default=0.1,
-                               minValue=0., maxValue=1.,
+                               min_value=0., max_value=1.,
                                required=True)
     color = properties.Float("Not a color!")
 

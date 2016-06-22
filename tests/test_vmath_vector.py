@@ -1,7 +1,12 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import unittest
-from properties.vmath import Vector, Matrix3
 import numpy as np
-import warnings
+
+from properties.vmath import Vector
 
 
 class TestVMathVector(unittest.TestCase):
@@ -215,22 +220,22 @@ class TestVMathVector(unittest.TestCase):
         def f(): v3.cross(5)
         self.assertRaises(TypeError, f)
 
-    def test_asPercent(self):
+    def test_as_percent(self):
         v1 = Vector(10, 0, 0)
         v2 = Vector(20, 0, 0)
-        self.assertTrue(np.array_equal(v1.asPercent(2), v2))
+        self.assertTrue(np.array_equal(v1.as_percent(2), v2))
         self.assertTrue(np.array_equal(v1, Vector(10, 0, 0)))   # not copied
         v3 = Vector([0, 0, 2, 0, 0],
                     [0, 2, 0, 0, 0],
                     [2, 0, 0, 0, 0])
         v4 = v3 * .5
-        self.assertTrue(np.array_equal(v3.asPercent(.5), v4))
+        self.assertTrue(np.array_equal(v3.as_percent(.5), v4))
         v5 = Vector()
-        self.assertTrue(np.array_equal(v5.asPercent(100), v5))
+        self.assertTrue(np.array_equal(v5.as_percent(100), v5))
         v6 = Vector(5, 5, 5)
-        self.assertTrue(np.array_equal(v6.asPercent(0), v5))
+        self.assertTrue(np.array_equal(v6.as_percent(0), v5))
 
-        def f(): v6.asPercent('One Hundred Percent')
+        def f(): v6.as_percent('One Hundred Percent')
         self.assertRaises(TypeError, f)
 
     def test_normalize(self):
@@ -249,64 +254,64 @@ class TestVMathVector(unittest.TestCase):
         self.assertTrue(v3.normalize() is v3)
         self.assertTrue(np.array_equal(v3.length, [1, 1, 1]))
 
-    def test_asLength(self):
+    def test_as_length(self):
         v1 = Vector(1, 1, 1)
-        v2 = v1.asLength(1)
+        v2 = v1.as_length(1)
         self.assertTrue(v1 is not v2)
         self.assertTrue(v1.length == np.sqrt(3))
         self.assertTrue(v2.length == 1)
 
         v3 = Vector(np.r_[1, 2], np.r_[1, 2], np.r_[1, 2])
-        v4 = v3.asLength([1, 2])
+        v4 = v3.as_length([1, 2])
         self.assertTrue(np.array_equal(v4.length, [1, 2]))
 
-        def f(): v = v3.asLength(5)
+        def f(): v = v3.as_length(5)
         self.assertRaises(ValueError, f)
         v5 = Vector(np.r_[1, 0], np.r_[0, 0], np.r_[0, 1])
         self.assertTrue(np.array_equal(v5.length, [1, 1]))
-        v6 = v5.asLength([-1, 3])
+        v6 = v5.as_length([-1, 3])
         self.assertTrue(np.array_equal(v6, [[-1., -0., -0.], [0., 0., 3.]]))
         self.assertTrue(np.array_equal(v6.length, [1, 3]))
         v7 = Vector()
 
-        def f(): v = v7.asLength(5)
+        def f(): v = v7.as_length(5)
         self.assertRaises(ZeroDivisionError, f)
-        v8 = v7.asLength(0)
+        v8 = v7.as_length(0)
         self.assertTrue(v8.length == 0)
         v9 = Vector([0, 0, 1, 0, 0],
                     [0, 1, 0, 0, 0],
                     [1, 0, 0, 0, 0])
         length = [5, 5, 5, 5, 5]
 
-        def f(): v = v9.asLength(length)
+        def f(): v = v9.as_length(length)
         self.assertRaises(ZeroDivisionError, f)
         length = [5, 5, 5, 0, 0]
-        v10 = v9.asLength(length)
+        v10 = v9.as_length(length)
         self.assertTrue(np.array_equal(length, v10.length))
 
-    def test_asUnit(self):
+    def test_as_unit(self):
         v1 = Vector(1, 0, 0)
-        v2 = v1.asUnit()
+        v2 = v1.as_unit()
         self.assertTrue(v1 is not v2)
         self.assertTrue(np.array_equal(v1, v2))
         self.assertTrue(v2.length == 1)
         v3 = Vector(np.r_[1, 2], np.r_[1, 2], np.r_[1, 2])
-        v4 = v3.asUnit()
+        v4 = v3.as_unit()
         self.assertTrue(np.array_equal(v4.length, [1, 1]))
         v5 = Vector(1, 1, 1)
-        v6 = v5.asUnit()
+        v6 = v5.as_unit()
         self.assertTrue(v6.length == 1)
         self.assertTrue(v6.x == v6.y)
         self.assertTrue(v6.z == v6.y)
         v7 = Vector()
 
-        def f(): v = v7.asUnit()
+        def f(): v = v7.as_unit()
         self.assertRaises(ZeroDivisionError, f)
         v9 = Vector([0, 0, 1, 0, 0],
                     [0, 1, 0, 0, 0],
                     [1, 0, 0, 0, 0])
 
-        def f(): v = v9.asUnit()
+        def f(): v = v9.as_unit()
         self.assertRaises(ZeroDivisionError, f)
 
     # def test_mult_warning(self):
