@@ -6,8 +6,7 @@ from __future__ import unicode_literals
 import numpy as np
 
 class Vector(np.ndarray):
-    """
-    Primitive vector, defined from the origin
+    """Primitive vectors, or list of primitive vectors, defined from the origin
     """
 
     def __new__(cls, x=None, y=None, z=None):
@@ -61,15 +60,44 @@ class Vector(np.ndarray):
         if obj is None:
             return
 
-    def copy(self):
-        return Vector(self.x, self.y, self.z)
+    @property
+    def x(self):
+        if self.nV == 1:
+            return self[0, 0]
+        return self[:, 0].view(np.ndarray)
+
+    @x.setter
+    def x(self, value):
+        self[:, 0] = value
+
+    @property
+    def y(self):
+        if self.nV == 1:
+            return self[0, 1]
+        return self[:, 1].view(np.ndarray)
+
+    @y.setter
+    def y(self, value):
+        self[:, 1] = value
+
+    @property
+    def z(self):
+        if self.nV == 1:
+            return self[0, 2]
+        return self[:, 2].view(np.ndarray)
+
+    @z.setter
+    def z(self, value):
+        self[:, 2] = value
 
     @property
     def nV(self):
+        """Number of vectors"""
         return self.shape[0]
 
     @property
     def length(self):
+        """Vector length"""
         l = np.sqrt(np.sum(self**2, axis=1))
         if self.nV == 1:
             return float(l)
@@ -107,15 +135,19 @@ class Vector(np.ndarray):
         raise ZeroDivisionError('Cannot resize vector of length 0 to '
                                 'nonzero length')
 
+    def copy(self):
+        """Returns a new copy of the vector"""
+        return Vector(self)
+
     def as_length(self, l):
         """Scale the length of a vector to a value"""
-        V = Vector(self)
+        V = self.copy()
         V.length = l
         return V
 
     def as_percent(self, p):
         """Scale the length of a vector by a percent"""
-        V = Vector(self)
+        V = self.copy()
         V.length = p * self.length
         return V
 
@@ -129,36 +161,6 @@ class Vector(np.ndarray):
         """Scale the length of a vector to 1 in place"""
         self.length = np.ones(self.nV)
         return self
-
-    @property
-    def x(self):
-        if self.nV == 1:
-            return self[0, 0]
-        return self[:, 0].view(np.ndarray)
-
-    @x.setter
-    def x(self, value):
-        self[:, 0] = value
-
-    @property
-    def y(self):
-        if self.nV == 1:
-            return self[0, 1]
-        return self[:, 1].view(np.ndarray)
-
-    @y.setter
-    def y(self, value):
-        self[:, 1] = value
-
-    @property
-    def z(self):
-        if self.nV == 1:
-            return self[0, 2]
-        return self[:, 2].view(np.ndarray)
-
-    @z.setter
-    def z(self, value):
-        self[:, 2] = value
 
     def dot(self, vec):
         """Dot product with another vector"""

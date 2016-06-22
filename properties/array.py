@@ -16,7 +16,9 @@ FileProp = namedtuple('FileProp', ['file', 'dtype'])
 
 
 class Array(Property):
-    """Array Property with specified shape and type.
+    """class properties.Array
+
+    Array Property with specified shape and type.
 
     Currently only float and int arrays are supported.
     """
@@ -88,6 +90,7 @@ class Array(Property):
         self._dtype = value
 
     def validator(self, instance, proposed):
+        """Determine if array is valid based on shape and dtype"""
         if not isinstance(proposed, (list, np.ndarray)):
             raise ValueError('{} must be a list or numpy array'.format(
                 self.name

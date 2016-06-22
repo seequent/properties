@@ -14,6 +14,10 @@ from . import exceptions
 
 
 class Property(object):
+    """class properties.Property
+
+    Base property class that establishes property behavior
+    """
 
     name = ''
     class_name = ''
@@ -52,11 +56,12 @@ class Property(object):
 
     @property
     def _exposed(self):
-        """The properties that exposed on the class."""
+        """the properties that are exposed on the class."""
         return [self.name]
 
     @property
     def default(self):
+        """default value of the property"""
         return getattr(self, '_default', [] if self.repeated else None)
 
     @default.setter
@@ -65,6 +70,7 @@ class Property(object):
 
     @property
     def required(self):
+        """required properties must be set for validation to pass"""
         return getattr(self, '_required', False)
 
     @required.setter
@@ -73,6 +79,7 @@ class Property(object):
 
     @property
     def repeated(self):
+        """repeated properties may have multiple values"""
         return getattr(self, '_repeated', False)
 
     @repeated.setter
@@ -103,13 +110,16 @@ class Property(object):
         return self.name[0].upper() + self.name[1:]
 
     def validate(self, scope):
+        """validates the property attributes"""
         if getattr(scope, self.name, None) is None and self.required:
             raise exceptions.RequiredPropertyError(self.name)
 
     def validator(self, instance, value):
+        """validates the property value"""
         pass
 
     def _set_property_meta(self, attrs, _properties):
+        """establishes access of property values"""
 
         _properties[self.name] = self
 
@@ -181,13 +191,14 @@ class Property(object):
 
 
 class classproperty(property):
-    """Class decorator to enable property behaviour in classmethods"""
+    """class decorator to enable property behavior in classmethods"""
 
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
 
 
 def validator(func):
+    """wrapper used on validation functions to recursively validate"""
     @wraps(func)
     def func_wrapper(self):
         if getattr(self, '_validating', False):
@@ -214,6 +225,7 @@ _REGISTRY = {}
 
 
 class _PropertyMetaClass(type):
+    """metaclass that sets up behavior of properties within PropertyClass"""
     def __new__(cls, name, bases, attrs):
         _properties = {}
         for base in reversed(bases):
@@ -259,6 +271,10 @@ class _PropertyMetaClass(type):
         return new_class
 
 class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
+    """class properties.PropertyClass
+
+    PropertyClasses are set up to contain property classes
+    """
 
     _sphinx_prefix = 'properties.base'
 
@@ -329,9 +345,14 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
 
 
 class Pointer(Property):
+    """class properties.Pointer
+
+    Pointers are properties that contain a PropertyClass. They allow
+    one PropertyClass to be a property of another PropertyClass.
+    """
+
     _resolved = True
     _sphinx_prefix = 'properties.base'
-
 
     def __init__(self, doc, auto_create=True, **kwargs):
         self.auto_create = auto_create
@@ -339,6 +360,11 @@ class Pointer(Property):
 
     @classmethod
     def resolve(cls, resolved=True):
+        """classmethod properties.Pointer.resolve
+
+        resolving the pointers is necessary when pointer ptype contains
+        a PropertyClass name, rather than the PropertyClass itself
+        """
         cls._resolved = resolved
 
     @property
@@ -404,7 +430,7 @@ class Pointer(Property):
 
     @property
     def _exposed(self):
-        """The properties that exposed on the class."""
+        """The properties that are exposed on the class."""
         return [self.name] + self.expose
 
     @property
@@ -444,6 +470,7 @@ class Pointer(Property):
                     name=pdef.__name__))
 
     def validate(self, scope):
+        """validate the pointer"""
         super().validate(scope)
         P = getattr(scope, self.name)
         if not self.required and (P is None or P == []):
@@ -455,6 +482,7 @@ class Pointer(Property):
             P.validate()
 
     def validator(self, instance, value):
+        """validate the property class"""
         if not self._resolved:
             raise AttributeError(
                 'Pointers are must be resolved with '
@@ -507,19 +535,17 @@ class Pointer(Property):
         return value
 
     def get_extra_methods(self):
+        """get methods from exposed properties"""
         if len(self.expose) > 0 and self.repeated:
             raise AttributeError(
                 'Pointer cannot have repeated model with exposures.')
-
         scope = self
 
         def get_prop(prop_name):
             def fget(self):
                 return getattr(getattr(self, scope.name), prop_name)
-
             def fset(self, val):
                 return setattr(getattr(self, scope.name), prop_name, val)
-
             return property(fget=fget, fset=fset,
                             doc='Exposed property for {}'.format(prop_name))
 
