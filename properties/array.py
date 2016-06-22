@@ -21,11 +21,16 @@ class Array(Property):
     shape = ('*',)
     dtype = float
 
+    _sphinx_prefix = 'properties'
+
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
-            self._doc = '{}, shape: {}, type: {}'.format(
-                        self._base_doc, self.shape, self.dtype)
+            self._doc = '{doc}, shape: {shp}, type: {dtype}'.format(
+                doc=self._base_doc,
+                shp='(' + ','.join([str(s) for s in self.shape]) + ')',
+                dtype=self.dtype
+            )
         return self._doc
 
     def serialize(self, data):

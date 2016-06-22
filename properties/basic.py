@@ -22,6 +22,8 @@ class String(Property):
     lowercase = False
     strip = ' '
 
+    _sphinx_prefix = 'properties.basic'
+
     @property
     def doc(self):
         if getattr(self, '_doc', None) is None:
@@ -70,11 +72,15 @@ class String(Property):
 
 class Object(Property):
 
+    _sphinx_prefix = 'properties.basic'
+
     def from_JSON(self, value):
         return json.loads(value)
 
 
 class Bool(Property):
+
+    _sphinx_prefix = 'properties.basic'
 
     @property
     def doc(self):
@@ -93,6 +99,8 @@ class Bool(Property):
 
 class Color(Property):
     """RBG, hex, named color, or random color"""
+
+    _sphinx_prefix = 'properties.basic'
 
     @property
     def doc(self):
@@ -137,6 +145,8 @@ class Color(Property):
 
 class Complex(Property):
 
+    _sphinx_prefix = 'properties.basic'
+
     def validator(self, instance, value):
         if isinstance(value, (six.integer_types, float)):
             value = complex(value)
@@ -154,6 +164,8 @@ class Complex(Property):
 
 
 class Float(Property):
+
+    _sphinx_prefix = 'properties.basic'
 
     def validator(self, instance, value):
         if isinstance(value, six.integer_types):
@@ -173,6 +185,8 @@ class Float(Property):
 
 class Int(Property):
 
+    _sphinx_prefix = 'properties.basic'
+
     def validator(self, instance, value):
         if isinstance(value, float):
             value = int(value)
@@ -191,6 +205,8 @@ class Int(Property):
 
 
 class Range(Float):
+
+    _sphinx_prefix = 'properties.basic'
 
     max_value = None   #: maximum value
     min_value = None   #: minimum value
@@ -225,12 +241,15 @@ class Range(Float):
 
 
 class RangeInt(Int, Range):
-    pass
+
+    _sphinx_prefix = 'properties.basic'
 
 
 class DateTime(Property):
 
     short_date = False
+
+    _sphinx_prefix = 'properties.basic'
 
     def as_JSON(self, value):
         if value is None:

@@ -15,6 +15,8 @@ class File(Property):
 
     mode = 'r'   # mode for opening the file.
 
+    _sphinx_prefix = 'properties.files'
+
     def validator(self, instance, value):
         if hasattr(value, 'read'):
             prev = getattr(self, '_p_' + self.name, None)
@@ -29,6 +31,8 @@ class File(Property):
 
 
 class Image(File):
+
+    _sphinx_prefix = 'properties.files'
 
     def validator(self, instance, value):
         try:

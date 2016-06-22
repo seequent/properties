@@ -18,6 +18,8 @@ class Property(object):
     name = ''
     class_name = ''
 
+    _sphinx_prefix = 'properties.base'
+
     def __init__(self, doc, **kwargs):
         self._base_doc = doc
         for key in kwargs:
@@ -38,18 +40,15 @@ class Property(object):
     @property
     def sphinx(self):
         """Sphinx documentation for the property"""
-        prefix = ''
-        if 'properties.basic' in str(self.__class__):
-            prefix = 'properties.basic'
-        elif 'properties.spatial' in str(self.__class__):
-            prefix = 'properties.spatial'
-        elif 'properties.files' in str(self.__class__):
-            prefix = 'properties.files'
-        elif 'properties' in str(self.__class__):
-            prefix = 'properties'
-        return ':param {}: {}\n:type {}: :class:`{} <'.format(
-            self.name, self.doc, self.name, self.__class__.__name__) + \
-            prefix + '.' + self.__class__.__name__ + '>`'
+        return (
+            ':param {name}: {doc}\n:type {name}: :class:`{cls} '
+            '<{sphinx_prefix}.{cls}>`'.format(
+                name=self.name,
+                doc=self.doc,
+                cls=self.__class__.__name__,
+                sphinx_prefix=self._sphinx_prefix
+            )
+        )
 
     @property
     def _exposed(self):
@@ -261,6 +260,9 @@ class _PropertyMetaClass(type):
         return new_class
 
 class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
+
+    _sphinx_prefix = 'properties.base'
+
     def __init__(self, **kwargs):
         self._dirty_props = set()
         self.set(**kwargs)
@@ -329,6 +331,8 @@ class PropertyClass(with_metaclass(_PropertyMetaClass, object)):
 
 class Pointer(Property):
     _resolved = True
+    _sphinx_prefix = 'properties.base'
+
 
     def __init__(self, doc, auto_create=True, **kwargs):
         self.auto_create = auto_create

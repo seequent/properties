@@ -12,6 +12,8 @@ from . import vmath
 class Vector(Property):
     """A vector!"""
 
+    _sphinx_prefix = 'properties.spatial'
+
     @property
     def default(self):
         return getattr(self, '_default', [] if self.repeated else None)
