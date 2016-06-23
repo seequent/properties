@@ -57,7 +57,7 @@ or perhaps scale it so that it has Unit length
         import properties #hide
         simpleVector = properties.Vector('an arrow in space!', default='x')#hide
     vectors = MyVectors(simpleVector = [1., 1., 0.])#hide
-    print vectors.simpleVector.asUnit()
+    print vectors.simpleVector.as_unit()
 
 There are lots of things you might want to do with a :ref:`Vector <vmath_Vector>`! See the
 :ref:`Vector docs <vmath_Vector>` for more.
