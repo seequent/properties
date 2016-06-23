@@ -1,41 +1,45 @@
-from __future__ import absolute_import, unicode_literals, print_function, division
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import six
 
-import json, numpy as np
 from .base import Property
-from . import exceptions, vmath
+from . import vmath
+
 
 class Vector(Property):
+    """class properties.Vector
+
+    Vector property, using properties.vmath.Vector
     """
-    A vector!
-    """
-    formType = 'bool-choice'
+
+    _sphinx_prefix = 'properties.spatial'
 
     @property
     def default(self):
         return getattr(self, '_default', [] if self.repeated else None)
+
     @default.setter
     def default(self, value):
         self._default = self.validator(None, value).copy()
 
     def validator(self, instance, value):
+        """return a Vector based on input if input is valid"""
         if isinstance(value, vmath.Vector):
             return value
         if isinstance(value, six.string_types):
             if value.upper() == 'X':
-                return vmath.Vector(1,0,0)
+                return vmath.Vector(1, 0, 0)
             if value.upper() == 'Y':
-                return vmath.Vector(0,1,0)
+                return vmath.Vector(0, 1, 0)
             if value.upper() == 'Z':
-                return vmath.Vector(0,0,1)
+                return vmath.Vector(0, 0, 1)
         try:
             return vmath.Vector(value)
-        except Exception as e:
-            raise ValueError('%s must be a Vector'%self.name)
+        except Exception:
+            raise ValueError('{} must be a Vector'.format(self.name))
 
-    def fromJSON(self, value):
+    def from_json(self, value):
         return vmath.Vector(*value)
-
-del Property

@@ -16,7 +16,7 @@ Everything is documented!
     Giving structure (and documentation!) to the properties you use in your
     code avoids confusion and allows users to interact flexibly and provide
     multiple styles of input, have those inputs validated, and allow you as a
-    developer to  set expectations for what you want to work with.
+    developer to set expectations for what you want to work with.
 
 
 **Contents:**
@@ -43,10 +43,10 @@ Lets start by making a class to organize your coffee habits.
     import properties
     class CoffeeProfile(properties.PropertyClass):
         import properties #hide
-        myName = properties.String('What should I call you?', required = True)
+        myName = properties.String('What should I call you?', required=True)
         count = properties.Int('number of coffees today')
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default = False)
-        caffeineChoice = properties.String('How do you take your caffeine?' , choices = ['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])
+        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)
+        caffeineChoice = properties.String('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])
 
 
 The :code:`CoffeeProfile` class has 4 properties, one of which is required
@@ -58,10 +58,10 @@ instantiate the class with a name.
     import properties #hide
     class CoffeeProfile(properties.PropertyClass):#hide
         import properties #hide
-        myName = properties.String('What should I call you?', required = True)#hide
+        myName = properties.String('What should I call you?', required=True)#hide
         count = properties.Int('number of coffees today')#hide
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default = False)#hide
-        caffeineChoice = properties.String('How do you take your caffeine?' , choices = ['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
+        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
+        caffeineChoice = properties.String('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
     profile = CoffeeProfile(myName = 'Bob')
     print profile.myName
 
@@ -72,10 +72,10 @@ Since a default value was provided for :code:`enoughCoffee`, the response is (na
     import properties #hide
     class CoffeeProfile(properties.PropertyClass):#hide
         import properties #hide
-        myName = properties.String('What should I call you?', required = True)#hide
+        myName = properties.String('What should I call you?', required=True)#hide
         count = properties.Int('number of coffees today')#hide
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default = False)#hide
-        caffeineChoice = properties.String('How do you take your caffeine?' , choices = ['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
+        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
+        caffeineChoice = properties.String('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
     profile = CoffeeProfile(myName = 'Bob')#hide
     print profile.enoughCoffee
 
@@ -86,10 +86,10 @@ We can set Bob's :code:`caffeineChoice`, his default is coffee
     import properties #hide
     class CoffeeProfile(properties.PropertyClass):#hide
         import properties #hide
-        myName = properties.String('What should I call you?', required = True)#hide
+        myName = properties.String('What should I call you?', required=True)#hide
         count = properties.Int('number of coffees today')#hide
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default = False)#hide
-        caffeineChoice = properties.String('How do you take your caffeine?' , choices = ['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
+        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
+        caffeineChoice = properties.String('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
     profile = CoffeeProfile(myName = 'Bob')#hide
     profile.caffeineChoice = 'coffee'
 

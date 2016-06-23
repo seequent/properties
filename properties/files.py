@@ -1,18 +1,28 @@
-from __future__ import absolute_import, unicode_literals, print_function, division
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from builtins import open
-from future import standard_library
-standard_library.install_aliases()
+import io
+import os
 import six
 
-import json, numpy as np, os, io
 from .base import Property
-from . import exceptions
+
 
 class File(Property):
+    """class properties.File
 
-    mode = 'r' #: mode for opening the file.
+    File property
+    """
+
+    mode = 'r'   # mode for opening the file.
+
+    _sphinx_prefix = 'properties.files'
 
     def validator(self, instance, value):
+        """check that the file exists and is open"""
         if hasattr(value, 'read'):
             prev = getattr(self, '_p_' + self.name, None)
             if prev is not None and value is not prev:
@@ -20,20 +30,35 @@ class File(Property):
             return value
         if isinstance(value, six.string_types) and os.path.isfile(value):
             return open(value, self.mode)
-        raise ValueError('The value for "%s" must be an open file or a string.'%self.name)
+        raise ValueError(
+            'The value for "{}" must be an open file or a string.'.format(
+                self.name))
 
 
 class Image(File):
+    """class properties.Image
+
+    PNG image file property
+    """
+
+    _sphinx_prefix = 'properties.files'
 
     def validator(self, instance, value):
-
-        import png
+        """checks that image file is PNG and gets a copy"""
+        try:
+            import png
+        except:
+            raise ImportError("Error importing png module: "
+                              "`pip install pypng`")
 
         if getattr(value, '__valid__', False):
             return value
 
-        reader = png.Reader(value)
-        reader.validate_signature()
+        if hasattr(value, 'read'):
+            png.Reader(value).validate_signature()
+        else:
+            with open(value, 'rb') as v:
+                png.Reader(v).validate_signature()
 
         output = io.BytesIO()
         output.name = 'texture.png'
@@ -45,7 +70,5 @@ class Image(File):
             fp = open(value, 'rb')
         output.write(fp.read())
         output.seek(0)
-
         fp.close()
-
         return output
