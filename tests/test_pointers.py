@@ -255,6 +255,22 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(exceptions.RequiredPropertyError,
                           lambda: rrclass.validate())
 
+    def test_repeated_plus_equals(self):
+        surf0 = MySurface()
+        surf1 = MySurface()
+        surf2 = MySurface()
+
+        class MyShapeAssertAllNew(MyShape):
+            def _on_property_change(self, name, pre, post):
+                if (isinstance(post, (list, tuple)) and
+                        isinstance(pre, (list, tuple))):
+                    for p in post:
+                        assert p not in pre
+
+        shp0 = MyShapeAssertAllNew()
+
+        shp0.sub_surfs += [surf0, surf1, surf2]
+
 
 if __name__ == '__main__':
     unittest.main()
