@@ -39,7 +39,8 @@ class Vector(Property):
         try:
             return vmath.Vector(value)
         except Exception:
-            raise ValueError('{} must be a Vector'.format(self.name))
+            raise ValueError('{}: must be Vector with '
+                             '3 elements'.format(self.name))
 
     def from_json(self, value):
         return vmath.Vector(*value)
