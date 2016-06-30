@@ -65,6 +65,14 @@ class TestPropertiesArray(unittest.TestCase):
         assert isinstance(arrays.int_matrix, np.ndarray)
         assert arrays.int_matrix.dtype.kind == 'i'
 
+    def test_nan_array(self):
+        arrays = MyClass()
+        self.assertRaises(ValueError,
+                          lambda: setattr(arrays, 'int_array',
+                                          [np.nan, 0, 2]))
+        arrays.float_array = [np.nan, 0., 1]
+        dat = arrays._properties['float_array'].serialize(arrays.float_array)
+
     def test_array_init(self):
         def f(shape, dtype):
             class MyBadClass(properties.PropertyClass):

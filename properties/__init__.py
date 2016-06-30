@@ -22,7 +22,7 @@ from .files import *
 from .spatial import *
 from . import vmath
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __author__ = '3point Science, Inc.'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2016 3point Science, Inc.'

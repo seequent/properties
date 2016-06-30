@@ -133,11 +133,16 @@ class Property(object):
                 val = [v for v in val]
             if val is not None:
                 return val
-            if scope.default is None or scope.default == []:
-                default = scope.default
+            if scope.default is None:
+                default = None
+            elif scope.repeated and isinstance(scope.default, (list, tuple)):
+                default = [scope.validator(self, d) for d in scope.default]
+            elif scope.repeated:
+                default = [scope.default]
             else:
                 default = scope.validator(self, scope.default)
-            setattr(self, '_p_' + scope.name, default)
+                if isinstance(scope, Pointer):
+                    setattr(self, '_p_' + scope.name, default)
             return default
 
         def fset(self, val):

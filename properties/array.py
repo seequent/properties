@@ -43,7 +43,9 @@ class Array(Property):
         """Convert the array data to a serialized binary format"""
         if isinstance(data.flatten()[0], np.floating):
             use_dtype = '<f4'
-            assert np.allclose(data.astype(use_dtype), data, equal_nan=True), \
+            nan_mask = ~np.isnan(data)
+            assert np.allclose(
+                    data.astype(use_dtype)[nan_mask], data[nan_mask]), \
                 'Converting the type should not screw things up.'
         elif isinstance(data.flatten()[0], np.integer):
             use_dtype = '<i4'
@@ -98,15 +100,25 @@ class Array(Property):
         proposed = np.array(proposed)
         if (proposed.dtype.kind == 'i' and
                 len(set(self.dtype).intersection(six.integer_types)) == 0):
-            raise ValueError('{}: Array type must be int'.format(self.name))
+            raise ValueError(
+                '{name}: Array type must be {type}'.format(
+                    name=self.name,
+                    type=', '.join([str(t) for t in self.dtype])
+                )
+            )
         if proposed.dtype.kind == 'f' and float not in self.dtype:
-            raise ValueError('{}: Array type must be '
-                             'float'.format(self.name))
+            raise ValueError(
+                '{name}: Array type must be {type}'.format(
+                    name=self.name,
+                    type=', '.join([str(t) for t in self.dtype])
+                )
+            )
         if len(self.shape) != proposed.ndim:
             raise ValueError(
                 '{}: Array must have {:d} dimensions ''(shape: {})'.format(
                     self.name, len(self.shape), self.shape
-                ))
+                )
+            )
         for i, s in enumerate(self.shape):
             if s != '*' and proposed.shape[i] != s:
                 raise ValueError('{}: Array dimension {:d} must be '
