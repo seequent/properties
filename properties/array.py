@@ -55,7 +55,7 @@ class Array(Property):
             raise Exception('Must be a float or an int: {}'.format(data.dtype))
 
         data_file = tempfile.NamedTemporaryFile('rb+', suffix='.dat')
-        data_file.write(data.astype(use_dtype).tobytes())
+        data.astype(use_dtype).tofile(data_file.name)
         data_file.seek(0)
         return FileProp(data_file, use_dtype)
 
@@ -68,13 +68,11 @@ class Array(Property):
         if not isinstance(value, tuple):
             raise TypeError("{}: Invalid shape - must be a tuple "
                             "(e.g. ('*',3) for an array of length-3 "
-                            "arrays)".format(value, self.name))
+                            "arrays)".format(value))
         for s in value:
             if s != '*' and not isinstance(s, six.integer_types):
                 raise TypeError("{}: Invalid shape - values "
-                                "must be '*' or int".format(
-                                    value, self.name
-                                ))
+                                "must be '*' or int".format(value))
         self._shape = value
 
     @property
@@ -88,7 +86,7 @@ class Array(Property):
         if (float not in value and
                 len(set(value).intersection(six.integer_types)) == 0):
             raise TypeError("{}: Invalid dtype - must be int "
-                            "and/or float".format(value, self.name))
+                            "and/or float".format(value))
         self._dtype = value
 
     def validator(self, instance, proposed):
