@@ -55,7 +55,7 @@ class Array(Property):
             raise Exception('Must be a float or an int: {}'.format(data.dtype))
 
         data_file = tempfile.NamedTemporaryFile('rb+', suffix='.dat')
-        data_file.write(data.astype(use_dtype).tobytes())
+        data.astype(use_dtype).tofile(data_file.name)
         data_file.seek(0)
         return FileProp(data_file, use_dtype)
 
