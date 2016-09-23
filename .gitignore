@@ -69,3 +69,5 @@ credentials
 
 # unused vmath
 vmath_ignore/
+*.sublime-project
+*.sublime-workspace
