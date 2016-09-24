@@ -21,6 +21,7 @@ from __future__ import unicode_literals
 # from .files import *
 # from .spatial import *
 from .traits import *
+from .properties import *
 # from . import vmath
 
 __version__ = '0.1.5'

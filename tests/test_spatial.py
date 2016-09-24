@@ -8,8 +8,8 @@ import properties
 import unittest
 
 
-class MyClass(properties.PropertyClass):
-    loc = properties.Vector("My location")
+class MyClass(properties.HasProperties()):
+    loc = properties.Vector3("My location")
 
 
 class TestPropertiesSpatial(unittest.TestCase):
