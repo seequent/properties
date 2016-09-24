@@ -106,6 +106,7 @@ class Property(object):
         )
 
     def get_backend(self, backend):
+        self.new_backend()  # Ensures that the backends has been instantiated.
         if backend not in self._backends:
             raise Exception(
                 'The "{backend}" backend is not supported '
@@ -119,11 +120,13 @@ class Property(object):
         return self._backends[backend](self)
 
     @classmethod
-    def new_backend(cls, backend):
+    def new_backend(cls, backend=None):
         if getattr(cls, '_backends', None) is None:
             cls._backends = {
                 "dict": None
             }
+        if backend is None:
+            return
 
         def new_backend(func):
             # print('adding {} backend'.format(backend))
@@ -302,7 +305,12 @@ def get_default_backend():
 
 
 def HasProperties(backend=None):
-    return _backends["available"][get_default_backend()]
+    if backend is None:
+        backend = get_default_backend()
+    assert backend in _backends["available"], (
+        'Backend "{}" not available.'.format(backend)
+    )
+    return _backends["available"][backend]
 
 
 # class DocumentedTrait(tr.TraitType):
@@ -336,3 +344,11 @@ def HasProperties(backend=None):
 #         return property(fget=fget, fset=fset, doc=self.help)
 
 
+
+
+import traitlets as tr
+
+
+@Integer.new_backend('traitlets')
+def get_int(prop):
+    return tr.Integer(help=prop.help)

@@ -5,13 +5,6 @@ import properties
 
 properties.set_default_backend('traitlets')
 
-import traitlets as tr
-
-
-@properties.Integer.new_backend('traitlets')
-def get_int(prop):
-    return tr.Integer(help=prop.help)
-
 
 # print properties.Integer._backends
 
@@ -19,7 +12,7 @@ def get_int(prop):
 # class CoffeeProfile(tr.HasTraits):
 #     name = tr.Integer()
 
-class CoffeeProfile(properties.HasProperties()):
+class CoffeeProfile(properties.HasProperties('dict')):
     name = properties.Integer(
         'What should I call you?',
         required=True
@@ -36,8 +29,7 @@ class CoffeeProfile(properties.HasProperties()):
     #     choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy']
     # )
 
-print CoffeeProfile._backend
-
+print CoffeeProfile()._backend
 
 
 class CoffeeProfile2(CoffeeProfile):
@@ -76,5 +68,4 @@ print [x for x in dir(profile) if not x.startswith('_')]
 
 # profile.name
 
-print profile._backend.name
-
+# print profile._backend.name
