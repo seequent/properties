@@ -302,6 +302,10 @@ class Array(Property):
     """A trait for serializable float or int arrays"""
 
     info_text = 'a list or numpy array'
+
+    # TODO: `wrapper` can be overridden in a base class or from the input.
+    #       e.g. a tuple, list or Vector3
+    #       Need to maybe turn it into a @property and only accept some things?
     wrapper = np.array
 
     @property
@@ -354,16 +358,21 @@ class Array(Property):
         if not isinstance(value, (tuple, list, np.ndarray)):
             self.error(instance, value)
         value = self.wrapper(value)
-        if (value.dtype.kind == 'i' and
-                len(set(self.dtype).intersection(integer_types)) == 0):
-            self.error(instance, value)
-        if value.dtype.kind == 'f' and float not in self.dtype:
-            self.error(instance, value)
-        if len(self.shape) != value.ndim:
-            self.error(instance, value)
-        for i, s in enumerate(self.shape):
-            if s != '*' and value.shape[i] != s:
+        if isinstance(value, np.ndarray):
+            if (value.dtype.kind == 'i' and
+                    len(set(self.dtype).intersection(integer_types)) == 0):
                 self.error(instance, value)
+            if value.dtype.kind == 'f' and float not in self.dtype:
+                self.error(instance, value)
+            if len(self.shape) != value.ndim:
+                self.error(instance, value)
+            for i, s in enumerate(self.shape):
+                if s != '*' and value.shape[i] != s:
+                    self.error(instance, value)
+        else:
+            # TODO: Here we might be dealing with a tuple or something.
+            pass
+
         return value
 
 
