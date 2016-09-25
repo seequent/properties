@@ -251,9 +251,20 @@ class Float(Integer):
 class DateTime(Property):
     """DateTime property using 'datetime.datetime'"""
 
+    info_text = 'a datetime object'
     short_date = False
 
     _sphinx_prefix = 'properties.basic'
+
+    def validate(self, instance, value):
+        if isinstance(value, datetime.datetime):
+            return value
+        if not isinstance(value, string_types):
+            self.error(value, instance)
+        try:
+            return self.from_json(value)
+        except ValueError:
+            self.error(value, instance)
 
     def as_json(self, value):
         if value is None:
@@ -266,8 +277,8 @@ class DateTime(Property):
         if value is None or value == 'None':
             return None
         if len(value) == 10:
-            return datetime.strptime(value, "%Y/%m/%d")
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+            return datetime.datetime.strptime(value, "%Y/%m/%d")
+        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
 class Array(Property):
@@ -321,21 +332,21 @@ class Array(Property):
     #         dtype=self.dtype
     #     )
 
-    def validate(self, obj, value):
+    def validate(self, instance, value):
         """Determine if array is valid based on shape and dtype"""
         if not isinstance(value, (tuple, list, np.ndarray)):
-            self.error(obj, value)
+            self.error(instance, value)
         value = self.wrapper(value)
         if (value.dtype.kind == 'i' and
                 len(set(self.dtype).intersection(integer_types)) == 0):
-            self.error(obj, value)
+            self.error(instance, value)
         if value.dtype.kind == 'f' and float not in self.dtype:
-            self.error(obj, value)
+            self.error(instance, value)
         if len(self.shape) != value.ndim:
-            self.error(obj, value)
+            self.error(instance, value)
         for i, s in enumerate(self.shape):
             if s != '*' and value.shape[i] != s:
-                self.error(obj, value)
+                self.error(instance, value)
         return value
 
 
