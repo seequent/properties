@@ -152,9 +152,6 @@ class Integer(Property):
     def from_json(self, value):
         return int(str(value))
 
-    def get_traitlets_backend(self):
-        return tr.Int()
-
 
 VECTOR_DIRECTIONS = {
     'ZERO': [0, 0, 0],
