@@ -26,12 +26,16 @@ class TestPropertiesSpatial(unittest.TestCase):
         assert np.all(opts.loc == [0, 1, 0])
         opts.loc = 'z'
         assert np.all(opts.loc == [0, 0, 1])
+        assert opts.loc.x == 0.0
+        assert opts.loc.y == 0.0
+        assert opts.loc.z == 1.0
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'loc', 'unit-x-vector'))
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'loc', 5))
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'loc', [5, 100]))
+
 
 
 if __name__ == '__main__':
