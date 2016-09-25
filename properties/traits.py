@@ -115,6 +115,17 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
         # print(name, value)
         self._backend[name] = value
 
+    @property
+    def assert_valid(self):
+        self._validating = True
+        try:
+            for k in self._props:
+                prop = self._props[k]
+                prop.assert_valid(self)
+        finally:
+            self._validating = False
+        return True
+
 
 class HasDictProperties(BaseHasProperties):
 

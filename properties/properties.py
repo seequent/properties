@@ -63,10 +63,11 @@ class Property(object):
         assert isinstance(value, bool), "Required must be a boolean."
         self._required = value
 
-    def is_valid(self, scope):
+    def assert_valid(self, scope):
         attr = getattr(scope, self.name, None)
         if (attr is None) and self.required:
             raise ValueError(self.name)
+        return True
 
     def validate(self, instance, value):
         """validates the property attributes"""
@@ -92,10 +93,12 @@ class Property(object):
 
         return property(fget=fget, fset=fset, doc=scope.help)
 
-    def as_json(self, value):
+    @staticmethod
+    def as_json(value):
         return value
 
-    def from_json(self, value):
+    @staticmethod
+    def from_json(value):
         return value
 
     def error(self, instance, value):
@@ -149,7 +152,8 @@ class Bool(Property):
             self.error(instance, value)
         return value
 
-    def from_json(self, value):
+    @staticmethod
+    def from_json(value):
         if isinstance(value, string_types):
             value = value.upper()
             if value in ('TRUE', 'Y', 'YES', 'ON'):
@@ -219,12 +223,14 @@ class Integer(Property):
         _in_bounds(self, instance, value)
         return int(value)
 
-    def as_json(self, value):
+    @staticmethod
+    def as_json(value):
         if value is None or np.isnan(value):
             return None
         return int(np.round(value))
 
-    def from_json(self, value):
+    @staticmethod
+    def from_json(value):
         return int(str(value))
 
 
@@ -239,22 +245,30 @@ class Float(Integer):
         _in_bounds(self, instance, value)
         return value
 
-    def as_json(self, value):
+    @staticmethod
+    def as_json(value):
         if value is None or np.isnan(value):
             return None
         return value
 
-    def from_json(self, value):
+    @staticmethod
+    def from_json(value):
         return float(str(value))
 
 
 class DateTime(Property):
-    """DateTime property using 'datetime.datetime'"""
+    """
+
+        DateTime property using 'datetime.datetime'
+
+        Two string formats are available:
+
+            1995/08/12
+            1995-08-12T18:00:00Z
+
+    """
 
     info_text = 'a datetime object'
-    short_date = False
-
-    _sphinx_prefix = 'properties.basic'
 
     def validate(self, instance, value):
         if isinstance(value, datetime.datetime):
@@ -266,18 +280,21 @@ class DateTime(Property):
         except ValueError:
             self.error(value, instance)
 
-    def as_json(self, value):
+    @staticmethod
+    def as_json(value):
         if value is None:
             return
-        if self.short_date:
-            return value.strftime("%Y/%m/%d")
         return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def from_json(self, value):
+    @staticmethod
+    def from_json(value):
         if value is None or value == 'None':
             return None
         if len(value) == 10:
-            return datetime.datetime.strptime(value, "%Y/%m/%d")
+            return datetime.datetime.strptime(
+                value.replace('-', '/'),
+                "%Y/%m/%d"
+            )
         return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
