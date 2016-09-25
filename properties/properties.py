@@ -140,6 +140,8 @@ class Property(object):
 
 
 class Bool(Property):
+
+    _default = False
     info_text = 'a boolean'
 
     def validate(self, instance, value):
@@ -160,6 +162,8 @@ class Bool(Property):
 
 
 class String(Property):
+
+    _default = ''
     info_text = 'a string'
 
     def validate(self, instance, value):
@@ -178,6 +182,7 @@ def _in_bounds(prop, instance, value):
 
 class Integer(Property):
 
+    _default = 0
     info_text = 'an integer'
 
     # @property
@@ -224,6 +229,8 @@ class Integer(Property):
 
 
 class Float(Integer):
+
+    _default = 0.0
     info_text = 'a float'
 
     def validate(self, instance, value):
@@ -316,7 +323,7 @@ class Array(Property):
 
     def validate(self, obj, value):
         """Determine if array is valid based on shape and dtype"""
-        if not isinstance(value, (tuple, list, self.wrapper)):
+        if not isinstance(value, (tuple, list, np.ndarray)):
             self.error(obj, value)
         value = self.wrapper(value)
         if (value.dtype.kind == 'i' and

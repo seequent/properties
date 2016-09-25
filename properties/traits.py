@@ -165,6 +165,12 @@ def HasProperties(backend=None):
     return _backends["available"][backend]
 
 
+class UidModel(HasProperties()):
+    uid = properties.String("Unique identifier", required=True)
+    title = properties.String("Title")
+    description = properties.String("Description")
+
+
 # class DocumentedTrait(tr.TraitType):
 #     """A mixin for documenting traits"""
 
