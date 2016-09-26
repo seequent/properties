@@ -113,6 +113,14 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
 
     def _set(self, name, value):
         # print(name, value)
+
+        # self._on_property_change(
+        #     dict(
+        #         name=scope.name,
+        #         value=value
+        #     )
+        # )
+
         self._backend[name] = value
 
     @property
@@ -144,6 +152,14 @@ class HasTraitProperties(BaseHasProperties):
 
     def _set(self, name, value):
         # print(name, value)
+
+        # self._on_property_change(
+        #     dict(
+        #         name=scope.name,
+        #         value=value
+        #     )
+        # )
+
         setattr(self._backend, name, value)
 
 
@@ -211,4 +227,3 @@ class UidModel(HasProperties()):
 #             return setattr(self._backend, name, value)
 
 #         return property(fget=fget, fset=fset, doc=self.help)
-

@@ -84,12 +84,6 @@ class Property(object):
         def fset(self, value):
             value = scope.validate(self, value)
             self._set(scope.name, value)
-            # self._on_property_change(
-            #     dict(
-            #         name=scope.name,
-            #         value=value
-            #     )
-            # )
 
         return property(fget=fget, fset=fset, doc=scope.help)
 
