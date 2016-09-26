@@ -30,7 +30,7 @@ class GettableProperty(object):
                     'Unknown key for property: "{}".'.format(key))
             try:
                 setattr(self, key, kwargs[key])
-            except AttributeError as e:
+            except AttributeError:
                 raise AttributeError(
                     'Cannot set property: "{}".'.format(key))
 
