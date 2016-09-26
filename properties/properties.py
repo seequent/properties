@@ -11,14 +11,13 @@ import vectormath as vmath
 import datetime
 
 
-class Property(object):
+class GettableProperty(object):
     """
         Base property class that establishes property behavior
     """
 
     info_text = 'corrected'
     name = ''
-    class_name = ''
 
     def __init__(self, help, **kwargs):
         self._base_help = help
@@ -43,6 +42,22 @@ class Property(object):
 
     def info(self):
         return self.info_text
+
+    def assert_valid(self, scope):
+        return True
+
+    def get_property(self):
+        """establishes access of property values"""
+
+        scope = self
+
+        def fget(self):
+            return self._get(scope.name)
+
+        return property(fget=fget, doc=scope.help)
+
+
+class Property(GettableProperty):
 
     @property
     def default(self):

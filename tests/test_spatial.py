@@ -37,6 +37,5 @@ class TestPropertiesSpatial(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100]))
 
 
-
 if __name__ == '__main__':
     unittest.main()

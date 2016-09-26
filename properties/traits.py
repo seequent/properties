@@ -45,7 +45,7 @@ class PropertyMetaclass(type):
         prop_dict = {
             key: value for key, value in classdict.items()
             if (
-                isinstance(value, properties.Property)
+                isinstance(value, properties.GettableProperty)
             )
         }
 
@@ -54,6 +54,9 @@ class PropertyMetaclass(type):
             backend_name = resolve("_backend_name", bases, classdict)
             backend_dict = {}
             for k, v in iteritems(prop_dict):
+                if not hasattr(v, 'get_backend'):
+                    # Gettable only properties do not have a backend.
+                    continue
                 temp = v.get_backend(backend_name)
                 if temp is not None:
                     backend_dict.update({k: temp})
