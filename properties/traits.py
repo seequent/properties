@@ -110,9 +110,12 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
     def property_names(self):
         return self._props.keys()
 
-    def _get(self, name):
+    def _get(self, name, default):
         # print(name)
-        return self._backend.get(name)
+        value = self._backend.get(name)
+        if value is None:
+            return default
+        return value
 
     def _set(self, name, value):
         # print(name, value)
@@ -126,7 +129,6 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
 
         self._backend[name] = value
 
-    @property
     def assert_valid(self):
         self._validating = True
         try:

@@ -7,32 +7,49 @@ import properties
 import unittest
 
 
-class NumPrimitive(properties.PropertyClass):
+class NumPrimitive(properties.HasProperties()):
     mycomplex = properties.Complex("its complicated")
     myfloat = properties.Float("something that floats", default=1)
-    myint = properties.Int("an integer")
+    myint = properties.Integer("an integer")
 
 
-class StrPrimitive(properties.PropertyClass):
-    abc = properties.String("a, b or c", choices=['A', 'B', 'C'])
-    vowel = properties.String("vowels", choices={
-        'VOWEL': ('A', 'E', 'I', 'O', 'U'),
-        'MAYBE': 'Y'
-    })
-    anystr = properties.String("a string!")
+class BoolPrimitive(properties.HasProperties()):
     abool = properties.Bool("True or False", default=True, required=True)
 
 
-class APrimitive(properties.PropertyClass):
-    opacity = properties.Range("My range", default=0.1,
-                               min_value=0., max_value=1.,
-                               required=True)
+class StrPrimitive(properties.HasProperties()):
+    anystr = properties.String("a string!")
+    stripstr = properties.String("a string!", strip=' ')
+    lowerstr = properties.String("a string!", change_case='lower')
+    upperstr = properties.String("a string!", change_case='upper')
+
+
+class StrChoicePrimitive(properties.HasProperties()):
+    abc = properties.StringChoice("a, b or c", choices=['A', 'B', 'C'])
+    vowel = properties.StringChoice("vowels", choices={
+        'vowel': ('a', 'e', 'i', 'o', 'u'),
+        'maybe': 'y'
+    })
+
+
+class APrimitive(properties.HasProperties()):
+    opacity = properties.Float(
+        "My range",
+        default=0.1,
+        min=0.,
+        max=1.,
+        required=True
+    )
     color = properties.Float("Not a color!")
 
 
-class AnotherPrimitive(properties.PropertyClass):
-    myrangeint = properties.RangeInt('int range', default=0,
-                                     min_value=0, max_value=10)
+class AnotherPrimitive(properties.HasProperties()):
+    myrangeint = properties.Integer(
+        'int range',
+        default=0,
+        min=0,
+        max=10
+    )
 
 
 class SomeOptions(APrimitive):
@@ -51,25 +68,20 @@ class DefaultColorOptions(APrimitive):
     color = properties.Color("This color is random", default='random')
 
 
-class MySurface(properties.PropertyClass):
-    opts = properties.Pointer("My options",
-                              ptype=SomeOptions,
-                              expose=['color'])
-
-
 class TestBasic(unittest.TestCase):
 
     def test_color(self):
 
         opts = ReqOptions()
-        self.assertRaises(properties.exceptions.RequiredPropertyError,
-                          lambda: opts.validate())
+        self.assertRaises(ValueError, opts.assert_valid)
 
-        opts = ReqDefOptions()
-        opts.validate()
+        opts = ReqDefOptions(
+            color='red',
+            opacity=0
+        )
+        opts.assert_valid()
 
         opts = SomeOptions(color='red')
-        opts.validate()
 
         # Test options
         assert opts.color == (255, 0, 0)
@@ -131,58 +143,41 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(ValueError,
                           lambda: setattr(prim, 'myrangeint', [4, 5]))
 
-    def test_inheritance(self):
-
-        S = MySurface(
-            opts={"opacity": 0.3, "color": "red"},
-        )
-
-        assert S.opts.opacity == 0.3
-        assert S.opts.color == (255, 0, 0)
-
-        S = MySurface()
-
-        assert S.opts is S.opts
-
-        S.opts.opacity = .1
-        assert S.opts.opacity == .1
-        S.opts.color = 'darkred'
-        assert S.opts.color == (139, 0, 0)
-
-        self.assertRaises(ValueError,
-                          lambda: setattr(S.opts, 'color', 'SunburnRed'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(S.opts, 'opacity', 5))
-
-    def test_setting(self):
-        S = MySurface()
-        self.assertRaises(KeyError, S.set, k=2)
-        S.set(color=[0, 0, 0])
-
     def test_string(self):
         mystr = StrPrimitive()
-        mystr.abc = 'a'
         mystr.anystr = '   A  '
-        assert mystr.abc == mystr.anystr   # ensure whitespace being stripped
-        self.assertRaises(ValueError, lambda: setattr(mystr, 'abc', 'd'))
-        assert mystr.validate()
+        assert mystr.anystr == '   A  '
+        mystr.stripstr = '  A   '
+        assert mystr.stripstr == 'A'   # ensure whitespace being stripped
+        mystr.lowerstr = '  A   '
+        assert mystr.lowerstr == '  a   '
+        mystr.upperstr = '  a   '
+        assert mystr.upperstr == '  A   '
+
+    def test_string_choice(self):
+        mystr = StrChoicePrimitive()
         mystr.vowel = 'O'
-        assert mystr.vowel == 'VOWEL'
-        mystr.vowel = ' a '
-        assert mystr.vowel == 'VOWEL'
+        assert mystr.vowel == 'vowel'
+        mystr.vowel = 'a'
+        assert mystr.vowel == 'vowel'
         mystr.vowel = 'y'
-        assert mystr.vowel == 'MAYBE'
+        assert mystr.vowel == 'maybe'
         self.assertRaises(ValueError, lambda: setattr(mystr, 'vowel', 'D'))
         mystr.vowel = 'Vowel'
-        assert mystr.vowel == 'VOWEL'
+        assert mystr.vowel == 'vowel'
+        mystr.abc = 'a'
+        assert mystr.abc == 'A'
+        mystr.abc = 'A'
+        assert mystr.abc == 'A'
+        self.assertRaises(ValueError, lambda: setattr(mystr, 'abc', 'X'))
 
     def test_bool(self):
-        opt = StrPrimitive()
+        opt = BoolPrimitive()
         assert opt.abool is True
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
         opt.abool = False
         assert opt.abool is False
-        assert opt.validate()
+        opt.assert_valid()
 
     def test_numbers(self):
         nums = NumPrimitive()

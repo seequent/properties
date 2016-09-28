@@ -15,9 +15,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-# from .array import *
 # from .base import Property, PropertyClass, Pointer, validator, classproperty
-# from .basic import *
 # from .files import *
 # from .spatial import *
 from .traits import *
