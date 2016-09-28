@@ -9,7 +9,7 @@ import unittest
 import properties
 
 
-class MyClass(properties.PropertyClass):
+class MyClass(properties.HasProperties()):
     int_array = properties.Array(
         'some ints',
         shape=('*',),
@@ -71,11 +71,11 @@ class TestPropertiesArray(unittest.TestCase):
                           lambda: setattr(arrays, 'int_array',
                                           [np.nan, 0, 2]))
         arrays.float_array = [np.nan, 0., 1]
-        dat = arrays._properties['float_array'].serialize(arrays.float_array)
+        dat = arrays._props['float_array'].serialize(arrays.float_array)
 
     def test_array_init(self):
         def f(shape, dtype):
-            class MyBadClass(properties.PropertyClass):
+            class MyBadClass(properties.HasProperties()):
                 bad_array = properties.Array(
                     "Uh oh",
                     shape=shape,
