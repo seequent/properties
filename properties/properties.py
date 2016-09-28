@@ -419,12 +419,12 @@ class Array(Property):
     def shape(self, value):
         if not isinstance(value, tuple):
             raise TypeError("{}: Invalid shape - must be a tuple "
-                             "(e.g. ('*',3) for an array of length-3 "
-                             "arrays)".format(value))
+                            "(e.g. ('*',3) for an array of length-3 "
+                            "arrays)".format(value))
         for s in value:
             if s != '*' and not isinstance(s, integer_types):
                 raise TypeError("{}: Invalid shape - values "
-                                 "must be '*' or int".format(value))
+                                "must be '*' or int".format(value))
         self._shape = value
 
     @property
@@ -438,7 +438,7 @@ class Array(Property):
         if (float not in value and
                 len(set(value).intersection(integer_types)) == 0):
             raise TypeError("{}: Invalid dtype - must be int "
-                             "and/or float".format(value))
+                            "and/or float".format(value))
         self._dtype = value
 
     def info(self):
