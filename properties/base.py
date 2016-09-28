@@ -120,9 +120,14 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
 
     def _get(self, name, default):
         # print(name)
-        value = self._backend.get(name)
-        if value is None:
-            return default
+        if name in self._backend:
+            value = self._backend[name]
+        else:
+            value = default
+        if value is basic.Undefined:
+            return None
+        # if value is None:
+        #     return default
         return value
 
     def _set(self, name, value):
@@ -146,6 +151,22 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
         finally:
             self._validating = False
         return True
+
+    def __setstate__(self, newstate):
+        # print('setting state: ', newstate)
+        for k, v in iteritems(newstate):
+            setattr(self, k, v)
+
+    def __reduce__(self):
+        props = dict()
+        for p in self._props:
+            if not hasattr(self._props[p], 'as_pickle'):
+                continue
+            value = self._props[p].as_pickle(self)
+            if value is not None:
+                props[p] = value
+        # print(props)
+        return (self.__class__, (), props)
 
 
 class HasDictProperties(BaseHasProperties):

@@ -26,6 +26,8 @@ __all__ = [
     "Color"
 ]
 
+Undefined = tr.Undefined
+
 
 class GettableProperty(object):
     """
@@ -54,6 +56,16 @@ class GettableProperty(object):
                 )
 
     @property
+    def default(self):
+        """default value of the property"""
+        return getattr(self, '_default', Undefined)
+
+    @default.setter
+    def default(self, value):
+        value = self.validate(None, value)
+        self._default = value
+
+    @property
     def help(self):
         if getattr(self, '_help', None) is None:
             self._help = self._base_help
@@ -77,16 +89,6 @@ class GettableProperty(object):
 
 
 class Property(GettableProperty):
-
-    @property
-    def default(self):
-        """default value of the property"""
-        return getattr(self, '_default', None)
-
-    @default.setter
-    def default(self, value):
-        value = self.validate(None, value)
-        self._default = value
 
     @property
     def required(self):
@@ -120,11 +122,17 @@ class Property(GettableProperty):
             value = scope.validate(self, value)
             self._set(scope.name, value)
 
-        return property(fget=fget, fset=fset, doc=scope.help)
+        def fdel(self):
+            self._set(scope.name, Undefined)
+
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
 
     @staticmethod
     def as_json(value):
         return value
+
+    def as_pickle(self, instance):
+        return self.as_json(instance._get(self.name, self.default))
 
     @staticmethod
     def from_json(value):
@@ -537,6 +545,10 @@ class Vector3(Array):
         assert value > 0.0, 'length must be positive'
         self._length = value
 
+    @staticmethod
+    def as_json(value):
+        return map(float, value.flatten())
+
     def validate(self, obj, value):
         """Determine if array is valid based on shape and dtype"""
         if isinstance(value, string_types):
@@ -577,6 +589,10 @@ class Vector2(Array):
         assert isinstance(value, float), 'length must be a float'
         assert value > 0.0, 'length must be positive'
         self._length = value
+
+    @staticmethod
+    def as_json(value):
+        return map(float, value.flatten())
 
     def validate(self, obj, value):
         """Determine if array is valid based on shape and dtype"""
