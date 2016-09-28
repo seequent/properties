@@ -25,11 +25,11 @@ class TestPropertiesSpatial(unittest.TestCase):
         opts.loc = [1.5, 0, 0]
         assert np.all(opts.loc == [1.5, 0, 0])
         opts.loc = 'x'
-        assert np.all(opts.loc == [1, 0, 0])
+        assert np.allclose(opts.loc, [1, 0, 0])
         opts.loc = 'y'
-        assert np.all(opts.loc == [0, 1, 0])
+        assert np.allclose(opts.loc, [0, 1, 0])
         opts.loc = 'z'
-        assert np.all(opts.loc == [0, 0, 1])
+        assert np.allclose(opts.loc, [0, 0, 1])
         assert opts.loc.x == 0.0
         assert opts.loc.y == 0.0
         assert opts.loc.z == 1.0
@@ -45,11 +45,11 @@ class TestPropertiesSpatial(unittest.TestCase):
         opts = Location2()
         assert opts.loc is opts.loc
         opts.loc = [1.5, 0]
-        assert np.all(opts.loc == [1.5, 0])
+        assert np.allclose(opts.loc, [1.5, 0])
         opts.loc = 'x'
-        assert np.all(opts.loc == [1, 0])
+        assert np.allclose(opts.loc, [1, 0])
         opts.loc = 'y'
-        assert np.all(opts.loc == [0, 1])
+        assert np.allclose(opts.loc, [0, 1])
         assert opts.loc.x == 0.0
         assert opts.loc.y == 1.0
         self.assertRaises(ValueError,

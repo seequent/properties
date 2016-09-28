@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import traitlets as tr
 from six import with_metaclass
 from six import iteritems
-from . import properties
+from . import basic
 
 
 __all__ = [
@@ -53,7 +53,7 @@ class PropertyMetaclass(type):
         prop_dict = {
             key: value for key, value in classdict.items()
             if (
-                isinstance(value, properties.GettableProperty)
+                isinstance(value, basic.GettableProperty)
             )
         }
 
@@ -209,9 +209,9 @@ def HasProperties(backend=None):
 
 
 class UidModel(HasProperties()):
-    uid = properties.String("Unique identifier", required=True)
-    title = properties.String("Title")
-    description = properties.String("Description")
+    uid = basic.String("Unique identifier", required=True)
+    title = basic.String("Title")
+    description = basic.String("Description")
 
 
 
