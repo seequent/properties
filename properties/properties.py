@@ -127,7 +127,9 @@ class Property(GettableProperty):
         )
 
     def get_backend(self, backend):
-        self.new_backend()  # Ensures that the backends has been instantiated.
+        # Ensures that the backend has been instantiated.
+        self.new_backend(None)
+
         if backend not in self._backends:
             raise Exception(
                 'The "{backend}" backend is not supported '
@@ -150,7 +152,6 @@ class Property(GettableProperty):
             return
 
         def new_backend(func):
-            # print('adding {} backend'.format(backend))
             cls._backends[backend] = func
         return new_backend
 

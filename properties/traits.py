@@ -151,9 +151,12 @@ class HasTraitProperties(BaseHasProperties):
     _backend_name = "traitlets"
     _backend_class = tr.HasTraits
 
-    def _get(self, name):
+    def _get(self, name, default):
         # print(name)
-        return getattr(self._backend, name)
+        value = getattr(self._backend, name)
+        if value is None:
+            return default
+        return value
 
     def _set(self, name, value):
         # print(name, value)
