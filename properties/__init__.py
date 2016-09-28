@@ -6,21 +6,13 @@ multiple styles of input, have those inputs validated, and allow you as a
 developer to set expectations for what you want to work with.
 
 import properties
-class Profile(properties.PropertyClass):
+class Profile(properties.HasProperties()):
     name = properties.String('What is your name!', required=True)
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
-# from .base import Property, PropertyClass, Pointer, validator, classproperty
-# from .files import *
-# from .spatial import *
-from .traits import *
-from .properties import *
-# from . import vmath
+from .base import *
+from .basic import *
 
 __version__ = '0.1.5'
 __author__ = '3point Science'

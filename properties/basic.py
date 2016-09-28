@@ -10,6 +10,22 @@ import numpy as np
 import vectormath as vmath
 import datetime
 
+__all__ = [
+    "GettableProperty",
+    "Property",
+    "Bool",
+    "Integer",
+    "Float",
+    "Complex",
+    "String",
+    "StringChoice",
+    "DateTime",
+    "Array",
+    "Vector3",
+    "Vector2",
+    "Color"
+]
+
 
 class GettableProperty(object):
     """
@@ -179,84 +195,6 @@ class Bool(Property):
         raise ValueError('Could not load boolean form JSON: {}'.format(value))
 
 
-class String(Property):
-
-    _default = ''
-    info_text = 'a string'
-
-    @property
-    def strip(self):
-        return getattr(self, '_strip', '')
-
-    @strip.setter
-    def strip(self, value):
-        assert isinstance(value, string_types), (
-            '`strip` property must be the string to strip'
-        )
-        self._strip = value
-
-    @property
-    def change_case(self):
-        return getattr(self, '_change_case', None)
-
-    @change_case.setter
-    def change_case(self, value):
-        assert value in (None, 'upper', 'lower'), (
-            "`change_case` property must be 'upper', 'lower' or None"
-        )
-        self._change_case = value
-
-    def validate(self, instance, value):
-        if not isinstance(value, string_types):
-            self.error(instance, value)
-        value = str(value)
-        value = value.strip(self.strip)
-        if self.change_case == 'upper':
-            value = value.upper()
-        elif self.change_case == 'lower':
-            value = value.lower()
-        return value
-
-
-class StringChoice(Property):
-
-    @property
-    def info_text(self):
-        return 'any of "{}"'.format('", "'.join(self.choices))
-
-    @property
-    def choices(self):
-        return getattr(self, '_choices', {})
-
-    @choices.setter
-    def choices(self, value):
-        if not isinstance(value, (list, tuple, dict)):
-            raise ValueError('value must be a list, tuple, or dict')
-        if isinstance(value, (list, tuple)):
-            value = {v: v for v in value}
-        for k, v in value.items():
-            if not isinstance(v, (list, tuple)):
-                value[k] = [v]
-        for k, v in value.items():
-            if not isinstance(k, string_types):
-                raise ValueError('value must be strings')
-            for val in v:
-                if not isinstance(val, string_types):
-                    raise ValueError('value must be strings')
-        self._choices = value
-
-    def validate(self, instance, value):
-        if not isinstance(value, string_types):
-            self.error(instance, value)
-        for k, v in self.choices.items():
-            if (
-                value.upper() == k.upper() or
-                value.upper() in [_.upper() for _ in v]
-               ):
-                return k
-        self.error(instance, value)
-
-
 def _in_bounds(prop, instance, value):
     if (
         (prop.min is not None and value < prop.min) or
@@ -358,6 +296,84 @@ class Complex(Property):
     @staticmethod
     def from_json(self, value):
         return complex(str(value))
+
+
+class String(Property):
+
+    _default = ''
+    info_text = 'a string'
+
+    @property
+    def strip(self):
+        return getattr(self, '_strip', '')
+
+    @strip.setter
+    def strip(self, value):
+        assert isinstance(value, string_types), (
+            '`strip` property must be the string to strip'
+        )
+        self._strip = value
+
+    @property
+    def change_case(self):
+        return getattr(self, '_change_case', None)
+
+    @change_case.setter
+    def change_case(self, value):
+        assert value in (None, 'upper', 'lower'), (
+            "`change_case` property must be 'upper', 'lower' or None"
+        )
+        self._change_case = value
+
+    def validate(self, instance, value):
+        if not isinstance(value, string_types):
+            self.error(instance, value)
+        value = str(value)
+        value = value.strip(self.strip)
+        if self.change_case == 'upper':
+            value = value.upper()
+        elif self.change_case == 'lower':
+            value = value.lower()
+        return value
+
+
+class StringChoice(Property):
+
+    @property
+    def info_text(self):
+        return 'any of "{}"'.format('", "'.join(self.choices))
+
+    @property
+    def choices(self):
+        return getattr(self, '_choices', {})
+
+    @choices.setter
+    def choices(self, value):
+        if not isinstance(value, (list, tuple, dict)):
+            raise ValueError('value must be a list, tuple, or dict')
+        if isinstance(value, (list, tuple)):
+            value = {v: v for v in value}
+        for k, v in value.items():
+            if not isinstance(v, (list, tuple)):
+                value[k] = [v]
+        for k, v in value.items():
+            if not isinstance(k, string_types):
+                raise ValueError('value must be strings')
+            for val in v:
+                if not isinstance(val, string_types):
+                    raise ValueError('value must be strings')
+        self._choices = value
+
+    def validate(self, instance, value):
+        if not isinstance(value, string_types):
+            self.error(instance, value)
+        for k, v in self.choices.items():
+            if (
+                value.upper() == k.upper() or
+                value.upper() in [_.upper() for _ in v]
+               ):
+                return k
+        self.error(instance, value)
 
 
 class DateTime(Property):
