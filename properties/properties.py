@@ -541,11 +541,11 @@ class Vector2(Array):
     """A vector trait that can define the length."""
 
     info_text = 'a list or Vector2'
-    # wrapper = vmath.Vector2
+    wrapper = vmath.Vector2
 
     @property
     def shape(self):
-        return (2,)
+        return (1, 2)
 
     @property
     def dtype(self):
