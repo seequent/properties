@@ -111,7 +111,9 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
         self._backend = self._backend_class()
         for key in kwargs:
             if key not in self.property_names:
-                raise KeyError('{}: Keyword input is not trait'.format(key))
+                raise KeyError(
+                    'Keyword input "{:s}" is not a known property'.format(key)
+                )
             setattr(self, key, kwargs[key])
 
     @property
