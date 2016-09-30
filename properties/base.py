@@ -7,6 +7,7 @@ import traitlets as tr
 from six import with_metaclass
 from six import iteritems
 from . import basic
+from . import handlers
 
 
 __all__ = [
@@ -51,11 +52,19 @@ class PropertyMetaclass(type):
             base._backend_class is not None
         ])
 
-        # Grab all the traitlets stuff
+        # Grab all the properties
         prop_dict = {
             key: value for key, value in classdict.items()
             if (
                 isinstance(value, basic.GettableProperty)
+            )
+        }
+
+        # Grab all the observers
+        observer_dict = {
+            key: value for key, value in classdict.items()
+            if (
+                isinstance(value, handlers.Observer)
             )
         }
 
@@ -77,15 +86,36 @@ class PropertyMetaclass(type):
             _props = dict()
             for base in reversed(bases):
                 if hasattr(base, '_props'):
-                    _props.update(base._props)
+                    _props.update({
+                        k: v for k, v in iteritems(base._props)
+                        # drop ones which are no longer properties
+                        if not (k not in prop_dict and k in classdict)
+                    })
             _props.update(prop_dict)
             # save these to the class
             classdict['_props'] = _props
 
-        # Overwrite the properties with @property
-        for k in prop_dict:
-            prop_dict[k].name = k
-            classdict[k] = prop_dict[k].get_property()
+            # get pointers to all inherited observers
+            _cls_observers = dict()
+            for base in reversed(bases):
+                if hasattr(base, '_cls_observers'):
+                    _cls_observers.update({
+                        k: v for k, v in iteritems(base._cls_observers)
+                        # drop ones which are no longer observers
+                        if not (k not in observer_dict and k in classdict)
+                    })
+            _cls_observers.update(observer_dict)
+            # save these to the class
+            classdict['_cls_observers'] = _cls_observers
+
+        # Overwrite properties with @property
+        for key, prop in iteritems(prop_dict):
+            prop.name = key
+            classdict[key] = prop.get_property()
+
+        # Overwrite observers with @property
+        for key, obs in iteritems(observer_dict):
+            classdict[key] = obs.get_property()
 
         # Create some better documentation
         doc_str = classdict.get('__doc__', '')
@@ -102,8 +132,10 @@ class PropertyMetaclass(type):
         newcls = super(PropertyMetaclass, mcs).__new__(
             mcs, name, bases, classdict
         )
+
+        # Save the class in the registry
         newcls._REGISTRY[name] = newcls
-        # resolve("_REGISTRY", bases, classdict)
+
         return newcls
 
 
@@ -116,6 +148,15 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
 
     def __init__(self, **kwargs):
         self._backend = self._backend_class()
+
+        # add the default listeners
+        self._listeners = dict()
+        for k, v in iteritems(self._cls_observers):
+            handlers._set_listener(self, v)
+
+        for k, v in iteritems(self._props):
+            v.startup(self)
+
         # set the defaults
         defaults = self._defaults or dict()
         for key, value in iteritems(defaults):
@@ -149,17 +190,21 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
         #     return default
         return value
 
-    def _set(self, name, value):
-        # print(name, value)
+    def _notify(self, change):
+        listeners = handlers._get_listeners(self, change)
+        for listener in listeners:
+            listener.func(self, change)
 
-        # self._on_property_change(
-        #     dict(
-        #         name=scope.name,
-        #         value=value
-        #     )
-        # )
+    def _set(self, name, value):
 
         self._backend[name] = value
+
+        self._notify(
+            dict(
+                name=name,
+                value=value
+            )
+        )
 
     def validate(self, silent=False):
         self._validating = True
@@ -208,6 +253,19 @@ class Instance(basic.Property):
         )
         self.instance_class = instance_class
         super(Instance, self).__init__(help, **kwargs)
+
+    def startup(self, instance):
+        if self.auto_create:
+            instance._set(self.name, self.instance_class())
+
+    @property
+    def auto_create(self):
+        return getattr(self, '_auto_create', False)
+
+    @auto_create.setter
+    def auto_create(self, value):
+        assert isinstance(value, bool), 'auto_create must be a boolean'
+        self._auto_create = value
 
     def validate(self, instance, value):
         if isinstance(value, self.instance_class):
@@ -272,29 +330,29 @@ class HasDictProperties(BaseHasProperties):
     _backend_class = dict
 
 
-class HasTraitProperties(BaseHasProperties):
+# class HasTraitProperties(BaseHasProperties):
 
-    _backend_name = "traitlets"
-    _backend_class = tr.HasTraits
+#     _backend_name = "traitlets"
+#     _backend_class = tr.HasTraits
 
-    def _get(self, name, default):
-        # print(name)
-        value = getattr(self._backend, name)
-        if value is None:
-            return default
-        return value
+#     def _get(self, name, default):
+#         # print(name)
+#         value = getattr(self._backend, name)
+#         if value is None:
+#             return default
+#         return value
 
-    def _set(self, name, value):
-        # print(name, value)
+#     def _set(self, name, value):
+#         # print(name, value)
 
-        # self._on_property_change(
-        #     dict(
-        #         name=scope.name,
-        #         value=value
-        #     )
-        # )
+#         # self._on_property_change(
+#         #     dict(
+#         #         name=scope.name,
+#         #         value=value
+#         #     )
+#         # )
 
-        setattr(self._backend, name, value)
+#         setattr(self._backend, name, value)
 
 
 _backends = {
@@ -302,7 +360,7 @@ _backends = {
     "available": {
         _._backend_name: _ for _ in [
             HasDictProperties,
-            HasTraitProperties
+            # HasTraitProperties
         ]
     }
 }

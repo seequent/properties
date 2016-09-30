@@ -3,7 +3,7 @@ import properties
 # properties.set_default_backend('db3')
 
 
-properties.set_default_backend('traitlets')
+# properties.set_default_backend('traitlets')
 
 
 # print properties.Integer._backends
@@ -39,6 +39,10 @@ class CoffeeProfile2(CoffeeProfile):
         required=True
     )
 
+    @properties.observe('y')
+    def _on_y_change(self, change):
+        print('y changed', change)
+
 
 class CoffeeProfile3(CoffeeProfile):
     x = properties.Integer(
@@ -52,6 +56,14 @@ class CoffeeProfile4(CoffeeProfile2, CoffeeProfile3):
         'What should I call you 42?',
         required=True
     )
+
+    @property
+    def x(self):
+        return 1
+
+    # @properties.observe('x')
+    # def _on_x_change(self, change):
+    #     print('x changed', change)
 
 # print CoffeeProfile4._backend_class
 print CoffeeProfile4._backend_class.__mro__
@@ -69,6 +81,13 @@ print [x for x in dir(profile) if not x.startswith('_')]
 
 
 print CoffeeProfile._REGISTRY
+
+assert 'x' not in CoffeeProfile4._props
+
+print('hi')
+profile.y = 2
+
+
 
 # profile.name
 

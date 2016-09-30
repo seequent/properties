@@ -14,7 +14,7 @@ class NumPrimitive(properties.HasProperties()):
 
 
 class BoolPrimitive(properties.HasProperties()):
-    abool = properties.Bool("True or False", default=True, required=True)
+    abool = properties.Bool("True or False", default=True)
 
 
 class StrPrimitive(properties.HasProperties()):
@@ -35,7 +35,6 @@ class StrChoicePrimitive(properties.HasProperties()):
 class APrimitive(properties.HasProperties()):
     opacity = properties.Float(
         "My range",
-        default=0.1,
         min=0.,
         max=1.,
         required=True
@@ -61,7 +60,7 @@ class ReqOptions(APrimitive):
 
 
 class ReqDefOptions(APrimitive):
-    color = properties.Color("My color", required=True, default='red')
+    color = properties.Color("My color", required=True)
 
 
 class DefaultColorOptions(APrimitive):
@@ -73,13 +72,13 @@ class TestBasic(unittest.TestCase):
     def test_color(self):
 
         opts = ReqOptions()
-        self.assertRaises(ValueError, opts.assert_valid)
+        self.assertRaises(ValueError, opts.validate)
 
         opts = ReqDefOptions(
             color='red',
             opacity=0
         )
-        opts.assert_valid()
+        opts.validate()
 
         opts = SomeOptions(color='red')
 
@@ -177,7 +176,7 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
         opt.abool = False
         assert opt.abool is False
-        opt.assert_valid()
+        opt.validate()
 
     def test_numbers(self):
         nums = NumPrimitive()

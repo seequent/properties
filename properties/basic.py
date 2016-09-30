@@ -92,6 +92,9 @@ class GettableProperty(object):
 
         return property(fget=fget, doc=scope.help)
 
+    def startup(self, instance):
+        pass
+
 
 class Property(GettableProperty):
 
