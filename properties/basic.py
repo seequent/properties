@@ -222,6 +222,7 @@ class Bool(Property):
 
 
 def _in_bounds(prop, instance, value):
+    """Checks if the value is in the range (min, max)"""
     if (
         (prop.min is not None and value < prop.min) or
         (prop.max is not None and value > prop.max)
