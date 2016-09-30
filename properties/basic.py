@@ -23,7 +23,8 @@ __all__ = [
     "Array",
     "Vector3",
     "Vector2",
-    "Color"
+    "Color",
+    "Undefined"
 ]
 
 Undefined = tr.Undefined
@@ -62,6 +63,10 @@ class GettableProperty(object):
 
     @default.setter
     def default(self, value):
+        if hasattr(self, 'required') and self.required:
+            raise ValueError(
+                'Default can not be specified for required properties'
+            )
         value = self.validate(None, value)
         self._default = value
 
@@ -90,6 +95,13 @@ class GettableProperty(object):
 
 class Property(GettableProperty):
 
+    def __init__(self, help, **kwargs):
+        if 'required' in kwargs:
+            self.required = kwargs.pop('required')
+        if not self.required and hasattr(self, '_class_default'):
+            self._default = self._class_default
+        super(Property, self).__init__(help, **kwargs)
+
     @property
     def required(self):
         """required properties must be set for validation to pass"""
@@ -100,10 +112,16 @@ class Property(GettableProperty):
         assert isinstance(value, bool), "Required must be a boolean."
         self._required = value
 
-    def assert_valid(self, scope):
-        attr = getattr(scope, self.name, None)
-        if (attr is None) and self.required:
-            raise ValueError(self.name)
+    def assert_valid(self, instance):
+        value = getattr(instance, self.name, None)
+        if (value is None) and self.required:
+            raise ValueError(
+                "The `{name}` property of a {cls} instance is required "
+                "and has not been set.".format(
+                    name=self.name,
+                    cls=instance.__class__.__name__
+                )
+            )
         return True
 
     def validate(self, instance, value):
@@ -140,7 +158,7 @@ class Property(GettableProperty):
 
     def error(self, instance, value):
         raise ValueError(
-            "The '{name}' trait of a {cls} instance must be {info}. "
+            "The `{name}` property of a {cls} instance must be {info}. "
             "A value of {val!r} {vtype!r} was specified.".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
@@ -182,7 +200,7 @@ class Property(GettableProperty):
 
 class Bool(Property):
 
-    _default = False
+    _class_default = False
     info_text = 'a boolean'
 
     def validate(self, instance, value):
@@ -213,7 +231,7 @@ def _in_bounds(prop, instance, value):
 
 class Integer(Property):
 
-    _default = 0
+    _class_default = 0
     info_text = 'an integer'
 
     # @property
@@ -263,7 +281,7 @@ class Integer(Property):
 
 class Float(Integer):
 
-    _default = 0.0
+    _class_default = 0.0
     info_text = 'a float'
 
     def validate(self, instance, value):
@@ -308,7 +326,7 @@ class Complex(Property):
 
 class String(Property):
 
-    _default = ''
+    _class_default = ''
     info_text = 'a string'
 
     @property

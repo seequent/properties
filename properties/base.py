@@ -13,7 +13,8 @@ __all__ = [
     "HasProperties",
     "set_default_backend",
     "get_default_backend",
-    "UidModel"
+    "UidModel",
+    "Instance"
 ]
 
 
@@ -107,8 +108,20 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
 
     _backend_class = None
 
+    _defaults = None
+
     def __init__(self, **kwargs):
         self._backend = self._backend_class()
+        # set the defaults
+        defaults = self._defaults or dict()
+        for key, value in iteritems(defaults):
+            if key not in self.property_names:
+                raise KeyError(
+                    'Default input "{:s}" is not a known property'.format(key)
+                )
+            setattr(self, key, value)
+
+        # set the keywords
         for key in kwargs:
             if key not in self.property_names:
                 raise KeyError(
@@ -144,7 +157,7 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
 
         self._backend[name] = value
 
-    def assert_valid(self):
+    def validate(self, silent=False):
         self._validating = True
         try:
             for k in self._props:
@@ -153,6 +166,18 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
         finally:
             self._validating = False
         return True
+
+    def serialize(self, using='json'):
+        assert using == 'json', "Only json is supported."
+        props = dict()
+        for p in self._props:
+            prop = self._props[p]
+            value = prop.as_json(
+                self._get(prop.name, prop.default)
+            )
+            if value is not None:
+                props[p] = value
+        return props
 
     def __setstate__(self, newstate):
         # print('setting state: ', newstate)
@@ -169,6 +194,35 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
                 props[p] = value
         # print(props)
         return (self.__class__, (), props)
+
+
+class Instance(basic.Property):
+
+    def __init__(self, help, instance_class, **kwargs):
+        assert issubclass(instance_class, BaseHasProperties), (
+            'instance_class must be a HasProperties class'
+        )
+        self.instance_class = instance_class
+        super(Instance, self).__init__(help, **kwargs)
+
+    def validate(self, instance, value):
+        if isinstance(value, self.instance_class):
+            return value
+        else:
+            return self.instance_class(value)
+
+    def assert_valid(self, instance):
+        valid = super(Instance, self).assert_valid(instance)
+        if valid is False:
+            return valid
+        value = getattr(instance, self.name, None)
+        value.validate()
+
+    @staticmethod
+    def as_json(value):
+        if value is not None:
+            return value.serialize(using='json')
+        return None
 
 
 class HasDictProperties(BaseHasProperties):

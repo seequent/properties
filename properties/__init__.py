@@ -13,6 +13,7 @@ class Profile(properties.HasProperties()):
 
 from .base import *
 from .basic import *
+from .utils import *
 
 __version__ = '0.1.5'
 __author__ = '3point Science'
