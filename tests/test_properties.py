@@ -17,6 +17,7 @@ class CoffeeProfile(properties.HasProperties('dict')):
         'What should I call you?',
         required=True
     )
+    _REGISTRY = dict()
     # count = properties.Integer(
     #     'number of coffees today'
     # )
@@ -65,6 +66,9 @@ print profile._backend
 print profile.name
 
 print [x for x in dir(profile) if not x.startswith('_')]
+
+
+print CoffeeProfile._REGISTRY
 
 # profile.name
 

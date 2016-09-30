@@ -14,7 +14,8 @@ __all__ = [
     "set_default_backend",
     "get_default_backend",
     "UidModel",
-    "Instance"
+    "Instance",
+    "List"
 ]
 
 
@@ -101,6 +102,8 @@ class PropertyMetaclass(type):
         newcls = super(PropertyMetaclass, mcs).__new__(
             mcs, name, bases, classdict
         )
+        newcls._REGISTRY[name] = newcls
+        # resolve("_REGISTRY", bases, classdict)
         return newcls
 
 
@@ -109,6 +112,7 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
     _backend_class = None
 
     _defaults = None
+    _REGISTRY = dict()
 
     def __init__(self, **kwargs):
         self._backend = self._backend_class()
@@ -225,6 +229,43 @@ class Instance(basic.Property):
         return None
 
 
+class List(basic.Property):
+
+    def __init__(self, help, instance_class, **kwargs):
+        assert issubclass(instance_class, BaseHasProperties), (
+            'instance_class must be a HasProperties class'
+        )
+        self.instance_class = instance_class
+        super(List, self).__init__(help, **kwargs)
+
+    def validate(self, instance, value):
+        if not isinstance(value, (tuple, list)):
+            self.error(instance, value)
+        out = []
+        for v in value:
+            if isinstance(v, self.instance_class):
+                out += [v]
+            else:
+                out += [self.instance_class(v)]
+        return out
+
+    def assert_valid(self, instance):
+        valid = super(List, self).assert_valid(instance)
+        if valid is False:
+            return valid
+        value = getattr(instance, self.name, None)
+        if value is None:
+            return True
+        for v in value:
+            v.validate()
+
+    @staticmethod
+    def as_json(value):
+        if value is not None:
+            return [v.serialize(using='json') for v in value]
+        return None
+
+
 class HasDictProperties(BaseHasProperties):
 
     _backend_name = "dict"
@@ -277,6 +318,7 @@ def get_default_backend():
 
 
 def HasProperties(backend=None):
+
     if backend is None:
         backend = get_default_backend()
     assert backend in _backends["available"], (
