@@ -15,6 +15,10 @@ class NumPrimitive(properties.HasProperties()):
 
 class BoolPrimitive(properties.HasProperties()):
     abool = properties.Bool("True or False", default=True)
+    athing = properties.Union("", (
+        properties.String("a string"),
+        properties.Bool("temp")
+    ))
 
 
 class StrPrimitive(properties.HasProperties()):
@@ -176,6 +180,10 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
         opt.abool = False
         assert opt.abool is False
+        opt.athing = 'hi'
+        assert opt.athing == 'hi'
+        opt.athing = True
+        assert opt.athing is True
         opt.validate()
 
     def test_numbers(self):
