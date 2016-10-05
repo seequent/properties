@@ -167,8 +167,15 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
             setattr(self, key, value)
 
         # set the keywords
+        self.exclusive_kwargs = kwargs.pop(
+            'exclusive_kwargs', getattr(self, 'exclusive_kwargs', False)
+        )
+
         for key in kwargs:
-            if key not in self.property_names:
+            if (
+                (self.exclusive_kwargs and key not in self.property_names) or
+                not hasattr(self, key)
+            ):
                 raise KeyError(
                     'Keyword input "{:s}" is not a known property'.format(key)
                 )
