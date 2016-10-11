@@ -88,6 +88,13 @@ print('hi')
 profile.y = 2
 
 
+def temp(inst, change):
+    print('temp', inst, change)
+
+properties.observe(profile, 'y', temp)
+
+
+profile.y = 3
 
 # profile.name
 

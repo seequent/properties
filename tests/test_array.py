@@ -71,7 +71,10 @@ class TestPropertiesArray(unittest.TestCase):
                           lambda: setattr(arrays, 'int_array',
                                           [np.nan, 0, 2]))
         arrays.float_array = [np.nan, 0., 1]
-        dat = arrays._props['float_array'].serialize(arrays.float_array)
+        x = arrays.float_array
+        assert isinstance(x, np.ndarray)
+        assert np.isnan(x[0])
+        assert np.all(x[1:] == [0, 1])
 
     def test_array_init(self):
         def f(shape, dtype):

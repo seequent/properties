@@ -1,6 +1,7 @@
 from functools import wraps
 from six import string_types
 
+
 __all__ = [
     "observe"
 ]
@@ -27,8 +28,13 @@ def _get_listeners(instance, change):
 
 
 class Observer(object):
+    """
+        Acts as a listener on an properties instance.
+    """
 
-    # kind = 'change'
+    # This is used for the type of observer
+    # kind = 'all'  # not currently implemented
+
     @property
     def names(self):
         return getattr(self, '_names')
@@ -54,8 +60,30 @@ class Observer(object):
 
 def observe(names_or_instance, names=None, func=None):
     """
-        Observe a change in a named property
+        Observe a change in a named property.
+
+        You can use this inside a class as a wrapper, which will
+        be applied to all class instances:
+
+        .. code::
+
+            @properties.observe('variable_x')
+            def class_method(self, change):
+                print(change)
+
+        or you can use it for a single properties instance:
+
+        .. code::
+
+            properties.observe(my_props, 'variable_x', func)
+
+        Where :code:`func` takes an instance and a change notification.
+
     """
 
     if names is None and func is None:
         return Observer(names_or_instance)
+
+    observer = Observer(names)(func)
+    _set_listener(names_or_instance, observer)
+    return observer
