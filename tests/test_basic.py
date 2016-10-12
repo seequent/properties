@@ -131,6 +131,8 @@ class TestBasic(unittest.TestCase):
         assert opts.color == (255, 255, 255)
         opts.color = [50, 50, 50]
         assert opts.color == (50, 50, 50)
+        opts.color = np.r_[50, 50, 50]
+        assert opts.color == (50, 50, 50)
         opts.color = 'random'
         assert len(opts.color) == 3
         self.assertRaises(ValueError,
@@ -195,6 +197,24 @@ class TestBasic(unittest.TestCase):
         assert mystr.upperstr == '  A   '
 
     def test_string_choice(self):
+
+        # bad `choice` __init__
+        self.assertRaises(
+            ValueError, properties.StringChoice, "a choice",
+            choices=2
+        )
+        self.assertRaises(
+            ValueError, properties.StringChoice, "a choice",
+            choices=np.r_['a', 'b']
+        )
+        self.assertRaises(
+            ValueError, properties.StringChoice, "a choice",
+            choices=['a', 1]
+        )
+        self.assertRaises(
+            ValueError, properties.StringChoice, "a choice",
+            choices={'a': ['a', 1]}
+        )
         mystr = StrChoicePrimitive()
         mystr.vowel = 'O'
         assert mystr.vowel == 'vowel'
@@ -203,6 +223,7 @@ class TestBasic(unittest.TestCase):
         mystr.vowel = 'y'
         assert mystr.vowel == 'maybe'
         self.assertRaises(ValueError, lambda: setattr(mystr, 'vowel', 'D'))
+        self.assertRaises(ValueError, lambda: setattr(mystr, 'vowel', 1))
         mystr.vowel = 'Vowel'
         assert mystr.vowel == 'vowel'
         mystr.abc = 'a'

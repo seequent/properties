@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import traitlets as tr
 from six import with_metaclass
 from six import iteritems
 from . import basic
@@ -18,37 +17,9 @@ __all__ = [
 ]
 
 
-def resolve(attr, bases, classdict):
-    # TODO: ensure this follows the correct mro??
-    if attr in classdict:
-        return classdict[attr]
-    for base in bases:
-        if hasattr(base, attr):
-            return getattr(base, attr)
-
-
 class PropertyMetaclass(type):
 
     def __new__(mcs, name, bases, classdict):
-
-        def sphinx(trait_name, trait):
-            if isinstance(trait, tr.TraitType) and hasattr(trait.sphinx):
-                return trait.sphinx(trait_name)
-            return (
-                ':param {name}: {doc}\n:type {name}: '
-                ':class:`{cls} <.{cls}>`'.format(
-                    name=trait_name,
-                    doc=trait.help,
-                    cls=trait.__class__.__name__
-                )
-            )
-
-        # Find all of the previous traits bases
-        backend_class = tuple([
-            base._backend_class for base in bases if
-            hasattr(base, '_backend_class') and
-            base._backend_class is not None
-        ])
 
         # Grab all the properties
         prop_dict = {
@@ -66,45 +37,32 @@ class PropertyMetaclass(type):
             )
         }
 
-        # Create a new backend class and merge with previous
-        if backend_class:
-            backend_name = resolve("_backend_name", bases, classdict)
-            backend_dict = {}
-            for k, v in iteritems(prop_dict):
-                if not hasattr(v, 'get_backend'):
-                    # Gettable only properties do not have a backend.
-                    continue
-                temp = v.get_backend(backend_name)
-                if temp is not None:
-                    backend_dict.update({k: temp})
-            my_backend = type(str(name),  backend_class, backend_dict)
-            classdict["_backend_class"] = my_backend
+        # get pointers to all inherited properties
+        _props = dict()
+        for base in reversed(bases):
+            if hasattr(base, '_props'):
+                _props.update({
+                    k: v for k, v in iteritems(base._props)
+                    # drop ones which are no longer properties
+                    if not (k not in prop_dict and k in classdict)
+                })
+        # Overwrite with this classes properties
+        _props.update(prop_dict)
+        # save these to the class
+        classdict['_props'] = _props
 
-            # get pointers to all inherited properties
-            _props = dict()
-            for base in reversed(bases):
-                if hasattr(base, '_props'):
-                    _props.update({
-                        k: v for k, v in iteritems(base._props)
-                        # drop ones which are no longer properties
-                        if not (k not in prop_dict and k in classdict)
-                    })
-            _props.update(prop_dict)
-            # save these to the class
-            classdict['_props'] = _props
-
-            # get pointers to all inherited observers
-            _cls_observers = dict()
-            for base in reversed(bases):
-                if hasattr(base, '_cls_observers'):
-                    _cls_observers.update({
-                        k: v for k, v in iteritems(base._cls_observers)
-                        # drop ones which are no longer observers
-                        if not (k not in observer_dict and k in classdict)
-                    })
-            _cls_observers.update(observer_dict)
-            # save these to the class
-            classdict['_cls_observers'] = _cls_observers
+        # get pointers to all inherited observers
+        _cls_observers = dict()
+        for base in reversed(bases):
+            if hasattr(base, '_cls_observers'):
+                _cls_observers.update({
+                    k: v for k, v in iteritems(base._cls_observers)
+                    # drop ones which are no longer observers
+                    if not (k not in observer_dict and k in classdict)
+                })
+        _cls_observers.update(observer_dict)
+        # save these to the class
+        classdict['_cls_observers'] = _cls_observers
 
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
@@ -117,12 +75,11 @@ class PropertyMetaclass(type):
 
         # Create some better documentation
         doc_str = classdict.get('__doc__', '')
-        trts = {
-            key: value for key, value in prop_dict.items()
-            if isinstance(value, tr.TraitType)
-        }
+        # TODO:
+        #       This will probably be more sphinx like documentation,
+        #       it may depend on the environment e.g. __IPYTHON__
         doc_str += '\n'.join(
-            (value.sphinx(key) for key, value in trts.items())
+            (value.help for key, value in iteritems(_props))
         )
         classdict["__doc__"] = __doc__
 
@@ -333,36 +290,3 @@ class UidModel(HasProperties):
     uid = basic.String("Unique identifier", required=True)
     title = basic.String("Title")
     description = basic.String("Description")
-
-
-
-
-# class DocumentedTrait(tr.TraitType):
-#     """A mixin for documenting traits"""
-
-#     sphinx_extra = ''
-
-#     @property
-#     def sphinx_class(self):
-#         return ':class:`{cls} <.{cls}>`'.format(cls=self.__class__.__name__)
-
-#     def sphinx(self, name):
-#         if not isinstance(self, tr.TraitType):
-#             return ''
-#         return (
-#             ':param {name}: {doc}\n:type {name}: {cls}'.format(
-#                 name=name,
-#                 doc=self.help + self.sphinx_extra,
-#                 cls=self.sphinx_class
-#             )
-#         )
-
-#     def get_property(self, name):
-
-#         def fget(self):
-#             return getattr(self._backend, name)
-
-#         def fset(self, value):
-#             return setattr(self._backend, name, value)
-
-#         return property(fget=fget, fset=fset, doc=self.help)

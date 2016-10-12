@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import traitlets as tr
+from traitlets import Undefined
 from six import integer_types
 from six import string_types
 import numpy as np
@@ -27,8 +27,6 @@ __all__ = [
     "Color",
     "Undefined"
 ]
-
-Undefined = tr.Undefined
 
 
 class GettableProperty(object):
@@ -660,20 +658,17 @@ class Vector2(Array):
 
 
 class Color(Property):
-    """class properties.Color
-
-    Color property, allowed inputs are RBG, hex, named color, or
-    'random' for random color. This property converts all these to RBG.
+    """
+        Color property, allowed inputs are RBG, hex, named color, or
+        'random' for random color. This property converts all these to RBG.
     """
 
-    _sphinx_prefix = 'properties.basic'
-
-    @property
-    def doc(self):
-        if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc
-            self._doc += ', Format: RGB, hex, or predefined color'
-        return self._doc
+    # @property
+    # def doc(self):
+    #     if getattr(self, '_doc', None) is None:
+    #         self._doc = self._base_doc
+    #         self._doc += ', Format: RGB, hex, or predefined color'
+    #     return self._doc
 
     def validate(self, instance, value):
         """check if input is valid color and converts to RBG"""
@@ -693,7 +688,7 @@ class Color(Property):
                 value = [
                     int(value[i:i + 6 // 3], 16) for i in range(0, 6, 6 // 3)
                 ]
-            except ValueError as e:
+            except ValueError:
                 raise ValueError(
                     '{}: Hex color must be base 16 (0-F)'.format(value))
 
@@ -774,8 +769,3 @@ COLORS_NAMED = dict(
     wheat="F5DEB3", white="FFFFFF", whitesmoke="F5F5F5",
     yellow="FFFF00", yellowgreen="9ACD32"
 )
-
-
-@Integer.new_backend('traitlets')
-def get_int(prop):
-    return tr.Integer(help=prop.help)

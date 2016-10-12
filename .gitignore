@@ -71,3 +71,4 @@ credentials
 vmath_ignore/
 *.sublime-project
 *.sublime-workspace
+cover/*

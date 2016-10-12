@@ -12,7 +12,7 @@ import properties
 # class CoffeeProfile(tr.HasTraits):
 #     name = tr.Integer()
 
-class CoffeeProfile(properties.HasProperties('dict')):
+class CoffeeProfile(properties.HasProperties):
     name = properties.Integer(
         'What should I call you?',
         required=True
