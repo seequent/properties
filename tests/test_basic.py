@@ -4,16 +4,18 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import properties
+import numpy as np
 import unittest
+import cPickle
 
 
-class NumPrimitive(properties.HasProperties()):
+class NumPrimitive(properties.HasProperties):
     mycomplex = properties.Complex("its complicated")
     myfloat = properties.Float("something that floats", default=1)
     myint = properties.Integer("an integer")
 
 
-class BoolPrimitive(properties.HasProperties()):
+class BoolPrimitive(properties.HasProperties):
     abool = properties.Bool("True or False", default=True)
     athing = properties.Union("", (
         properties.String("a string"),
@@ -21,14 +23,14 @@ class BoolPrimitive(properties.HasProperties()):
     ))
 
 
-class StrPrimitive(properties.HasProperties()):
+class StrPrimitive(properties.HasProperties):
     anystr = properties.String("a string!")
     stripstr = properties.String("a string!", strip=' ')
     lowerstr = properties.String("a string!", change_case='lower')
     upperstr = properties.String("a string!", change_case='upper')
 
 
-class StrChoicePrimitive(properties.HasProperties()):
+class StrChoicePrimitive(properties.HasProperties):
     abc = properties.StringChoice("a, b or c", choices=['A', 'B', 'C'])
     vowel = properties.StringChoice("vowels", choices={
         'vowel': ('a', 'e', 'i', 'o', 'u'),
@@ -36,7 +38,7 @@ class StrChoicePrimitive(properties.HasProperties()):
     })
 
 
-class APrimitive(properties.HasProperties()):
+class APrimitive(properties.HasProperties):
     opacity = properties.Float(
         "My range",
         min=0.,
@@ -46,13 +48,21 @@ class APrimitive(properties.HasProperties()):
     color = properties.Float("Not a color!")
 
 
-class AnotherPrimitive(properties.HasProperties()):
+class AnotherPrimitive(properties.HasProperties):
     myrangeint = properties.Integer(
         'int range',
         default=0,
         min=0,
         max=10
     )
+
+
+class Location2(properties.HasProperties):
+    loc = properties.Vector2("My location")
+
+
+class Location3(properties.HasProperties):
+    loc = properties.Vector3("My location")
 
 
 class SomeOptions(APrimitive):
@@ -69,6 +79,33 @@ class ReqDefOptions(APrimitive):
 
 class DefaultColorOptions(APrimitive):
     color = properties.Color("This color is random", default='random')
+
+
+class ThingWithOptions(properties.HasProperties):
+    opts = properties.Instance("My options", SomeOptions)
+
+
+class MyArray(properties.HasProperties):
+    int_array = properties.Array(
+        'some ints',
+        shape=('*',),
+        dtype=int
+    )
+    float_array = properties.Array(
+        'some floats',
+        shape=('*',),
+        dtype=float
+    )
+    flexible_array = properties.Array(
+        'some numbers',
+        shape=('*',),
+        dtype=(float, int)
+    )
+    int_matrix = properties.Array(
+        '3x3x3 matrix',
+        shape=(3, 3, 3),
+        dtype=int
+    )
 
 
 class TestBasic(unittest.TestCase):
@@ -191,6 +228,120 @@ class TestBasic(unittest.TestCase):
         nums.mycomplex = 1.
         assert type(nums.mycomplex) == complex
         # assert
+
+    def test_instance(self):
+        opts = SomeOptions(color='red')
+        sfc = ThingWithOptions(opts=opts)
+        assert sfc.opts.color == (255, 0, 0)
+
+    def test_vector3(self):
+
+        opts = Location3()
+        assert opts.loc is opts.loc
+        opts.loc = [1.5, 0, 0]
+        assert np.all(opts.loc == [1.5, 0, 0])
+        opts.loc = 'x'
+        assert np.allclose(opts.loc, [1, 0, 0])
+        opts.loc = 'y'
+        assert np.allclose(opts.loc, [0, 1, 0])
+        opts.loc = 'z'
+        assert np.allclose(opts.loc, [0, 0, 1])
+        assert opts.loc.x == 0.0
+        assert opts.loc.y == 0.0
+        assert opts.loc.z == 1.0
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 5))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', [5, 100]))
+
+    def test_vector2(self):
+
+        opts = Location2()
+        assert opts.loc is opts.loc
+        opts.loc = [1.5, 0]
+        assert np.allclose(opts.loc, [1.5, 0])
+        opts.loc = 'x'
+        assert np.allclose(opts.loc, [1, 0])
+        opts.loc = 'y'
+        assert np.allclose(opts.loc, [0, 1])
+        assert opts.loc.x == 0.0
+        assert opts.loc.y == 1.0
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 'z'))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 5))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', [5, 100, 0]))
+
+    def test_pickle(self):
+        x = Location2()
+        del x.loc
+        x.loc = [7, 2]
+
+        xp = cPickle.loads(cPickle.dumps(x))
+        assert xp.loc.x == 7
+        assert xp.loc.y == 2
+
+    def test_array(self):
+
+        arrays = MyArray()
+        self.assertRaises(ValueError,
+                          lambda: setattr(arrays, 'int_array', [.5, .5]))
+        self.assertRaises(ValueError,
+                          lambda: setattr(arrays, 'float_array', [0, 1]))
+        self.assertRaises(ValueError,
+                          lambda: setattr(arrays, 'float_array', [[0, 1]]))
+        self.assertRaises(ValueError,
+                          lambda: setattr(arrays, 'int_matrix', [0, 1]))
+        self.assertRaises(ValueError,
+                          lambda: setattr(arrays, 'int_matrix', [[[0, 1]]]))
+        arrays.int_array = [1, 2, 3]
+        assert isinstance(arrays.int_array, np.ndarray)
+        assert arrays.int_array.dtype.kind == 'i'
+        arrays.float_array = [1., 2., 3.]
+        assert isinstance(arrays.float_array, np.ndarray)
+        assert arrays.float_array.dtype.kind == 'f'
+        arrays.flexible_array = arrays.float_array
+        assert arrays.flexible_array is not arrays.float_array
+        assert arrays.flexible_array.dtype.kind == 'f'
+        arrays.flexible_array = arrays.int_array
+        assert arrays.flexible_array is not arrays.int_array
+        assert arrays.flexible_array.dtype.kind == 'i'
+        arrays.int_matrix = [[[1, 2, 3], [2, 3, 4], [3, 4, 5]],
+                             [[2, 3, 4], [3, 4, 5], [1, 2, 3]],
+                             [[3, 4, 5], [1, 2, 3], [2, 3, 4]]]
+        assert isinstance(arrays.int_matrix, np.ndarray)
+        assert arrays.int_matrix.dtype.kind == 'i'
+
+    def test_nan_array(self):
+        arrays = MyArray()
+        self.assertRaises(ValueError,
+                          lambda: setattr(arrays, 'int_array',
+                                          [np.nan, 0, 2]))
+        arrays.float_array = [np.nan, 0., 1]
+        x = arrays.float_array
+        assert isinstance(x, np.ndarray)
+        assert np.isnan(x[0])
+        assert np.all(x[1:] == [0, 1])
+
+    def test_array_init(self):
+        def f(shape, dtype):
+            class MyBadClass(properties.HasProperties):
+                bad_array = properties.Array(
+                    "Uh oh",
+                    shape=shape,
+                    dtype=dtype
+                )
+        self.assertRaises(TypeError, lambda: f(5, int))
+        self.assertRaises(TypeError, lambda: f((5, 'any'), int))
+        self.assertRaises(TypeError, lambda: f(('*', 3), str))
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,8 +12,6 @@ from . import handlers
 
 __all__ = [
     "HasProperties",
-    "set_default_backend",
-    "get_default_backend",
     "UidModel",
     "Instance",
     "List"
@@ -139,10 +137,10 @@ class PropertyMetaclass(type):
         return newcls
 
 
-class BaseHasProperties(with_metaclass(PropertyMetaclass)):
+class HasProperties(with_metaclass(PropertyMetaclass)):
 
-    _backend_class = None
-
+    _backend_name = "dict"
+    _backend_class = dict
     _defaults = None
     _REGISTRY = dict()
 
@@ -174,7 +172,7 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
         for key in kwargs:
             if (
                 (self.exclusive_kwargs and key not in self.property_names) or
-                not hasattr(self, key)
+                (not hasattr(self, key) and key not in self.property_names)
             ):
                 raise KeyError(
                     'Keyword input "{:s}" is not a known property'.format(key)
@@ -255,7 +253,7 @@ class BaseHasProperties(with_metaclass(PropertyMetaclass)):
 class Instance(basic.Property):
 
     def __init__(self, help, instance_class, **kwargs):
-        assert issubclass(instance_class, BaseHasProperties), (
+        assert issubclass(instance_class, HasProperties), (
             'instance_class must be a HasProperties class'
         )
         self.instance_class = instance_class
@@ -297,7 +295,7 @@ class Instance(basic.Property):
 class List(basic.Property):
 
     def __init__(self, help, instance_class, **kwargs):
-        assert issubclass(instance_class, BaseHasProperties), (
+        assert issubclass(instance_class, HasProperties), (
             'instance_class must be a HasProperties class'
         )
         self.instance_class = instance_class
@@ -331,68 +329,7 @@ class List(basic.Property):
         return None
 
 
-class HasDictProperties(BaseHasProperties):
-
-    _backend_name = "dict"
-    _backend_class = dict
-
-
-# class HasTraitProperties(BaseHasProperties):
-
-#     _backend_name = "traitlets"
-#     _backend_class = tr.HasTraits
-
-#     def _get(self, name, default):
-#         # print(name)
-#         value = getattr(self._backend, name)
-#         if value is None:
-#             return default
-#         return value
-
-#     def _set(self, name, value):
-#         # print(name, value)
-
-#         # self._on_property_change(
-#         #     dict(
-#         #         name=scope.name,
-#         #         value=value
-#         #     )
-#         # )
-
-#         setattr(self._backend, name, value)
-
-
-_backends = {
-    "default": "dict",
-    "available": {
-        _._backend_name: _ for _ in [
-            HasDictProperties,
-            # HasTraitProperties
-        ]
-    }
-}
-
-
-def set_default_backend(backend):
-    assert backend in _backends["available"]
-    _backends["default"] = backend
-
-
-def get_default_backend():
-    return _backends["default"]
-
-
-def HasProperties(backend=None):
-
-    if backend is None:
-        backend = get_default_backend()
-    assert backend in _backends["available"], (
-        'Backend "{}" not available.'.format(backend)
-    )
-    return _backends["available"][backend]
-
-
-class UidModel(HasProperties()):
+class UidModel(HasProperties):
     uid = basic.String("Unique identifier", required=True)
     title = basic.String("Title")
     description = basic.String("Description")

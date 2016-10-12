@@ -6,7 +6,7 @@ multiple styles of input, have those inputs validated, and allow you as a
 developer to set expectations for what you want to work with.
 
 import properties
-class Profile(properties.HasProperties()):
+class Profile(properties.HasProperties):
     name = properties.String('What is your name!', required=True)
 
 """
