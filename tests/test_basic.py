@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import properties
 import numpy as np
 import unittest
-import cPickle
+import pickle
 
 
 class NumPrimitive(properties.HasProperties):
@@ -434,7 +434,7 @@ class TestBasic(unittest.TestCase):
         del x.loc
         x.loc = [7, 2]
 
-        xp = cPickle.loads(cPickle.dumps(x))
+        xp = pickle.loads(pickle.dumps(x))
         assert xp.loc.x == 7
         assert xp.loc.y == 2
 
