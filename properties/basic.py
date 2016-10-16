@@ -3,12 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from traitlets import Undefined
 from six import integer_types
 from six import string_types
 import numpy as np
 import vectormath as vmath
 import datetime
+from . import utils
 
 __all__ = [
     "GettableProperty",
@@ -27,6 +27,8 @@ __all__ = [
     "Color",
     "Undefined"
 ]
+
+Undefined = utils.Sentinel('Undefined', 'Undefined value for properties.')
 
 
 class GettableProperty(object):

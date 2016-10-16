@@ -46,3 +46,9 @@ def defaults(func):
         return defaults
 
     return func_wrapper
+
+
+class Sentinel(object):
+    def __init__(self, name, help):
+        self.name = name
+        self.help = help
