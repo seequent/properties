@@ -7,16 +7,16 @@ from distutils.core import setup
 from setuptools import find_packages
 
 CLASSIFIERS = [
-'Development Status :: 4 - Beta',
-'Programming Language :: Python',
-'Topic :: Scientific/Engineering',
-'Topic :: Scientific/Engineering :: Mathematics',
-'Topic :: Scientific/Engineering :: Physics',
-'Operating System :: Microsoft :: Windows',
-'Operating System :: POSIX',
-'Operating System :: Unix',
-'Operating System :: MacOS',
-'Natural Language :: English',
+    'Development Status :: 4 - Beta',
+    'Programming Language :: Python',
+    'Topic :: Scientific/Engineering',
+    'Topic :: Scientific/Engineering :: Mathematics',
+    'Topic :: Scientific/Engineering :: Physics',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX',
+    'Operating System :: Unix',
+    'Operating System :: MacOS',
+    'Natural Language :: English',
 ]
 
 with open("README.rst") as f:
@@ -26,11 +26,11 @@ setup(
     name="properties",
     version="0.1.5",
     packages=find_packages(),
-    install_requires=['numpy>=1.7',
-                      'pypng',
-                      'future',
-                      'six',
-                     ],
+    install_requires=[
+        'numpy>=1.7',
+        'future',
+        'six',
+    ],
     author="3point Science",
     author_email="info@3ptscience.com",
     description="properties",
