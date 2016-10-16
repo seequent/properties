@@ -66,7 +66,7 @@ class Location3(properties.HasProperties):
 
 
 class SomeOptions(APrimitive):
-    color = properties.Color("My color")
+    color = properties.Color("My color", default='blue')
 
 
 class ReqOptions(APrimitive):
@@ -82,7 +82,11 @@ class DefaultColorOptions(APrimitive):
 
 
 class ThingWithOptions(properties.HasProperties):
-    opts = properties.Instance("My options", SomeOptions)
+    opts = properties.Instance("My options", SomeOptions, auto_create=True)
+    moreopts = properties.List(
+        "List of options",
+        SomeOptions
+    )
 
 
 class MyArray(properties.HasProperties):
@@ -252,8 +256,14 @@ class TestBasic(unittest.TestCase):
 
     def test_instance(self):
         opts = SomeOptions(color='red')
-        sfc = ThingWithOptions(opts=opts)
-        assert sfc.opts.color == (255, 0, 0)
+        twop = ThingWithOptions(opts=opts)
+        assert twop.opts.color == (255, 0, 0)
+
+        twop = ThingWithOptions()
+        # auto create the options.
+        assert twop.opts.color == (0, 0, 255)
+
+        assert len(twop.moreopts) == 0
 
     def test_vector3(self):
 
