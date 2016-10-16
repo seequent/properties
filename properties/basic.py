@@ -158,46 +158,18 @@ class Property(GettableProperty):
     def from_json(value):
         return value
 
-    def error(self, instance, value):
-        raise ValueError(
+    def error(self, instance, value, error=ValueError, extra=''):
+        raise error(
             "The `{name}` property of a {cls} instance must be {info}. "
-            "A value of {val!r} {vtype!r} was specified.".format(
+            "A value of {val!r} {vtype!r} was specified. {extra}".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
                 info=self.info(),
                 val=value,
-                vtype=type(value)
+                vtype=type(value),
+                extra=extra,
             )
         )
-
-    def get_backend(self, backend):
-        # Ensures that the backend has been instantiated.
-        self.new_backend(None)
-
-        if backend not in self._backends:
-            raise Exception(
-                'The "{backend}" backend is not supported '
-                'for a {cls} property.'.format(
-                    backend=backend,
-                    cls=self.__class__.__name__
-                )
-            )
-        if self._backends[backend] is None:
-            return None
-        return self._backends[backend](self)
-
-    @classmethod
-    def new_backend(cls, backend=None):
-        if getattr(cls, '_backends', None) is None:
-            cls._backends = {
-                "dict": None
-            }
-        if backend is None:
-            return
-
-        def new_backend(func):
-            cls._backends[backend] = func
-        return new_backend
 
 
 class Union(Property):
@@ -583,12 +555,14 @@ class Vector3(Array):
 
     @length.setter
     def length(self, value):
-        assert isinstance(value, float), 'length must be a float'
+        assert isinstance(value, (float, integer_types)), 'length must be a float'
         assert value > 0.0, 'length must be positive'
-        self._length = value
+        self._length = float(value)
 
     @staticmethod
     def as_json(value):
+        if value is None:
+            return None
         return map(float, value.flatten())
 
     def validate(self, obj, value):
@@ -604,7 +578,11 @@ class Vector3(Array):
             try:
                 value.length = self.length
             except ZeroDivisionError:
-                self.error(obj, value)
+                self.error(
+                    obj, value,
+                    error=ZeroDivisionError,
+                    extra='The vector must have a length specified.'
+                )
         return value
 
 
@@ -628,12 +606,14 @@ class Vector2(Array):
 
     @length.setter
     def length(self, value):
-        assert isinstance(value, float), 'length must be a float'
+        assert isinstance(value, (float, integer_types)), 'length must be a float'
         assert value > 0.0, 'length must be positive'
         self._length = value
 
     @staticmethod
     def as_json(value):
+        if value is None:
+            return None
         return map(float, value.flatten())
 
     def validate(self, obj, value):
@@ -649,11 +629,14 @@ class Vector2(Array):
         value = super(Vector2, self).validate(obj, value)
 
         if self.length is not None:
-            raise NotImplementedError('TODO.')
             try:
                 value.length = self.length
             except ZeroDivisionError:
-                self.error(obj, value)
+                self.error(
+                    obj, value,
+                    error=ZeroDivisionError,
+                    extra='The vector must have a length specified.'
+                )
         return value
 
 

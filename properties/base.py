@@ -119,7 +119,10 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
                 raise KeyError(
                     'Default input "{:s}" is not a known property'.format(key)
                 )
-            setattr(self, key, value)
+            if callable(value):
+                setattr(self, key, value())
+            else:
+                setattr(self, key, value)
 
         # set the keywords
         self.exclusive_kwargs = kwargs.pop(
@@ -257,6 +260,9 @@ class List(basic.Property):
         )
         self.instance_class = instance_class
         super(List, self).__init__(help, **kwargs)
+
+    def startup(self, instance):
+        instance._set(self.name, [])
 
     def validate(self, instance, value):
         if not isinstance(value, (tuple, list)):

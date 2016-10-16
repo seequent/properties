@@ -59,10 +59,16 @@ class AnotherPrimitive(properties.HasProperties):
 
 class Location2(properties.HasProperties):
     loc = properties.Vector2("My location")
+    unit = properties.Vector2("My location", length=1)
 
 
 class Location3(properties.HasProperties):
     loc = properties.Vector3("My location")
+    unit = properties.Vector3("My location", length=1)
+
+    @properties.observe('loc')
+    def _on_loc_change(self, change):
+        self._last_change = change
 
 
 class SomeOptions(APrimitive):
@@ -83,10 +89,27 @@ class DefaultColorOptions(APrimitive):
 
 class ThingWithOptions(properties.HasProperties):
     opts = properties.Instance("My options", SomeOptions, auto_create=True)
+    opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
     moreopts = properties.List(
         "List of options",
         SomeOptions
     )
+
+
+class ThingWithDefaults(ThingWithOptions):
+    _defaults = dict(
+        opts=SomeOptions(),  # this is bad practice, but works!
+        opts2=SomeOptions,
+        moreopts=lambda: [SomeOptions()]
+    )
+
+
+class ThingWithInheritedDefaults(ThingWithDefaults):
+    @properties.defaults
+    def _defaults(self):
+        return dict(
+            opts2=lambda: SomeOptions(color='green'),
+        )
 
 
 class MyArray(properties.HasProperties):
@@ -252,70 +275,6 @@ class TestBasic(unittest.TestCase):
         nums = NumPrimitive()
         nums.mycomplex = 1.
         assert type(nums.mycomplex) == complex
-        # assert
-
-    def test_instance(self):
-        opts = SomeOptions(color='red')
-        twop = ThingWithOptions(opts=opts)
-        assert twop.opts.color == (255, 0, 0)
-
-        twop = ThingWithOptions()
-        # auto create the options.
-        assert twop.opts.color == (0, 0, 255)
-
-        assert len(twop.moreopts) == 0
-
-    def test_vector3(self):
-
-        opts = Location3()
-        assert opts.loc is opts.loc
-        opts.loc = [1.5, 0, 0]
-        assert np.all(opts.loc == [1.5, 0, 0])
-        opts.loc = 'x'
-        assert np.allclose(opts.loc, [1, 0, 0])
-        opts.loc = 'y'
-        assert np.allclose(opts.loc, [0, 1, 0])
-        opts.loc = 'z'
-        assert np.allclose(opts.loc, [0, 0, 1])
-        assert opts.loc.x == 0.0
-        assert opts.loc.y == 0.0
-        assert opts.loc.z == 1.0
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', [5, 100]))
-
-    def test_vector2(self):
-
-        opts = Location2()
-        assert opts.loc is opts.loc
-        opts.loc = [1.5, 0]
-        assert np.allclose(opts.loc, [1.5, 0])
-        opts.loc = 'x'
-        assert np.allclose(opts.loc, [1, 0])
-        opts.loc = 'y'
-        assert np.allclose(opts.loc, [0, 1])
-        assert opts.loc.x == 0.0
-        assert opts.loc.y == 1.0
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'z'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', [5, 100, 0]))
-
-    def test_pickle(self):
-        x = Location2()
-        del x.loc
-        x.loc = [7, 2]
-
-        xp = cPickle.loads(cPickle.dumps(x))
-        assert xp.loc.x == 7
-        assert xp.loc.y == 2
 
     def test_array(self):
 
@@ -371,7 +330,113 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(TypeError, lambda: f((5, 'any'), int))
         self.assertRaises(TypeError, lambda: f(('*', 3), str))
 
+    def test_instance(self):
+        opts = SomeOptions(color='red')
+        twop = ThingWithOptions(opts=opts)
+        twop2 = ThingWithOptions()
+        assert twop.opts.color == (255, 0, 0)
+        # auto create the options.
+        assert twop2.opts is not twop.opts
+        assert twop2.opts.color == (0, 0, 255)
 
+        # test that the startup on the instance creates the list
+        assert len(twop.moreopts) == 0
+        assert twop.moreopts is twop.moreopts
+        assert twop.moreopts is not twop2.moreopts
+
+    def test_defaults(self):
+        self.assertRaises(AttributeError, properties.defaults, lambda: {})
+
+        twd = ThingWithDefaults()
+        twd2 = ThingWithDefaults()
+        assert len(twd.moreopts) == 1
+        assert twd.moreopts[0] is not twd2.moreopts[0]
+        assert twd.opts is twd2.opts
+        assert twd.opts2 is not twd2.opts2
+
+        twid = ThingWithInheritedDefaults()
+        assert twid.opts is twd.opts
+        assert len(twid.moreopts) == 1
+        assert twid.opts2.color == (0, 128, 0)
+
+    def test_vector3(self):
+
+        opts = Location3()
+        assert opts.loc is opts.loc
+        opts.loc = [1.5, 0, 0]
+        assert np.all(opts.loc == [1.5, 0, 0])
+        opts.loc = 'x'
+        assert np.allclose(opts.loc, [1, 0, 0])
+        opts.loc = 'y'
+        assert np.allclose(opts.loc, [0, 1, 0])
+        opts.loc = 'z'
+        assert np.allclose(opts.loc, [0, 0, 1])
+        assert opts.loc.x == 0.0
+        assert opts.loc.y == 0.0
+        assert opts.loc.z == 1.0
+        assert opts.loc.length == 1.0
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 5))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', [5, 100]))
+        self.assertRaises(ZeroDivisionError,
+                          setattr, opts, 'unit', [0, 0., 0])
+
+    def test_vector2(self):
+
+        opts = Location2()
+        assert opts.loc is opts.loc
+        opts.loc = [1.5, 0]
+        assert np.allclose(opts.loc, [1.5, 0])
+        opts.loc = 'x'
+        assert np.allclose(opts.loc, [1, 0])
+        opts.loc = 'y'
+        assert np.allclose(opts.loc, [0, 1])
+        assert opts.loc.x == 0.0
+        assert opts.loc.y == 1.0
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 'z'))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', 5))
+        self.assertRaises(ValueError,
+                          lambda: setattr(opts, 'loc', [5, 100, 0]))
+        self.assertRaises(ZeroDivisionError,
+                          setattr, opts, 'unit', [0, 0])
+
+    def test_observer(self):
+        opts = Location3()
+        assert not hasattr(opts, '_last_change')
+        opts.loc = 'x'
+        assert hasattr(opts, '_last_change')
+
+        assert not hasattr(opts, '_hello')
+        properties.observe(
+            opts,
+            'loc',
+            lambda self, change: setattr(self, '_hello', change)
+        )
+        opts.loc = 'y'
+        assert hasattr(opts, '_hello')
+
+        class AnotherLoc(Location3):
+            _on_loc_change = None  # we can kill the observer later.
+
+        aopts = AnotherLoc()
+        aopts.loc = 'x'
+        assert not hasattr(aopts, '_last_change')
+
+    def test_pickle(self):
+        x = Location2()
+        del x.loc
+        x.loc = [7, 2]
+
+        xp = cPickle.loads(cPickle.dumps(x))
+        assert xp.loc.x == 7
+        assert xp.loc.y == 2
 
 
 if __name__ == '__main__':
