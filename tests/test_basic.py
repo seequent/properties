@@ -189,7 +189,7 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'opacity', 5))
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'opacity', -1))
-        self.assertRaises(ValueError,
+        self.assertRaises((ValueError, TypeError),
                           lambda: setattr(opts, 'opacity', [.25, .75]))
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'opacity', 'See-through'))
