@@ -232,7 +232,7 @@ class TestBasic(unittest.TestCase):
         )
         self.assertRaises(
             ValueError, properties.StringChoice, "a choice",
-            choices=np.r_['a', 'b']
+            choices=np.r_[np.array(['a', 'b'])]
         )
         self.assertRaises(
             ValueError, properties.StringChoice, "a choice",
