@@ -565,7 +565,7 @@ class Vector3(Array):
     def as_json(value):
         if value is None:
             return None
-        return map(float, value.flatten())
+        return list(map(float, value.flatten()))
 
     def validate(self, obj, value):
         """Determine if array is valid based on shape and dtype"""
@@ -616,7 +616,7 @@ class Vector2(Array):
     def as_json(value):
         if value is None:
             return None
-        return map(float, value.flatten())
+        return list(map(float, value.flatten()))
 
     def validate(self, obj, value):
         """Determine if array is valid based on shape and dtype"""
