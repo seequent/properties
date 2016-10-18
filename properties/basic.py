@@ -312,13 +312,13 @@ class Complex(Property):
         return value
 
     @staticmethod
-    def as_json(self, value):
+    def as_json(value):
         if value is None or np.isnan(value):
             return None
         return value
 
     @staticmethod
-    def from_json(self, value):
+    def from_json(value):
         return complex(str(value))
 
 
