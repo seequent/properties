@@ -7,7 +7,7 @@ Vectors
 -------
 
 
-We use a :code:`PropertyClass` to assemble related properties. Here we create
+We use a :code:`HasProperties` class to assemble related properties. Here we create
 a simple class that contains a vector. We create it with a doc-string telling
 us what it is, and in this example, we specify a default unit-vector in the
 x-direction.
@@ -15,9 +15,9 @@ x-direction.
 .. exec::
 
     import properties
-    class MyVectors(properties.PropertyClass): # create a properties class
+    class MyVectors(properties.HasProperties): # create a properties class
         import properties #hide
-        simpleVector = properties.Vector('an arrow in space!', default='x')
+        simpleVector = properties.Vector2('an arrow in space!', default='x')
     vectors = MyVectors() # instantiate it
     print vectors.simpleVector
 
@@ -31,9 +31,9 @@ a different :code:`simpleVector`
 .. exec::
 
     import properties #hide
-    class MyVectors(properties.PropertyClass):
+    class MyVectors(properties.HasProperties):
         import properties #hide
-        simpleVector = properties.Vector('an arrow in space!', default='x')
+        simpleVector = properties.Vector3('an arrow in space!', default='x')
     vectors = MyVectors(simpleVector = [1., 1., 0.])
     print vectors.simpleVector
 
@@ -42,9 +42,9 @@ and look at it component-by-component
 .. exec::
 
     import properties #hide
-    class MyVectors(properties.PropertyClass):#hide
+    class MyVectors(properties.HasProperties):#hide
         import properties #hide
-        simpleVector = properties.Vector('an arrow in space!', default='x')#hide
+        simpleVector = properties.Vector3('an arrow in space!', default='x')#hide
     vectors = MyVectors(simpleVector = [1., 1., 0.])#hide
     print vectors.simpleVector.x
 
@@ -53,9 +53,9 @@ or perhaps scale it so that it has Unit length
 .. exec::
 
     import properties #hide
-    class MyVectors(properties.PropertyClass):#hide
+    class MyVectors(properties.HasProperties):#hide
         import properties #hide
-        simpleVector = properties.Vector('an arrow in space!', default='x')#hide
+        simpleVector = properties.Vector3('an arrow in space!', default='x')#hide
     vectors = MyVectors(simpleVector = [1., 1., 0.])#hide
     print vectors.simpleVector.as_unit()
 
