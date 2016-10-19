@@ -223,7 +223,7 @@ class TestBasic(unittest.TestCase):
     def test_string(self):
         mystr = StrPrimitive()
         self.assertEqual(len(mystr.serialize()), 4)
-        for k, v in mystr.serialize().iteritems():
+        for k, v in mystr.serialize().items():
             self.assertEqual(v, u'')
 
         mystr.anystr = '   A  '
@@ -235,7 +235,7 @@ class TestBasic(unittest.TestCase):
         mystr.upperstr = '  a   '
         assert mystr.upperstr == '  A   '
 
-        for k, v in mystr.serialize().iteritems():
+        for k, v in mystr.serialize().items():
             self.assertNotEqual(v, u'')
 
     def test_string_choice(self):
@@ -258,7 +258,7 @@ class TestBasic(unittest.TestCase):
             choices={'a': ['a', 1]}
         )
         mystr = StrChoicePrimitive()
-        for k, v in mystr.serialize().iteritems():
+        for k, v in mystr.serialize().items():
             self.assertEqual(v, u'')
 
         mystr.vowel = 'O'
@@ -277,7 +277,7 @@ class TestBasic(unittest.TestCase):
         assert mystr.abc == 'A'
         self.assertRaises(ValueError, lambda: setattr(mystr, 'abc', 'X'))
 
-        for k, v in mystr.serialize().iteritems():
+        for k, v in mystr.serialize().items():
             self.assertNotEqual(v, u'')
 
     def test_bool(self):
