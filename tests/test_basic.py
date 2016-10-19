@@ -135,6 +135,10 @@ class MyArray(properties.HasProperties):
     )
 
 
+class MyDateTime(properties.HasProperties):
+    dt = properties.DateTime('My datetime')
+
+
 class TestBasic(unittest.TestCase):
 
     def test_color(self):
@@ -443,6 +447,24 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0])
         self.assertEqual(opts.serialize(), {'loc': [0.0, 1.0]})
+
+    def test_datetime(self):
+
+        import datetime
+
+        mydate = MyDateTime()
+        self.assertEqual(mydate.serialize(), {})
+        mydate.validate()
+
+        now = datetime.datetime.today()
+        json = properties.DateTime.as_json(now)
+        self.assertIsNotNone(json)
+        self.assertIsNotNone(properties.DateTime.from_json(json))
+
+        mydate.dt = now
+        mydate.validate()
+        self.assertNotEqual(mydate.serialize(), {})
+
 
     def test_observer(self):
         opts = Location3()
