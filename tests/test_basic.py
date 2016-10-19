@@ -141,6 +141,7 @@ class TestBasic(unittest.TestCase):
 
         opts = ReqOptions()
         self.assertRaises(ValueError, opts.validate)
+        self.assertEqual(len(opts.serialize()), 0)
 
         opts = ReqDefOptions(
             color='red',
@@ -176,6 +177,7 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'color', [5, 100]))
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'color', [-10, 0, 0]))
+        self.assertTrue(len(opts.serialize()) > 0)
 
         opts = DefaultColorOptions()
         assert len(opts.color) == 3
@@ -184,6 +186,7 @@ class TestBasic(unittest.TestCase):
 
         opts = SomeOptions(opacity=0.3)
         assert opts.opacity == 0.3
+        self.assertEqual(len(opts.serialize()), 2)
 
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'opacity', 5))
@@ -211,9 +214,14 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(prim, 'myrangeint', 'numbah!'))
         self.assertRaises(ValueError,
                           lambda: setattr(prim, 'myrangeint', [4, 5]))
+        self.assertEqual(len(opts.serialize()), 2)
 
     def test_string(self):
         mystr = StrPrimitive()
+        self.assertEqual(len(mystr.serialize()), 4)
+        for k, v in mystr.serialize().iteritems():
+            self.assertEqual(v, u'')
+
         mystr.anystr = '   A  '
         assert mystr.anystr == '   A  '
         mystr.stripstr = '  A   '
@@ -222,6 +230,9 @@ class TestBasic(unittest.TestCase):
         assert mystr.lowerstr == '  a   '
         mystr.upperstr = '  a   '
         assert mystr.upperstr == '  A   '
+
+        for k, v in mystr.serialize().iteritems():
+            self.assertNotEqual(v, u'')
 
     def test_string_choice(self):
 
@@ -243,6 +254,9 @@ class TestBasic(unittest.TestCase):
             choices={'a': ['a', 1]}
         )
         mystr = StrChoicePrimitive()
+        for k, v in mystr.serialize().iteritems():
+            self.assertEqual(v, u'')
+
         mystr.vowel = 'O'
         assert mystr.vowel == 'vowel'
         mystr.vowel = 'a'
@@ -259,8 +273,12 @@ class TestBasic(unittest.TestCase):
         assert mystr.abc == 'A'
         self.assertRaises(ValueError, lambda: setattr(mystr, 'abc', 'X'))
 
+        for k, v in mystr.serialize().iteritems():
+            self.assertNotEqual(v, u'')
+
     def test_bool(self):
         opt = BoolPrimitive()
+        self.assertEqual(opt.serialize(), {'abool': True})
         assert opt.abool is True
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
         opt.abool = False
@@ -271,14 +289,23 @@ class TestBasic(unittest.TestCase):
         assert opt.athing is True
         opt.validate()
 
+        self.assertEqual(opt.serialize(),
+                         {
+                            'athing': True,
+                            'abool': False,
+                         })
+
     def test_numbers(self):
         nums = NumPrimitive()
+        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0})
         nums.mycomplex = 1.
         assert type(nums.mycomplex) == complex
+        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0, 'mycomplex': 1.})
 
     def test_array(self):
 
         arrays = MyArray()
+        self.assertEqual(len(arrays.serialize()), 0)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array', [.5, .5]))
         self.assertRaises(ValueError,
@@ -306,9 +333,11 @@ class TestBasic(unittest.TestCase):
                              [[3, 4, 5], [1, 2, 3], [2, 3, 4]]]
         assert isinstance(arrays.int_matrix, np.ndarray)
         assert arrays.int_matrix.dtype.kind == 'i'
+        self.assertEqual(len(arrays.serialize()), 4)
 
     def test_nan_array(self):
         arrays = MyArray()
+        self.assertEqual(len(arrays.serialize()), 0)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array',
                                           [np.nan, 0, 2]))
@@ -317,6 +346,7 @@ class TestBasic(unittest.TestCase):
         assert isinstance(x, np.ndarray)
         assert np.isnan(x[0])
         assert np.all(x[1:] == [0, 1])
+        self.assertEqual(len(arrays.serialize()), 1)
 
     def test_array_init(self):
         def f(shape, dtype):
@@ -332,8 +362,11 @@ class TestBasic(unittest.TestCase):
 
     def test_instance(self):
         opts = SomeOptions(color='red')
+        self.assertEqual(opts.serialize(), {'color': (255, 0, 0)})
         twop = ThingWithOptions(opts=opts)
+        self.assertEqual(len(twop.serialize()), 3)
         twop2 = ThingWithOptions()
+        self.assertEqual(len(twop2.serialize()), 3)
         assert twop.opts.color == (255, 0, 0)
         # auto create the options.
         assert twop2.opts is not twop.opts
@@ -362,6 +395,7 @@ class TestBasic(unittest.TestCase):
     def test_vector3(self):
 
         opts = Location3()
+        self.assertEqual(len(opts.serialize()), 0)
         assert opts.loc is opts.loc
         opts.loc = [1.5, 0, 0]
         assert np.all(opts.loc == [1.5, 0, 0])
@@ -375,6 +409,7 @@ class TestBasic(unittest.TestCase):
         assert opts.loc.y == 0.0
         assert opts.loc.z == 1.0
         assert opts.loc.length == 1.0
+
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'loc', 'unit-x-vector'))
         self.assertRaises(ValueError,
@@ -383,6 +418,7 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0., 0])
+        self.assertEqual(opts.serialize(), {'loc': [0.0, 0.0, 1.0]})
 
     def test_vector2(self):
 
@@ -406,6 +442,7 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100, 0]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0])
+        self.assertEqual(opts.serialize(), {'loc': [0.0, 1.0]})
 
     def test_observer(self):
         opts = Location3()
@@ -438,6 +475,29 @@ class TestBasic(unittest.TestCase):
         assert xp.loc.x == 7
         assert xp.loc.y == 2
 
+    def test_serialize(self):
+
+        class mySerializableThing(properties.HasProperties):
+            anystr = properties.String("a string!")
+            anotherstr = properties.String("a different string!", default='HELLO WORLD!')
+            myint = properties.Integer("an integer!")
+            myvector2 = properties.Vector2("a 2x2 vector!")
+
+        thing = mySerializableThing()
+        # should contain ', 'myvector2': []' ?
+        self.assertEqual(thing.serialize(), {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0})
+
+        thing.anystr = 'a value'
+        thing.anotherstr = ''
+        thing.myint = -15
+        thing.myvector2 = [3.1415926535, 42]
+        self.assertEqual(thing.serialize(),
+                         {
+                            'anystr': 'a value',
+                            'anotherstr': '',
+                            'myint': -15,
+                            'myvector2': [3.1415926535, 42],
+                         })
 
 if __name__ == '__main__':
     unittest.main()
