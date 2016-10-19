@@ -4,3 +4,5 @@ Array
 *****
 
 .. autoclass:: properties.Array
+    :members:
+    :undoc-members:

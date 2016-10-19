@@ -25,13 +25,22 @@ Everything is documented!
     :maxdepth: 2
 
     content/examples
-    content/base
-    content/basic
+    content/gettableproperty
+    content/property
+    content/instance
+    content/uidmodel
+    content/union
+    content/bool
+    content/integer
+    content/float
+    content/complex
+    content/string
+    content/stringchoice
+    content/datetime
     content/array
-    content/spatial
-    content/pointer
-    content/files
-    content/vmath
+    content/vector3
+    content/vector2
+    content/color
 
 A Primer
 --------
@@ -129,6 +138,4 @@ Indices and tables
 ******************
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
