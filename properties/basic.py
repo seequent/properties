@@ -26,7 +26,7 @@ __all__ = [
     "Vector3",
     "Vector2",
     "Color",
-    "Uid"
+    "Uid",
     "Undefined"
 ]
 
