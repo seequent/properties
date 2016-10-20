@@ -183,14 +183,9 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
 
     def serialize(self, using='json'):
         assert using == 'json', "Only json is supported."
-        props = dict()
-        for p in self._props:
-            prop = self._props[p]
-            value = prop.as_json(
-                self._get(prop.name, prop.default)
-            )
-            if value is not None:
-                props[p] = value
+        kv = ((k, v.as_json(self._get(v.name, v.default))) \
+               for k, v in iteritems(self._props))
+        props = {k: v for k, v in kv if v is not None}
         return props
 
     def __setstate__(self, newstate):
