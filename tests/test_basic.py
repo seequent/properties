@@ -7,6 +7,7 @@ import properties
 import numpy as np
 import unittest
 import pickle
+import uuid
 
 
 class NumPrimitive(properties.HasProperties):
@@ -521,6 +522,14 @@ class TestBasic(unittest.TestCase):
         mydate.dt = now
         mydate.validate()
         self.assertNotEqual(mydate.serialize(), {})
+
+    def test_uid(self):
+        model = properties.UidModel()
+        model.title = 'UID model'
+        model.description = 'I have a uid'
+        assert isinstance(model.uid, uuid.UUID)
+        self.assertRaises(AttributeError,
+                          lambda: setattr(model, 'uid', uuid.uuid4()));
 
     def test_observer(self):
         opts = Location3()
