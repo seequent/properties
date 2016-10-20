@@ -8,6 +8,7 @@ from six import string_types
 import numpy as np
 import vectormath as vmath
 import datetime
+from uuid import uuid4
 from . import utils
 
 __all__ = [
@@ -640,6 +641,33 @@ class Vector2(Array):
                     extra='The vector must have a length specified.'
                 )
         return value
+
+
+class Uid(GettableProperty):
+    """
+        Base property class that establishes property behavior
+    """
+
+    info_text = 'a unique identifier'
+
+    @property
+    def default(self):
+        """default value of the property"""
+        return getattr(self, '_default', Undefined)
+
+    @default.setter
+    def default(self, value):
+        raise ValueError(
+            'Default can not be specified for UID properties'
+        )
+
+    def startup(self, instance):
+        instance._set(self.name, uuid4())
+
+    @staticmethod
+    def as_json(value):
+        return str(value)
+
 
 
 class Color(Property):

@@ -293,6 +293,6 @@ class List(basic.Property):
 
 
 class UidModel(HasProperties):
-    uid = basic.String("Unique identifier", required=True)
+    uid = basic.Uid("Unique identifier")
     title = basic.String("Title")
     description = basic.String("Description")
