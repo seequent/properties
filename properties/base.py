@@ -236,10 +236,7 @@ class Instance(basic.Property):
         if isinstance(value, self.instance_class):
             return value
         elif isinstance(value, dict):
-            try:
-                return self.instance_class(**value)
-            except KeyError:
-                pass
+            return self.instance_class(**value)
         return self.instance_class(value)
 
     def assert_valid(self, instance):
