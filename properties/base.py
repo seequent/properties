@@ -235,8 +235,12 @@ class Instance(basic.Property):
     def validate(self, instance, value):
         if isinstance(value, self.instance_class):
             return value
-        else:
-            return self.instance_class(value)
+        elif isinstance(value, dict):
+            try:
+                return self.instance_class(**value)
+            except KeyError:
+                pass
+        return self.instance_class(value)
 
     def assert_valid(self, instance):
         valid = super(Instance, self).assert_valid(instance)
