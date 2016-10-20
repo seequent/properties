@@ -134,6 +134,9 @@ class MyArray(properties.HasProperties):
         dtype=int
     )
 
+class MyListOfArrays(properties.HasProperties):
+    arrays = properties.List('List of MyArray Instances', MyArray)
+
 
 class MyDateTime(properties.HasProperties):
     dt = properties.DateTime('My datetime')
@@ -363,6 +366,17 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(TypeError, lambda: f(5, int))
         self.assertRaises(TypeError, lambda: f((5, 'any'), int))
         self.assertRaises(TypeError, lambda: f(('*', 3), str))
+
+    def test_list(self):
+        array_list = MyListOfArrays()
+        array0 = MyArray()
+        array1 = MyArray()
+        array2 = MyArray()
+        assert len(array_list.arrays) == 0
+        array_list.arrays = (array0,)
+        assert len(array_list.arrays) == 1
+        array_list.arrays = [array0, array1, array2]
+        assert len(array_list.arrays) == 3
 
     def test_instance(self):
         opts = SomeOptions(color='red')
