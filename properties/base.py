@@ -94,7 +94,7 @@ class PropertyMetaclass(type):
         return newcls
 
 
-class HasProperties(with_metaclass(PropertyMetaclass)):
+class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     _backend_name = "dict"
     _backend_class = dict
@@ -171,6 +171,7 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
             )
         )
 
+    @handlers.validator
     def validate(self, silent=False):
         self._validating = True
         try:

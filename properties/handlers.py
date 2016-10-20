@@ -29,7 +29,7 @@ def _get_listeners(instance, change):
 
 class Observer(object):
     """
-        Acts as a listener on an properties instance.
+        Acts as a listener on a properties instance.
     """
 
     # This is used for the type of observer
@@ -56,6 +56,16 @@ class Observer(object):
 
     def get_property(self):
         return self.func
+
+
+class Validator(Observer):
+    """
+        Acts as a listener on a properties instance.
+    """
+
+    # This is used for the type of observer
+    # kind = 'all'  # not currently implemented
+
 
 
 def observe(names_or_instance, names=None, func=None):
@@ -87,3 +97,47 @@ def observe(names_or_instance, names=None, func=None):
     observer = Observer(names)(func)
     _set_listener(names_or_instance, observer)
     return observer
+
+
+def validator(names_or_instance, names=None, func=None):
+    """
+        Use this to register a function that will be called when validator
+        is called on a class:
+
+        .. code::
+
+            @properties.validator
+            def validate(self):
+                print('is valid')
+
+        ---- OR ----
+
+        Call with arguments to validate a change in a named property.
+
+        You can use this inside a class as a wrapper, which will
+        be applied to all class instances:
+
+        .. code::
+
+            @properties.validator('variable_x')
+            def class_method(self, change):
+                print(change)
+
+        or you can use it for a single properties instance:
+
+        .. code::
+
+            properties.validator(my_props, 'variable_x', func)
+
+        Where :code:`func` takes an instance and a change notification.
+
+    """
+
+    if names is None and func is None:
+        if callable(names_or_instance):
+            return Validator([])(names_or_instance)
+        return Validator(names_or_instance)
+
+    val = Validator(names)(func)
+    _set_listener(names_or_instance, val)
+    return val
