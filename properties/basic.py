@@ -90,7 +90,7 @@ class GettableProperty(object):
         scope = self
 
         def fget(self):
-            return self._get(scope.name)
+            return self._get(scope.name, scope.default)
 
         return property(fget=fget, doc=scope.help)
 
