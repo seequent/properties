@@ -213,7 +213,7 @@ class Bool(Property):
                 return True
             elif value in ('FALSE', 'N', 'NO', 'OFF'):
                 return False
-        if isinstance(value, bool):
+        if isinstance(value, int):
             return value
         raise ValueError('Could not load boolean form JSON: {}'.format(value))
 
