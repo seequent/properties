@@ -404,10 +404,7 @@ class StringChoice(Property):
     def validate(self, instance, value):
         if not isinstance(value, string_types):
             self.error(instance, value)
-        print(self.choices)
         for k, v in self.choices.items():
-            print(k)
-            print(v)
             if (
                 value.upper() == k.upper() or
                 value.upper() in [_.upper() for _ in v]
