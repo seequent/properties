@@ -26,6 +26,7 @@ after_success:
   - if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" -a $TRAVIS_PYTHON_VERSION == "2.7" ]; then
       make publish;
     fi
+  - codecov
 
 notifications:
  slack: 3point:n4uGopqXrpbYFbslpV5z0tyO

@@ -3,10 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import properties
-import numpy as np
-import unittest
 import pickle
+import unittest
+import uuid
+
+import numpy as np
+import properties
 
 
 class NumPrimitive(properties.HasProperties):
@@ -90,7 +92,17 @@ class DefaultColorOptions(APrimitive):
 class NotProperty(object):
     pass
 
+
 class ThingWithOptions(properties.HasProperties):
+    opts = properties.Instance("My options", SomeOptions, auto_create=True)
+    opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
+    moreopts = properties.List(
+        "List of options",
+        SomeOptions
+    )
+
+
+class ThingWithOptions2(properties.HasProperties):
     opts = properties.Instance("My options", SomeOptions, auto_create=True)
     opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
     notprop = properties.Instance("My options", NotProperty, auto_create=True)
@@ -139,12 +151,33 @@ class MyArray(properties.HasProperties):
     )
 
 
+class MyListOfArrays(properties.HasProperties):
+    arrays = properties.List('List of MyArray Instances', MyArray)
+
+
+class MyDateTime(properties.HasProperties):
+    dt = properties.DateTime('My datetime')
+
+
+class TakesMultipleArgs(properties.HasProperties):
+    def __init__(self, something, **kwargs):
+        super(TakesMultipleArgs, self).__init__(**kwargs)
+        self.col = something
+
+    col = properties.Color('a color')
+
+
+class AThing(properties.HasProperties):
+    aprop = properties.Instance('My prop', TakesMultipleArgs)
+
+
 class TestBasic(unittest.TestCase):
 
     def test_color(self):
 
         opts = ReqOptions()
         self.assertRaises(ValueError, opts.validate)
+        self.assertEqual(len(opts.serialize()), 0)
 
         opts = ReqDefOptions(
             color='red',
@@ -180,6 +213,7 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'color', [5, 100]))
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'color', [-10, 0, 0]))
+        self.assertTrue(len(opts.serialize()) > 0)
 
         opts = DefaultColorOptions()
         assert len(opts.color) == 3
@@ -188,6 +222,7 @@ class TestBasic(unittest.TestCase):
 
         opts = SomeOptions(opacity=0.3)
         assert opts.opacity == 0.3
+        self.assertEqual(len(opts.serialize()), 2)
 
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'opacity', 5))
@@ -215,9 +250,14 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(prim, 'myrangeint', 'numbah!'))
         self.assertRaises(ValueError,
                           lambda: setattr(prim, 'myrangeint', [4, 5]))
+        self.assertEqual(len(opts.serialize()), 2)
 
     def test_string(self):
         mystr = StrPrimitive()
+        self.assertEqual(len(mystr.serialize()), 4)
+        for k, v in mystr.serialize().items():
+            self.assertEqual(v, u'')
+
         mystr.anystr = '   A  '
         assert mystr.anystr == '   A  '
         mystr.stripstr = '  A   '
@@ -226,6 +266,9 @@ class TestBasic(unittest.TestCase):
         assert mystr.lowerstr == '  a   '
         mystr.upperstr = '  a   '
         assert mystr.upperstr == '  A   '
+
+        for k, v in mystr.serialize().items():
+            self.assertNotEqual(v, u'')
 
     def test_string_choice(self):
 
@@ -247,6 +290,9 @@ class TestBasic(unittest.TestCase):
             choices={'a': ['a', 1]}
         )
         mystr = StrChoicePrimitive()
+        for k, v in mystr.serialize().items():
+            self.assertEqual(v, u'')
+
         mystr.vowel = 'O'
         assert mystr.vowel == 'vowel'
         mystr.vowel = 'a'
@@ -263,8 +309,12 @@ class TestBasic(unittest.TestCase):
         assert mystr.abc == 'A'
         self.assertRaises(ValueError, lambda: setattr(mystr, 'abc', 'X'))
 
+        for k, v in mystr.serialize().items():
+            self.assertNotEqual(v, u'')
+
     def test_bool(self):
         opt = BoolPrimitive()
+        self.assertEqual(opt.serialize(), {'abool': True})
         assert opt.abool is True
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
         opt.abool = False
@@ -275,14 +325,33 @@ class TestBasic(unittest.TestCase):
         assert opt.athing is True
         opt.validate()
 
+        self.assertEqual(opt.serialize(),
+                         {
+                            'athing': True,
+                            'abool': False,
+                         })
+        json = properties.Bool.as_json(opt.abool)
+        self.assertFalse(json)
+        self.assertEqual(properties.Bool.from_json(json), False)
+        with self.assertRaises(ValueError):
+            invalid_json = {}
+            self.assertEqual(properties.Bool.from_json(invalid_json), False)
+        self.assertEqual(properties.Bool.from_json('TRUE'), True)
+        self.assertNotEqual(properties.Bool.from_json('TRUE'), False)
+        self.assertEqual(properties.Bool.from_json('FALSE'), False)
+        self.assertNotEqual(properties.Bool.from_json('FALSE'), True)
+
     def test_numbers(self):
         nums = NumPrimitive()
+        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0})
         nums.mycomplex = 1.
         assert type(nums.mycomplex) == complex
+        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0, 'mycomplex': 1.})
 
     def test_array(self):
 
         arrays = MyArray()
+        self.assertEqual(len(arrays.serialize()), 0)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array', [.5, .5]))
         self.assertRaises(ValueError,
@@ -310,9 +379,11 @@ class TestBasic(unittest.TestCase):
                              [[3, 4, 5], [1, 2, 3], [2, 3, 4]]]
         assert isinstance(arrays.int_matrix, np.ndarray)
         assert arrays.int_matrix.dtype.kind == 'i'
+        self.assertEqual(len(arrays.serialize()), 4)
 
     def test_nan_array(self):
         arrays = MyArray()
+        self.assertEqual(len(arrays.serialize()), 0)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array',
                                           [np.nan, 0, 2]))
@@ -321,6 +392,7 @@ class TestBasic(unittest.TestCase):
         assert isinstance(x, np.ndarray)
         assert np.isnan(x[0])
         assert np.all(x[1:] == [0, 1])
+        self.assertEqual(len(arrays.serialize()), 1)
 
     def test_array_init(self):
         def f(shape, dtype):
@@ -334,10 +406,36 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(TypeError, lambda: f((5, 'any'), int))
         self.assertRaises(TypeError, lambda: f(('*', 3), str))
 
+    def test_list(self):
+        array_list = MyListOfArrays()
+        array0 = MyArray()
+        array1 = MyArray()
+        array2 = MyArray()
+        assert len(array_list.arrays) == 0
+        array_list.arrays = (array0,)
+        assert len(array_list.arrays) == 1
+        array_list.arrays = [array0, array1, array2]
+        assert len(array_list.arrays) == 3
+
+        array_list._props['arrays'].assert_valid(array0)
+        array0.int_array = [1, 2, 3]
+        array_list._props['arrays'].assert_valid(array0)
+        array_list._props['arrays'].assert_valid(None)
+
     def test_instance(self):
         opts = SomeOptions(color='red')
+        self.assertEqual(opts.serialize(), {'color': (255, 0, 0)})
         twop = ThingWithOptions(opts=opts)
-        twop2 = ThingWithOptions()
+
+        with self.assertRaises(ValueError):
+            twop._props['opts'].assert_valid(twop)
+        twop.opts.opacity = .5
+        twop.opts2.opacity = .5
+        twop._props['opts'].assert_valid(twop)
+        twop.validate()
+        self.assertEqual(len(twop.serialize()), 3)
+        twop2 = ThingWithOptions2()
+        # self.assertEqual(len(twop2.serialize()), 3)
         assert twop.opts.color == (255, 0, 0)
         # auto create the options.
         assert twop2.opts is not twop.opts
@@ -354,6 +452,15 @@ class TestBasic(unittest.TestCase):
         twop2.opts2 = opts
         twop2.notprop = notprop
         twop2.validate()
+
+        # test different validation routes
+        twop = AThing()
+        twop.aprop = '#F00000'
+        with self.assertRaises(ValueError):
+            twop.aprop = ''
+        twop.aprop = {'something': '#F00000'}
+        with self.assertRaises(ValueError):
+            twop.aprop = {'something': ''}
 
     def test_defaults(self):
         self.assertRaises(AttributeError, properties.defaults, lambda: {})
@@ -373,6 +480,7 @@ class TestBasic(unittest.TestCase):
     def test_vector3(self):
 
         opts = Location3()
+        self.assertEqual(len(opts.serialize()), 0)
         assert opts.loc is opts.loc
         opts.loc = [1.5, 0, 0]
         assert np.all(opts.loc == [1.5, 0, 0])
@@ -386,6 +494,7 @@ class TestBasic(unittest.TestCase):
         assert opts.loc.y == 0.0
         assert opts.loc.z == 1.0
         assert opts.loc.length == 1.0
+
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'loc', 'unit-x-vector'))
         self.assertRaises(ValueError,
@@ -394,6 +503,7 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0., 0])
+        self.assertEqual(opts.serialize(), {'loc': [0.0, 0.0, 1.0]})
 
     def test_vector2(self):
 
@@ -417,6 +527,31 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100, 0]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0])
+        self.assertEqual(opts.serialize(), {'loc': [0.0, 1.0]})
+
+    def test_datetime(self):
+        import datetime
+
+        mydate = MyDateTime()
+        self.assertEqual(mydate.serialize(), {})
+        mydate.validate()
+
+        now = datetime.datetime.today()
+        json = properties.DateTime.as_json(now)
+        self.assertIsNotNone(json)
+        self.assertIsNotNone(properties.DateTime.from_json(json))
+
+        mydate.dt = now
+        mydate.validate()
+        self.assertNotEqual(mydate.serialize(), {})
+
+    def test_uid(self):
+        model = properties.UidModel()
+        model.title = 'UID model'
+        model.description = 'I have a uid'
+        assert isinstance(model.uid, uuid.UUID)
+        self.assertRaises(AttributeError,
+                          lambda: setattr(model, 'uid', uuid.uuid4()))
 
     def test_observer(self):
         opts = Location3()
@@ -449,6 +584,29 @@ class TestBasic(unittest.TestCase):
         assert xp.loc.x == 7
         assert xp.loc.y == 2
 
+    def test_serialize(self):
+
+        class mySerializableThing(properties.HasProperties):
+            anystr = properties.String("a string!")
+            anotherstr = properties.String("a different string!", default='HELLO WORLD!')
+            myint = properties.Integer("an integer!")
+            myvector2 = properties.Vector2("a 2x2 vector!")
+
+        thing = mySerializableThing()
+        # should contain ', 'myvector2': []' ?
+        self.assertEqual(thing.serialize(), {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0})
+
+        thing.anystr = 'a value'
+        thing.anotherstr = ''
+        thing.myint = -15
+        thing.myvector2 = [3.1415926535, 42]
+        self.assertEqual(thing.serialize(),
+                         {
+                            'anystr': 'a value',
+                            'anotherstr': '',
+                            'myint': -15,
+                            'myvector2': [3.1415926535, 42],
+                         })
 
 if __name__ == '__main__':
     unittest.main()

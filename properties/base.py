@@ -184,14 +184,9 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
 
     def serialize(self, using='json'):
         assert using == 'json', "Only json is supported."
-        props = dict()
-        for p in self._props:
-            prop = self._props[p]
-            value = prop.as_json(
-                self._get(prop.name, prop.default)
-            )
-            if value is not None:
-                props[p] = value
+        kv = ((k, v.as_json(self._get(v.name, v.default))) \
+               for k, v in iteritems(self._props))
+        props = {k: v for k, v in kv if v is not None}
         return props
 
     def __setstate__(self, newstate):
@@ -234,8 +229,9 @@ class Instance(basic.Property):
     def validate(self, instance, value):
         if isinstance(value, self.instance_class):
             return value
-        else:
-            return self.instance_class(value)
+        elif isinstance(value, dict):
+            return self.instance_class(**value)
+        return self.instance_class(value)
 
     def assert_valid(self, instance):
         valid = super(Instance, self).assert_valid(instance)
@@ -248,9 +244,12 @@ class Instance(basic.Property):
 
     @staticmethod
     def as_json(value):
-        if value is not None:
+        if isinstance(value, HasProperties):
             return value.serialize(using='json')
-        return None
+        elif value is None:
+            return None
+        else:
+            raise TypeError('Cannot serialize type {}'.format(value.__class__))
 
 
 class List(basic.Property):
@@ -294,6 +293,6 @@ class List(basic.Property):
 
 
 class UidModel(HasProperties):
-    uid = basic.String("Unique identifier", required=True)
+    uid = basic.Uid("Unique identifier")
     title = basic.String("Title")
     description = basic.String("Description")
