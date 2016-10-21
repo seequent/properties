@@ -3,11 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import properties
-import numpy as np
-import unittest
 import pickle
+import unittest
 import uuid
+
+import numpy as np
+import properties
 
 
 class NumPrimitive(properties.HasProperties):
@@ -135,12 +136,25 @@ class MyArray(properties.HasProperties):
         dtype=int
     )
 
+
 class MyListOfArrays(properties.HasProperties):
     arrays = properties.List('List of MyArray Instances', MyArray)
 
 
 class MyDateTime(properties.HasProperties):
     dt = properties.DateTime('My datetime')
+
+
+class TakesMultipleArgs(properties.HasProperties):
+    def __init__(self, something, **kwargs):
+        super(TakesMultipleArgs, self).__init__(**kwargs)
+        self.col = something
+
+    col = properties.Color('a color')
+
+
+class AThing(properties.HasProperties):
+    aprop = properties.Instance('My prop', TakesMultipleArgs)
 
 
 class TestBasic(unittest.TestCase):
@@ -302,6 +316,16 @@ class TestBasic(unittest.TestCase):
                             'athing': True,
                             'abool': False,
                          })
+        json = properties.Bool.as_json(opt.abool)
+        self.assertFalse(json)
+        self.assertEqual(properties.Bool.from_json(json), False)
+        with self.assertRaises(ValueError):
+            invalid_json = {}
+            self.assertEqual(properties.Bool.from_json(invalid_json), False)
+        self.assertEqual(properties.Bool.from_json('TRUE'), True)
+        self.assertNotEqual(properties.Bool.from_json('TRUE'), False)
+        self.assertEqual(properties.Bool.from_json('FALSE'), False)
+        self.assertNotEqual(properties.Bool.from_json('FALSE'), True)
 
     def test_numbers(self):
         nums = NumPrimitive()
@@ -379,10 +403,22 @@ class TestBasic(unittest.TestCase):
         array_list.arrays = [array0, array1, array2]
         assert len(array_list.arrays) == 3
 
+        array_list._props['arrays'].assert_valid(array0)
+        array0.int_array = [1, 2, 3]
+        array_list._props['arrays'].assert_valid(array0)
+        array_list._props['arrays'].assert_valid(None)
+
     def test_instance(self):
         opts = SomeOptions(color='red')
         self.assertEqual(opts.serialize(), {'color': (255, 0, 0)})
         twop = ThingWithOptions(opts=opts)
+
+        with self.assertRaises(ValueError):
+            twop._props['opts'].assert_valid(twop)
+        twop.opacity = .5
+        twop.opts.opacity = .5
+        twop._props['opts'].assert_valid(twop)
+
         self.assertEqual(len(twop.serialize()), 3)
         twop2 = ThingWithOptions()
         self.assertEqual(len(twop2.serialize()), 3)
@@ -395,6 +431,15 @@ class TestBasic(unittest.TestCase):
         assert len(twop.moreopts) == 0
         assert twop.moreopts is twop.moreopts
         assert twop.moreopts is not twop2.moreopts
+
+        # test different validation routes
+        twop = AThing()
+        twop.aprop = '#F00000'
+        with self.assertRaises(ValueError):
+            twop.aprop = ''
+        twop.aprop = {'something': '#F00000'}
+        with self.assertRaises(ValueError):
+            twop.aprop = {'something': ''}
 
     def test_defaults(self):
         self.assertRaises(AttributeError, properties.defaults, lambda: {})
@@ -464,7 +509,6 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(opts.serialize(), {'loc': [0.0, 1.0]})
 
     def test_datetime(self):
-
         import datetime
 
         mydate = MyDateTime()
@@ -487,8 +531,6 @@ class TestBasic(unittest.TestCase):
         assert isinstance(model.uid, uuid.UUID)
         self.assertRaises(AttributeError,
                           lambda: setattr(model, 'uid', uuid.uuid4()));
-
-
 
     def test_observer(self):
         opts = Location3()

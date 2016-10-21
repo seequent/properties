@@ -3,12 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
+from uuid import uuid4
 from six import integer_types
 from six import string_types
 import numpy as np
 import vectormath as vmath
-import datetime
-from uuid import uuid4
 from . import utils
 
 __all__ = [
@@ -26,6 +26,7 @@ __all__ = [
     "Vector3",
     "Vector2",
     "Color",
+    "Uid",
     "Undefined"
 ]
 
@@ -214,7 +215,7 @@ class Bool(Property):
                 return True
             elif value in ('FALSE', 'N', 'NO', 'OFF'):
                 return False
-        if isinstance(value, bool):
+        if isinstance(value, int):
             return value
         raise ValueError('Could not load boolean form JSON: {}'.format(value))
 
@@ -654,12 +655,6 @@ class Uid(GettableProperty):
     def default(self):
         """default value of the property"""
         return getattr(self, '_default', Undefined)
-
-    @default.setter
-    def default(self, value):
-        raise ValueError(
-            'Default can not be specified for UID properties'
-        )
 
     def startup(self, instance):
         instance._set(self.name, uuid4())
