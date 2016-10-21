@@ -87,9 +87,13 @@ class DefaultColorOptions(APrimitive):
     color = properties.Color("This color is random", default='random')
 
 
+class NotProperty(object):
+    pass
+
 class ThingWithOptions(properties.HasProperties):
     opts = properties.Instance("My options", SomeOptions, auto_create=True)
     opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
+    notprop = properties.Instance("My options", NotProperty, auto_create=True)
     moreopts = properties.List(
         "List of options",
         SomeOptions
@@ -343,6 +347,13 @@ class TestBasic(unittest.TestCase):
         assert len(twop.moreopts) == 0
         assert twop.moreopts is twop.moreopts
         assert twop.moreopts is not twop2.moreopts
+
+        notprop = NotProperty()
+        opts.opacity = .5
+        twop2.opts = opts
+        twop2.opts2 = opts
+        twop2.notprop = notprop
+        twop2.validate()
 
     def test_defaults(self):
         self.assertRaises(AttributeError, properties.defaults, lambda: {})
