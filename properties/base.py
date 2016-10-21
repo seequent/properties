@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 from six import with_metaclass
 from six import iteritems
-from types import ClassType
 from . import basic
 from . import handlers
 
@@ -209,7 +208,7 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
 class Instance(basic.Property):
 
     def __init__(self, help, instance_class, **kwargs):
-        assert isinstance(instance_class, (type, ClassType))
+        assert isinstance(instance_class, type)
         self.instance_class = instance_class
         super(Instance, self).__init__(help, **kwargs)
 
