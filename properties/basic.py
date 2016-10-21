@@ -27,10 +27,10 @@ __all__ = [
     "Vector2",
     "Color",
     "Uid",
-    "Undefined"
+    "undefined"
 ]
 
-Undefined = utils.Sentinel('Undefined', 'Undefined value for properties.')
+undefined = utils.Sentinel('undefined', 'undefined value for properties.')
 
 
 class GettableProperty(object):
@@ -62,7 +62,7 @@ class GettableProperty(object):
     @property
     def default(self):
         """default value of the property"""
-        return getattr(self, '_default', Undefined)
+        return getattr(self, '_default', undefined)
 
     @default.setter
     def default(self, value):
@@ -147,7 +147,7 @@ class Property(GettableProperty):
             self._set(scope.name, value)
 
         def fdel(self):
-            self._set(scope.name, Undefined)
+            self._set(scope.name, undefined)
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
 
@@ -285,7 +285,7 @@ class Float(Integer):
     info_text = 'a float'
 
     def validate(self, instance, value):
-        if isinstance(value, float) or isinstance(value, integer_types):
+        if isinstance(value, (float, integer_types)):
             value = float(value)
         _in_bounds(self, instance, value)
         return value
@@ -654,7 +654,7 @@ class Uid(GettableProperty):
     @property
     def default(self):
         """default value of the property"""
-        return getattr(self, '_default', Undefined)
+        return getattr(self, '_default', undefined)
 
     def startup(self, instance):
         instance._set(self.name, uuid4())
