@@ -13,7 +13,8 @@ __all__ = [
     "HasProperties",
     "UidModel",
     "Instance",
-    "List"
+    "List",
+    "Union"
 ]
 
 
@@ -265,11 +266,13 @@ class Instance(basic.Property):
 
 class List(basic.Property):
 
-    def __init__(self, help, instance_class, **kwargs):
-        assert issubclass(instance_class, HasProperties), (
-            'instance_class must be a HasProperties class'
+    def __init__(self, help, prop, **kwargs):
+        if isinstance(prop, type) and issubclass(prop, HasProperties):
+            prop = Instance(help, HasProperties)
+        assert isinstance(prop, basic.Property), (
+            'prop must be a Property or HasProperties class'
         )
-        self.instance_class = instance_class
+        self.prop = prop
         super(List, self).__init__(help, **kwargs)
 
     def startup(self, instance):
@@ -280,10 +283,7 @@ class List(basic.Property):
             self.error(instance, value)
         out = []
         for v in value:
-            if isinstance(v, self.instance_class):
-                out += [v]
-            else:
-                out += [self.instance_class(v)]
+            out += [self.prop.validate(instance, value)]
         return out
 
     def assert_valid(self, instance):
@@ -294,13 +294,30 @@ class List(basic.Property):
         if value is None:
             return True
         for v in value:
-            v.validate()
+            v.assert_valid(instance)
 
-    @staticmethod
-    def as_json(value):
-        if value is not None:
-            return [v.serialize(using='json') for v in value]
-        return None
+
+class Union(basic.Property):
+
+    def __init__(self, help, props, **kwargs):
+        assert isinstance(props, (tuple, list)), "props must be a list"
+        for i, prop in enumerate(props):
+            if isinstance(prop, type) and issubclass(prop, HasProperties):
+                props[i] = Instance(help, prop)
+            assert isinstance(prop, basic.Property), (
+                "all props must be Property instance or HasProperties class"
+            )
+        self.props = props
+
+        super(Union, self).__init__(help, **kwargs)
+
+    def validate(self, instance, value):
+        for prop in self.props:
+            try:
+                return prop.validate(instance, value)
+            except ValueError:
+                continue
+        self.error(instance, value)
 
 
 class UidModel(HasProperties):
