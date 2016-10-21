@@ -18,7 +18,6 @@ from . import utils
 __all__ = [
     "GettableProperty",
     "Property",
-    "Union",
     "Bool",
     "Integer",
     "Float",
@@ -180,27 +179,6 @@ class Property(GettableProperty):
                 extra=extra,
             )
         )
-
-
-class Union(Property):
-
-    def __init__(self, help, props, **kwargs):
-        assert isinstance(props, (tuple, list)), "props must be a list"
-        for prop in props:
-            assert isinstance(prop, Property), (
-                "all props must be Property instance"
-            )
-        self.props = props
-
-        super(Union, self).__init__(help, **kwargs)
-
-    def validate(self, instance, value):
-        for prop in self.props:
-            try:
-                return prop.validate(instance, value)
-            except ValueError:
-                continue
-        self.error(instance, value)
 
 
 class Bool(Property):
