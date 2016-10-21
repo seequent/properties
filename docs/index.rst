@@ -38,14 +38,14 @@ Lets start by making a class to organize your coffee habits.
     import properties
     class CoffeeProfile(properties.HasProperties):
         import properties #hide
-        myName = properties.String('What should I call you?', required=True)
+        name = properties.String('What should I call you?', required=True)
         count = properties.Integer('number of coffees today')
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)
-        caffeineChoice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])
+        haz_enough_coffee = properties.Bool('Have you had enough coffee today?', default=False)
+        caffeine_choice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])
 
 
 The :code:`CoffeeProfile` class has 4 properties, one of which is required
-(:code:`myName`). All of them are documented! At a minimum, we need to
+(:code:`name`). All of them are documented! At a minimum, we need to
 instantiate the class with a name.
 
 .. exec::
@@ -53,44 +53,44 @@ instantiate the class with a name.
     import properties #hide
     class CoffeeProfile(properties.HasProperties):#hide
         import properties #hide
-        myName = properties.String('What should I call you?', required=True)#hide
+        name = properties.String('What should I call you?', required=True)#hide
         count = properties.Integer('number of coffees today')#hide
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
-        caffeineChoice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
-    profile = CoffeeProfile(myName = 'Bob')
-    print profile.myName
+        haz_enough_coffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
+        caffeine_choice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
+    profile = CoffeeProfile(name = 'Bob')
+    print profile.name
 
-Since a default value was provided for :code:`enoughCoffee`, the response is (naturally)
+Since a default value was provided for :code:`haz_enough_coffee`, the response is (naturally)
 
 .. exec::
 
     import properties #hide
     class CoffeeProfile(properties.HasProperties):#hide
         import properties #hide
-        myName = properties.String('What should I call you?', required=True)#hide
+        name = properties.String('What should I call you?', required=True)#hide
         count = properties.Integer('number of coffees today')#hide
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
-        caffeineChoice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
-    profile = CoffeeProfile(myName = 'Bob')#hide
-    print profile.enoughCoffee
+        haz_enough_coffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
+        caffeine_choice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
+    profile = CoffeeProfile(name = 'Bob')#hide
+    print profile.haz_enough_coffee
 
-We can set Bob's :code:`caffeineChoice`, his default is coffee
+We can set Bob's :code:`caffeine_choice`, his default is coffee
 
 .. exec::
 
     import properties #hide
     class CoffeeProfile(properties.HasProperties):#hide
         import properties #hide
-        myName = properties.String('What should I call you?', required=True)#hide
+        name = properties.String('What should I call you?', required=True)#hide
         count = properties.Integer('number of coffees today')#hide
-        enoughCoffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
-        caffeineChoice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
-    profile = CoffeeProfile(myName = 'Bob')#hide
-    profile.caffeineChoice = 'coffee'
+        haz_enough_coffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
+        caffeine_choice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
+    profile = CoffeeProfile(name = 'Bob')#hide
+    profile.caffeine_choice = 'coffee'
 
 
 He also likes macchiatos, so we try to set that, but that will error. Our
-:code:`caffeineChoice` property has a select set of choices. Clearly,
+:code:`caffeine_choice` property has a select set of choices. Clearly,
 macchiatos fall into the :code:`'something fancy'` category.
 
 
@@ -103,17 +103,17 @@ Property Classes are auto-documented! When you ask for the docs of
     Docstring:
     Required:
 
-    :param myName: What should I call you?
-    :type myName: :class:`.String`
+    :param name: What should I call you?
+    :type name: :class:`.String`
 
     Optional:
 
     :param count: number of coffees today
-    :type count: :class:`.Int`
-    :param favShop: Where is your favorite coffee shop?
-    :type favShop: :class:`.String`
-    :param caffeineChoice: How do you take your caffeine?, Choices: something fancy, tea, coffee, cappuccino, latte
-    :type caffeineChoice: :class:`.String`
+    :type count: :class:`.Integer`
+    :param haz_enough_coffee: Have you had enough coffee today?
+    :type haz_enough_coffee: :class:`.Bool`
+    :param caffeine_choice: How do you take your caffeine?, Choices: something fancy, tea, coffee, cappuccino, latte
+    :type caffeine_choice: :class:`.String`
     File:           ~/git/python_symlinks/properties/base.py
     Type:           _PropertyMetaClass
 
