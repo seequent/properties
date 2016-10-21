@@ -134,7 +134,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         # set the defaults
         defaults = self._defaults or dict()
         for key, value in iteritems(defaults):
-            if key not in self.property_names:
+            if key not in self._props.keys():
                 raise KeyError(
                     'Default input "{:s}" is not a known property'.format(key)
                 )
@@ -150,17 +150,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
         for key in kwargs:
             if (
-                (self.exclusive_kwargs and key not in self.property_names) or
-                (not hasattr(self, key) and key not in self.property_names)
+                (self.exclusive_kwargs and key not in self._props.keys()) or
+                (not hasattr(self, key) and key not in self._props.keys())
             ):
                 raise KeyError(
                     'Keyword input "{:s}" is not a known property'.format(key)
                 )
             setattr(self, key, kwargs[key])
-
-    @property
-    def property_names(self):
-        return self._props.keys()
 
     def _get(self, name, default):
         # print(name)
