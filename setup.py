@@ -27,10 +27,11 @@ setup(
     version="0.1.5",
     packages=find_packages(),
     install_requires=[
-        'numpy>=1.7',
-        'vectormath',
         'future',
+        'numpy>=1.7',
+        'png',
         'six',
+        'vectormath',
     ],
     author="3point Science",
     author_email="info@3ptscience.com",
