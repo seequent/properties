@@ -3,12 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
+from uuid import uuid4
 from six import integer_types
 from six import string_types
 import numpy as np
 import vectormath as vmath
-import datetime
-from uuid import uuid4
 from . import utils
 
 __all__ = [
