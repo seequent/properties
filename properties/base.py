@@ -37,10 +37,10 @@ class PropertyMetaclass(type):
             )
         }
 
-        delayed_val_dict = {
+        validator_dict = {
             key: value for key, value in classdict.items()
             if (
-                isinstance(value, handlers.DelayedValidator)
+                isinstance(value, handlers.ClassValidator)
             )
         }
 
@@ -59,29 +59,29 @@ class PropertyMetaclass(type):
         classdict['_props'] = _props
 
         # get pointers to all inherited observers
-        _cls_observers = dict()
+        _observers = dict()
         for base in reversed(bases):
-            if hasattr(base, '_cls_observers'):
-                _cls_observers.update({
-                    k: v for k, v in iteritems(base._cls_observers)
+            if hasattr(base, '_observers'):
+                _observers.update({
+                    k: v for k, v in iteritems(base._observers)
                     # drop ones which are no longer observers
                     if not (k not in observer_dict and k in classdict)
                 })
-        _cls_observers.update(observer_dict)
+        _observers.update(observer_dict)
         # save these to the class
-        classdict['_cls_observers'] = _cls_observers
+        classdict['_prop_observers'] = _observers
 
-        _delayed_validators = dict()
+        _validators = dict()
         for base in reversed(bases):
             if hasattr(base, '_delayed_validators'):
-                _delayed_validators.update({
-                    k: v for k, v in iteritems(base._delayed_validators)
+                _validators.update({
+                    k: v for k, v in iteritems(base._validators)
                     # drop ones which are no longer observers
-                    if not (k not in delayed_val_dict and k in classdict)
+                    if not (k not in validator_dict and k in classdict)
                 })
-        _delayed_validators.update(delayed_val_dict)
+        _validators.update(validator_dict)
         # save these to the class
-        classdict['_delayed_validators'] = _delayed_validators
+        classdict['_class_validators'] = _validators
 
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
@@ -90,16 +90,7 @@ class PropertyMetaclass(type):
 
         # Overwrite observers with their function
         for key, obs in iteritems(observer_dict):
-            classdict[key] = obs.get_property()
-
-        for key, val in iteritems(delayed_val_dict):
-            def delayed_val_func(self):
-                for k, v in iteritems(self._delayed_validators):
-                    if k == key:
-                        continue
-                    v.func(self)
-                return val.func(self)
-            classdict[key] = delayed_val_func
+            classdict[key] = obs.func
 
         # Create some better documentation
         doc_str = classdict.get('__doc__', '')
@@ -134,7 +125,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
         # add the default listeners
         self._listeners = dict()
-        for k, v in iteritems(self._cls_observers):
+        for k, v in iteritems(self._prop_observers):
             handlers._set_listener(self, v)
 
         for k, v in iteritems(self._props):
@@ -189,18 +180,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             listener.func(self, change)
 
     def _set(self, name, value):
-
+        self._notify(dict(name=name, value=value, mode='validate'))
         self._backend[name] = value
+        self._notify(dict(name=name, value=value, mode='observe'))
 
-        self._notify(
-            dict(
-                name=name,
-                value=value
-            )
-        )
-
-    @handlers.validator
-    def validate(self, silent=False):
+    def validate(self):
+        for key, val in iteritems(self._class_validators):
+            val.func(self)
         return True
 
     @handlers.validator

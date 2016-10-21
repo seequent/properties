@@ -308,9 +308,7 @@ class Float(Integer):
 
 
 class Complex(Property):
-    """
-        Complex number property
-    """
+    """Complex number property"""
 
     def validate(self, instance, value):
         if isinstance(value, (integer_types, float)):
