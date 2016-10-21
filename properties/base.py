@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 from six import with_metaclass
 from six import iteritems
+from types import ClassType
 from . import basic
 from . import handlers
 
@@ -208,9 +209,7 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
 class Instance(basic.Property):
 
     def __init__(self, help, instance_class, **kwargs):
-        assert issubclass(instance_class, HasProperties), (
-            'instance_class must be a HasProperties class'
-        )
+        assert isinstance(instance_class, (type, ClassType))
         self.instance_class = instance_class
         super(Instance, self).__init__(help, **kwargs)
 
@@ -239,13 +238,18 @@ class Instance(basic.Property):
         if valid is False:
             return valid
         value = getattr(instance, self.name, None)
-        value.validate()
+        if isinstance(value, HasProperties):
+            value.validate()
+        return True
 
     @staticmethod
     def as_json(value):
-        if value is not None:
+        if isinstance(value, HasProperties):
             return value.serialize(using='json')
-        return None
+        elif value is None:
+            return None
+        else:
+            raise TypeError('Cannot serialize type {}'.format(value.__class__))
 
 
 class List(basic.Property):
