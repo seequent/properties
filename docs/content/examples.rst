@@ -93,8 +93,10 @@ Then use :code:`MyVector3` as you would any other property:
 
         def validate(self, instance, value):
             """Determine if array is valid based on length"""
-            assert isinstance(value, list)
-            assert len(value) == 3
+            if not isinstance(value, list):
+                self.error()
+            if not len(value) == 3:
+                self.error()
             return value
 
     class MyProperties(properties.HasProperties):
@@ -105,8 +107,10 @@ Then use :code:`MyVector3` as you would any other property:
             info_text = 'a Vector!' #hide
             def validate(self, instance, value): #hide
                 """Determine if array is valid based on length""" #hide
-                assert isinstance(value, list) #hide
-                assert len(value) == 3 #hide
+                if not isinstance(value, list): #hide
+                    self.error() #hide
+                if not len(value) == 3: #hide
+                    self.error() #hide
                 return value #hide
         vec = MyVector3('A custom vector')
 
