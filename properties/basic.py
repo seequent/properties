@@ -365,6 +365,11 @@ class String(Property):
 
 class StringChoice(Property):
 
+    def __init__(self, help, choices, **kwargs):
+        self.choices = choices
+
+        super(StringChoice, self).__init__(help, **kwargs)
+
     @property
     def info_text(self):
         return 'any of "{}"'.format('", "'.join(self.choices))
@@ -393,7 +398,10 @@ class StringChoice(Property):
     def validate(self, instance, value):
         if not isinstance(value, string_types):
             self.error(instance, value)
+        print(self.choices)
         for k, v in self.choices.items():
+            print(k)
+            print(v)
             if (
                 value.upper() == k.upper() or
                 value.upper() in [_.upper() for _ in v]
