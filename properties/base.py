@@ -149,7 +149,7 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
             value = self._backend[name]
         else:
             value = default
-        if value is basic.Undefined:
+        if value is basic.undefined:
             return None
         # if value is None:
         #     return default
