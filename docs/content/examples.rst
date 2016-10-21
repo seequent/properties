@@ -17,25 +17,25 @@ x-direction.
     import properties
     class MyVectors(properties.HasProperties): # create a properties class
         import properties #hide
-        simpleVector = properties.Vector3('an arrow in space!', default='x')
+        simple_vector = properties.Vector3('an arrow in space!', default='x')
     vectors = MyVectors() # instantiate it
-    print vectors.simpleVector
+    print(vectors.simple_vector)
 
 In your code, you don't want to be working with strings, those have no
 numerical meaning! So we translate :code:`'x'` and give it numerical meaning - a unit
 vector in the x-direction, the first Cartesian coordinate.
 
 If you want to instantiate the :code:`MyVectors` class with
-a different :code:`simpleVector`
+a different :code:`simple_vector`
 
 .. exec::
 
     import properties #hide
     class MyVectors(properties.HasProperties):
         import properties #hide
-        simpleVector = properties.Vector3('an arrow in space!', default='x')
-    vectors = MyVectors(simpleVector = [1., 1., 0.])
-    print vectors.simpleVector
+        simple_vector = properties.Vector3('an arrow in space!', default='x')
+    vectors = MyVectors(simple_vector = [1., 1., 0.])
+    print(vectors.simple_vector)
 
 and look at it component-by-component
 
@@ -44,9 +44,9 @@ and look at it component-by-component
     import properties #hide
     class MyVectors(properties.HasProperties):#hide
         import properties #hide
-        simpleVector = properties.Vector3('an arrow in space!', default='x')#hide
-    vectors = MyVectors(simpleVector = [1., 1., 0.])#hide
-    print vectors.simpleVector.x
+        simple_vector = properties.Vector3('an arrow in space!', default='x')#hide
+    vectors = MyVectors(simple_vector = [1., 1., 0.])#hide
+    print(vectors.simple_vector.x)
 
 or perhaps scale it so that it has Unit length
 
@@ -55,9 +55,9 @@ or perhaps scale it so that it has Unit length
     import properties #hide
     class MyVectors(properties.HasProperties):#hide
         import properties #hide
-        simpleVector = properties.Vector3('an arrow in space!', default='x')#hide
-    vectors = MyVectors(simpleVector = [1., 1., 0.])#hide
-    print vectors.simpleVector.as_unit()
+        simple_vector = properties.Vector3('an arrow in space!', default='x')#hide
+    vectors = MyVectors(simple_vector = [1., 1., 0.])#hide
+    print(vectors.simple_vector.as_unit())
 
 There are lots of things you might want to do with a Vector! See the
 :ref:`Vector2 <properties_vector2>` or :ref:`Vector3 <properties_vector3>` docs for more.
@@ -71,7 +71,7 @@ To create your own properties, subclass :code:`Property` and override :code:`val
 .. exec::
 
     import properties
-    class Vector3(properties.Property):
+    class MyVector3(properties.Property):
         """A vector trait that defines length of 3"""
         info_text = 'a Vector!'
 
@@ -82,14 +82,25 @@ To create your own properties, subclass :code:`Property` and override :code:`val
             return value
 
 
-Then use :code:`Vector3` as you would any other property:
+Then use :code:`MyVector3` as you would any other property:
 
 .. exec::
 
     import properties
-    class MyClass(properties.HasProperties):
+    class MyVector3(properties.Property):
+        """A vector trait that defines length of 3"""
+        info_text = 'a Vector!'
+
+        def validate(self, instance, value):
+            """Determine if array is valid based on length"""
+            assert isinstance(value, list)
+            assert len(value) == 3
+            return value
+
+    class MyProperties(properties.HasProperties):
+        """A class that uses properties"""
         import properties #hide
-        class Vector3(properties.Property): #hide
+        class MyVector3(properties.Property): #hide
             """A vector trait that defines length of 3""" #hide
             info_text = 'a Vector!' #hide
             def validate(self, instance, value): #hide
@@ -97,10 +108,11 @@ Then use :code:`Vector3` as you would any other property:
                 assert isinstance(value, list) #hide
                 assert len(value) == 3 #hide
                 return value #hide
-        myvector = Vector3('A vector3')
+        vec = MyVector3('A custom vector')
 
-    myCls = MyClass()
-    myCls.myvector = [0, 1, 2]
-    print(myCls.myvector)
+    props = MyProperties()
+    props.vec = [0, 1, 2]
+    print(props.vec)
+
 
 Note that :code:`Properties` only work inside a :code:`HasProperties` class!
