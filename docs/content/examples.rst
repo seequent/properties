@@ -77,8 +77,10 @@ To create your own properties, subclass :code:`Property` and override :code:`val
 
         def validate(self, instance, value):
             """Determine if array is valid based on length"""
-            assert isinstance(value, list)
-            assert len(value) == 3
+            if not isinstance(value, list):
+                self.error()
+            if not len(value) == 3:
+                self.error()
             return value
 
 
