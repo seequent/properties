@@ -25,22 +25,8 @@ Everything is documented!
     :maxdepth: 2
 
     content/examples
-    content/gettableproperty
     content/property
-    content/instance
-    content/uidmodel
-    content/union
-    content/bool
-    content/integer
-    content/float
-    content/complex
-    content/string
-    content/stringchoice
-    content/datetime
-    content/array
-    content/vector3
-    content/vector2
-    content/color
+    content/basic
 
 A Primer
 --------
