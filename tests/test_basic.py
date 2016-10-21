@@ -586,13 +586,13 @@ class TestBasic(unittest.TestCase):
 
     def test_serialize(self):
 
-        class mySerializableThing(properties.HasProperties):
+        class MySerializableThing(properties.HasProperties):
             anystr = properties.String("a string!")
             anotherstr = properties.String("a different string!", default='HELLO WORLD!')
             myint = properties.Integer("an integer!")
             myvector2 = properties.Vector2("a 2x2 vector!")
 
-        thing = mySerializableThing()
+        thing = MySerializableThing()
         # should contain ', 'myvector2': []' ?
         self.assertEqual(thing.serialize(), {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0})
 
