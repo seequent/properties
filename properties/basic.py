@@ -656,12 +656,6 @@ class Uid(GettableProperty):
         """default value of the property"""
         return getattr(self, '_default', Undefined)
 
-    @default.setter
-    def default(self, value):
-        raise ValueError(
-            'Default can not be specified for UID properties'
-        )
-
     def startup(self, instance):
         instance._set(self.name, uuid4())
 
