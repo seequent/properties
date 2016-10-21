@@ -37,6 +37,13 @@ class PropertyMetaclass(type):
             )
         }
 
+        delayed_val_dict = {
+            key: value for key, value in classdict.items()
+            if (
+                isinstance(value, handlers.DelayedValidator)
+            )
+        }
+
         # get pointers to all inherited properties
         _props = dict()
         for base in reversed(bases):
@@ -64,14 +71,35 @@ class PropertyMetaclass(type):
         # save these to the class
         classdict['_cls_observers'] = _cls_observers
 
+        _delayed_validators = dict()
+        for base in reversed(bases):
+            if hasattr(base, '_delayed_validators'):
+                _delayed_validators.update({
+                    k: v for k, v in iteritems(base._delayed_validators)
+                    # drop ones which are no longer observers
+                    if not (k not in delayed_val_dict and k in classdict)
+                })
+        _delayed_validators.update(delayed_val_dict)
+        # save these to the class
+        classdict['_delayed_validators'] = _delayed_validators
+
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             prop.name = key
             classdict[key] = prop.get_property()
 
-        # Overwrite observers with @property
+        # Overwrite observers with their function
         for key, obs in iteritems(observer_dict):
             classdict[key] = obs.get_property()
+
+        for key, val in iteritems(delayed_val_dict):
+            def delayed_val_func(self):
+                for k, v in iteritems(self._delayed_validators):
+                    if k == key:
+                        continue
+                    v.func(self)
+                return val.func(self)
+            classdict[key] = delayed_val_func
 
         # Create some better documentation
         doc_str = classdict.get('__doc__', '')
@@ -173,6 +201,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     @handlers.validator
     def validate(self, silent=False):
+        return True
+
+    @handlers.validator
+    def _validate_props(self):
         self._validating = True
         try:
             for k in self._props:

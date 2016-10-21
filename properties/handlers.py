@@ -3,7 +3,8 @@ from six import string_types
 
 
 __all__ = [
-    "observe"
+    "observe",
+    "validator"
 ]
 
 
@@ -66,6 +67,20 @@ class Validator(Observer):
     # This is used for the type of observer
     # kind = 'all'  # not currently implemented
 
+
+class DelayedValidator(object):
+    """
+        Acts as a listener on a properties instance.
+    """
+
+    # This is used for the type of observer
+    # kind = 'all'  # not currently implemented
+
+    def __init__(self, func):
+        self.func = func
+
+    def get_property(self):
+        return self.func
 
 
 def observe(names_or_instance, names=None, func=None):
@@ -135,7 +150,7 @@ def validator(names_or_instance, names=None, func=None):
 
     if names is None and func is None:
         if callable(names_or_instance):
-            return Validator([])(names_or_instance)
+            return DelayedValidator(names_or_instance)
         return Validator(names_or_instance)
 
     val = Validator(names)(func)
