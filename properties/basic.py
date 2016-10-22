@@ -162,7 +162,8 @@ class Property(GettableProperty):
     def from_json(value):
         return value
 
-    def error(self, instance, value, error=ValueError, extra=''):
+    def error(self, instance, value, error=None, extra=''):
+        error = error if error is not None else ValueError
         raise error(
             "The `{name}` property of a {cls} instance must be {info}. "
             "A value of {val!r} {vtype!r} was specified. {extra}".format(
@@ -449,10 +450,14 @@ class Array(Property):
 
     info_text = 'a list or numpy array'
 
-    # TODO: `wrapper` can be overridden in a base class or from the input.
-    #       e.g. a tuple, list or Vector3
-    #       Need to maybe turn it into a @property and only accept some things?
-    wrapper = np.array
+    @property
+    def wrapper(self):
+        """wraps the value in the validation call.
+
+        This is usually a :class:`numpy.array` but could also be a
+        :class:`tuple`, :class:`list` or :class:`vectormath.Vector3`
+        """
+        return np.array
 
     @property
     def shape(self):

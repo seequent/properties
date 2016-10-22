@@ -61,7 +61,7 @@ instantiate the class with a name.
         count = properties.Integer('number of coffees today')#hide
         haz_enough_coffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
         caffeine_choice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
-    profile = CoffeeProfile(name = 'Bob')
+    profile = CoffeeProfile(name='Bob')
     print profile.name
 
 Since a default value was provided for :code:`haz_enough_coffee`, the response is (naturally)
@@ -89,7 +89,7 @@ We can set Bob's :code:`caffeine_choice`, his default is coffee
         count = properties.Integer('number of coffees today')#hide
         haz_enough_coffee = properties.Bool('Have you had enough coffee today?', default=False)#hide
         caffeine_choice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])#hide
-    profile = CoffeeProfile(name = 'Bob')#hide
+    profile = CoffeeProfile(name='Bob')#hide
     profile.caffeine_choice = 'coffee'
 
 
