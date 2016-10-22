@@ -71,18 +71,17 @@ class PropertyMetaclass(type):
         # save these to the class
         classdict['_prop_observers'] = _observers
 
-        _validators = dict()
+        _class_validators = dict()
         for base in reversed(bases):
-            if hasattr(base, '_delayed_validators'):
-                _validators.update({
-                    k: v for k, v in iteritems(base._validators)
+            if hasattr(base, '_class_validators'):
+                _class_validators.update({
+                    k: v for k, v in iteritems(base._class_validators)
                     # drop ones which are no longer observers
                     if not (k not in validator_dict and k in classdict)
                 })
-        _validators.update(validator_dict)
+        _class_validators.update(validator_dict)
         # save these to the class
-        classdict['_class_validators'] = _validators
-
+        classdict['_class_validators'] = _class_validators
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             prop.name = key
