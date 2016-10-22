@@ -60,7 +60,7 @@ or perhaps scale it so that it has Unit length
     print(vectors.simple_vector.as_unit())
 
 There are lots of things you might want to do with a Vector! See the
-:ref:`Vector2 <properties_vector2>` or :ref:`Vector3 <properties_vector3>` docs for more.
+:class:`.Vector2` or :class:`.Vector3` docs for more.
 
 
 Creating a property

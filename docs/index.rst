@@ -29,7 +29,6 @@ Everything is documented!
     :maxdepth: 2
 
     content/examples
-    content/property
     content/basic
 
 A Primer

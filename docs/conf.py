@@ -297,7 +297,7 @@ texinfo_documents = [
 ]
 
 # Documents to append as an appendix to all manuals.
-#texinfo_appendices = []
+# texinfo_appendices = []
 
 # If false, no module index is generated.
 #texinfo_domain_indices = True
@@ -310,9 +310,12 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None,
-                       'http://docs.scipy.org/doc/numpy/': None,
-                       'http://docs.scipy.org/doc/scipy/reference/': None,}
+intersphinx_mapping = {
+    'https://docs.python.org/3/': None,
+    'https://docs.scipy.org/doc/numpy/': None,
+    'https://docs.scipy.org/doc/scipy/reference/': None,
+    'http://vectormath.readthedocs.io/en/latest/': None,
+}
 
 
 import sphinx.environment

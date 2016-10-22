@@ -454,8 +454,8 @@ class Array(Property):
     def wrapper(self):
         """wraps the value in the validation call.
 
-        This is usually a :class:`numpy.array` but could also be a
-        :class:`tuple`, :class:`list` or :class:`vectormath.Vector3`
+        This is usually a :func:`numpy.array` but could also be a
+        :class:`tuple`, :class:`list` or :class:`vectormath.vector.Vector3`
         """
         return np.array
 
