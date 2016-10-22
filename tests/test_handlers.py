@@ -52,6 +52,9 @@ class TestHandlers(unittest.TestCase):
         props.validator(hand, 'c', _c_cannot_be_five)
         self.assertRaises(ValueError, lambda: setattr(hand, 'c', 5))
 
+        hand._backend['a'] = 'not an int'
+        self.assertRaises(ValueError, lambda: hand.validate())
+
 
 
 

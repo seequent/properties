@@ -134,6 +134,8 @@ class Property(GettableProperty):
                     cls=instance.__class__.__name__
                 )
             )
+        if value is not None:
+            self.validate(instance, value)
         return True
 
     def validate(self, instance, value):
