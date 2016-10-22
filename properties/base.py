@@ -267,7 +267,7 @@ class List(basic.Property):
 
     def __init__(self, help, prop, **kwargs):
         if isinstance(prop, type) and issubclass(prop, HasProperties):
-            prop = Instance(help, HasProperties)
+            prop = Instance(help, prop)
         assert isinstance(prop, basic.Property), (
             'prop must be a Property or HasProperties class'
         )
@@ -282,7 +282,7 @@ class List(basic.Property):
             self.error(instance, value)
         out = []
         for v in value:
-            out += [self.prop.validate(instance, value)]
+            out += [self.prop.validate(instance, v)]
         return out
 
     def assert_valid(self, instance):
@@ -300,13 +300,15 @@ class Union(basic.Property):
 
     def __init__(self, help, props, **kwargs):
         assert isinstance(props, (tuple, list)), "props must be a list"
-        for i, prop in enumerate(props):
+        new_props = tuple()
+        for prop in props:
             if isinstance(prop, type) and issubclass(prop, HasProperties):
-                props[i] = Instance(help, prop)
+                prop = Instance(help, prop)
             assert isinstance(prop, basic.Property), (
                 "all props must be Property instance or HasProperties class"
             )
-        self.props = props
+            new_props += (prop,)
+        self.props = new_props
 
         super(Union, self).__init__(help, **kwargs)
 
@@ -314,7 +316,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.validate(instance, value)
-            except ValueError:
+            except Exception:
                 continue
         self.error(instance, value)
 

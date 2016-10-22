@@ -56,7 +56,5 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(ValueError, lambda: hand.validate())
 
 
-
-
 if __name__ == '__main__':
     unittest.main()
