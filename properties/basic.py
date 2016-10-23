@@ -11,7 +11,6 @@ from six import integer_types
 from six import string_types
 import vectormath as vmath
 
-
 from .utils import undefined
 
 
@@ -263,6 +262,8 @@ class Float(Integer):
 
 class Complex(Property):
     """Complex number property"""
+
+    info_text = 'a complex number'
 
     def validate(self, instance, value):
         if isinstance(value, (integer_types, float)):
@@ -651,6 +652,7 @@ class Color(Property):
         'random' for random color. This property converts all these to RBG.
     """
 
+    info_text = 'a color'
     # @property
     # def doc(self):
     #     if getattr(self, '_doc', None) is None:

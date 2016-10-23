@@ -214,6 +214,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
 class Instance(basic.Property):
 
+    info_text = 'an instance'
+
     def __init__(self, help, instance_class, **kwargs):
         assert isinstance(instance_class, type)
         self.instance_class = instance_class
@@ -262,6 +264,8 @@ class Instance(basic.Property):
 
 
 class List(basic.Property):
+
+    info_text = 'a list'
 
     def __init__(self, help, prop, **kwargs):
         if isinstance(prop, type) and issubclass(prop, HasProperties):
@@ -334,6 +338,8 @@ class List(basic.Property):
 
 
 class Union(basic.Property):
+
+    info_text = 'a union of multiple property types'
 
     def __init__(self, help, props, **kwargs):
         assert isinstance(props, (tuple, list)), "props must be a list"
