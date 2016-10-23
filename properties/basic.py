@@ -111,7 +111,7 @@ class Property(GettableProperty):
                 )
             )
         if value is not None:
-            self.validate(instance, value)
+            instance._backend[self.name] = self.validate(instance, value)
         return True
 
     def validate(self, instance, value):
