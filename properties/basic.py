@@ -351,7 +351,6 @@ class StringChoice(Property):
 
     def __init__(self, help, choices, **kwargs):
         self.choices = choices
-
         super(StringChoice, self).__init__(help, **kwargs)
 
     @property
