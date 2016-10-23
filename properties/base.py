@@ -115,7 +115,7 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
         # set the defaults
         defaults = self._defaults or dict()
         for key, value in iteritems(defaults):
-            if key not in self.property_names:
+            if key not in self._props.keys():
                 raise KeyError(
                     'Default input "{:s}" is not a known property'.format(key)
                 )
@@ -125,23 +125,19 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
                 setattr(self, key, value)
 
         # set the keywords
-        self.exclusive_kwargs = kwargs.pop(
-            'exclusive_kwargs', getattr(self, 'exclusive_kwargs', False)
+        self._exclusive_kwargs = kwargs.pop(
+            '_exclusive_kwargs', getattr(self, '_exclusive_kwargs', False)
         )
 
         for key in kwargs:
             if (
-                (self.exclusive_kwargs and key not in self.property_names) or
-                (not hasattr(self, key) and key not in self.property_names)
+                (self._exclusive_kwargs and key not in self._props.keys()) or
+                (not hasattr(self, key) and key not in self._props.keys())
             ):
                 raise KeyError(
                     'Keyword input "{:s}" is not a known property'.format(key)
                 )
             setattr(self, key, kwargs[key])
-
-    @property
-    def property_names(self):
-        return self._props.keys()
 
     def _get(self, name, default):
         # print(name)
@@ -183,8 +179,8 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
 
     def serialize(self, using='json'):
         assert using == 'json', "Only json is supported."
-        kv = ((k, v.as_json(self._get(v.name, v.default))) \
-               for k, v in iteritems(self._props))
+        kv = ((k, v.as_json(self._get(v.name, v.default)))
+              for k, v in iteritems(self._props))
         props = {k: v for k, v in kv if v is not None}
         return props
 

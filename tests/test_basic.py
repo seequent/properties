@@ -128,6 +128,13 @@ class ThingWithInheritedDefaults(ThingWithDefaults):
         )
 
 
+class SerializableThing(properties.HasProperties):
+    anystr = properties.String("a string!")
+    anotherstr = properties.String("another string!", default='HELLO WORLD!')
+    myint = properties.Integer("an integer!")
+    myvector2 = properties.Vector2("a 2x2 vector!")
+
+
 class MyArray(properties.HasProperties):
     int_array = properties.Array(
         'some ints',
@@ -343,10 +350,12 @@ class TestBasic(unittest.TestCase):
 
     def test_numbers(self):
         nums = NumPrimitive()
-        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0})
+        serialized = {'myint': 0, 'myfloat': 1.0}
+        self.assertEqual(nums.serialize(), serialized)
         nums.mycomplex = 1.
-        assert type(nums.mycomplex) == complex
-        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0, 'mycomplex': 1.})
+        assert isinstance(nums.mycomplex, complex)
+        serialized["mycomplex"] = 1.
+        self.assertEqual(nums.serialize(), serialized)
 
     def test_array(self):
 
@@ -586,15 +595,12 @@ class TestBasic(unittest.TestCase):
 
     def test_serialize(self):
 
-        class MySerializableThing(properties.HasProperties):
-            anystr = properties.String("a string!")
-            anotherstr = properties.String("a different string!", default='HELLO WORLD!')
-            myint = properties.Integer("an integer!")
-            myvector2 = properties.Vector2("a 2x2 vector!")
-
-        thing = MySerializableThing()
+        thing = SerializableThing()
         # should contain ', 'myvector2': []' ?
-        self.assertEqual(thing.serialize(), {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0})
+        self.assertEqual(
+            thing.serialize(),
+            {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0}
+        )
 
         thing.anystr = 'a value'
         thing.anotherstr = ''
