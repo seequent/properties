@@ -562,6 +562,10 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(AttributeError,
                           lambda: setattr(model, 'uid', uuid.uuid4()))
 
+        model._backend['uid'] = 'hi'
+        with self.assertRaises(ValueError):
+            model.validate()
+
     def test_observer(self):
         opts = Location3()
         assert not hasattr(opts, '_last_change')
