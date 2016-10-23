@@ -13,30 +13,7 @@ from six import integer_types
 from six import string_types
 import vectormath as vmath
 
-from . import utils
-
-__all__ = [
-    "GettableProperty",
-    "Property",
-    "Union",
-    "Bool",
-    "Integer",
-    "Float",
-    "Complex",
-    "String",
-    "StringChoice",
-    "DateTime",
-    "Array",
-    "Vector3",
-    "Vector2",
-    "Color",
-    "Uid",
-    "Image",
-    "Undefined"
-]
-
-
-Undefined = utils.Sentinel('Undefined', 'Undefined value for properties.')
+from .utils import undefined
 
 
 class GettableProperty(object):
@@ -68,7 +45,7 @@ class GettableProperty(object):
     @property
     def default(self):
         """default value of the property"""
-        return getattr(self, '_default', Undefined)
+        return getattr(self, '_default', undefined)
 
     @default.setter
     def default(self, value):
@@ -155,7 +132,7 @@ class Property(GettableProperty):
             self._set(scope.name, value)
 
         def fdel(self):
-            self._set(scope.name, Undefined)
+            self._set(scope.name, undefined)
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
 
@@ -170,7 +147,8 @@ class Property(GettableProperty):
     def from_json(value):
         return value
 
-    def error(self, instance, value, error=ValueError, extra=''):
+    def error(self, instance, value, error=None, extra=''):
+        error = error if error is not None else ValueError
         raise error(
             "The `{name}` property of a {cls} instance must be {info}. "
             "A value of {val!r} {vtype!r} was specified. {extra}".format(
@@ -293,7 +271,7 @@ class Float(Integer):
     info_text = 'a float'
 
     def validate(self, instance, value):
-        if isinstance(value, float) or isinstance(value, integer_types):
+        if isinstance(value, (float, integer_types)):
             value = float(value)
         _in_bounds(self, instance, value)
         return value
@@ -460,10 +438,14 @@ class Array(Property):
 
     info_text = 'a list or numpy array'
 
-    # TODO: `wrapper` can be overridden in a base class or from the input.
-    #       e.g. a tuple, list or Vector3
-    #       Need to maybe turn it into a @property and only accept some things?
-    wrapper = np.array
+    @property
+    def wrapper(self):
+        """wraps the value in the validation call.
+
+        This is usually a :func:`numpy.array` but could also be a
+        :class:`tuple`, :class:`list` or :class:`vectormath.vector.Vector3`
+        """
+        return np.array
 
     @property
     def shape(self):
@@ -554,7 +536,12 @@ class Vector3(Array):
     """A vector trait that can define the length."""
 
     info_text = 'a list or Vector3'
-    wrapper = vmath.Vector3
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector3`
+        """
+        return vmath.Vector3
 
     @property
     def shape(self):
@@ -570,7 +557,9 @@ class Vector3(Array):
 
     @length.setter
     def length(self, value):
-        assert isinstance(value, (float, integer_types)), 'length must be a float'
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
         assert value > 0.0, 'length must be positive'
         self._length = float(value)
 
@@ -605,7 +594,12 @@ class Vector2(Array):
     """A vector trait that can define the length."""
 
     info_text = 'a list or Vector2'
-    wrapper = vmath.Vector2
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector2`
+        """
+        return vmath.Vector2
 
     @property
     def shape(self):
@@ -621,7 +615,9 @@ class Vector2(Array):
 
     @length.setter
     def length(self, value):
-        assert isinstance(value, (float, integer_types)), 'length must be a float'
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
         assert value > 0.0, 'length must be positive'
         self._length = value
 
@@ -697,7 +693,7 @@ class Uid(GettableProperty):
     @property
     def default(self):
         """default value of the property"""
-        return getattr(self, '_default', Undefined)
+        return getattr(self, '_default', undefined)
 
     def startup(self, instance):
         instance._set(self.name, uuid4())

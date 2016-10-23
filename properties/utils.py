@@ -1,9 +1,5 @@
 from functools import wraps
 
-__all__ = [
-    "defaults"
-]
-
 
 def defaults(func):
     """
@@ -52,3 +48,6 @@ class Sentinel(object):
     def __init__(self, name, help):
         self.name = name
         self.help = help
+
+
+undefined = Sentinel('undefined', 'undefined value for properties.')

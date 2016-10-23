@@ -89,9 +89,23 @@ class DefaultColorOptions(APrimitive):
     color = properties.Color("This color is random", default='random')
 
 
+class NotProperty(object):
+    pass
+
+
 class ThingWithOptions(properties.HasProperties):
     opts = properties.Instance("My options", SomeOptions, auto_create=True)
     opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
+    moreopts = properties.List(
+        "List of options",
+        SomeOptions
+    )
+
+
+class ThingWithOptions2(properties.HasProperties):
+    opts = properties.Instance("My options", SomeOptions, auto_create=True)
+    opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
+    notprop = properties.Instance("My options", NotProperty, auto_create=True)
     moreopts = properties.List(
         "List of options",
         SomeOptions
@@ -112,6 +126,13 @@ class ThingWithInheritedDefaults(ThingWithDefaults):
         return dict(
             opts2=lambda: SomeOptions(color='green'),
         )
+
+
+class SerializableThing(properties.HasProperties):
+    anystr = properties.String("a string!")
+    anotherstr = properties.String("another string!", default='HELLO WORLD!')
+    myint = properties.Integer("an integer!")
+    myvector2 = properties.Vector2("a 2x2 vector!")
 
 
 class MyArray(properties.HasProperties):
@@ -329,10 +350,12 @@ class TestBasic(unittest.TestCase):
 
     def test_numbers(self):
         nums = NumPrimitive()
-        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0})
+        serialized = {'myint': 0, 'myfloat': 1.0}
+        self.assertEqual(nums.serialize(), serialized)
         nums.mycomplex = 1.
-        assert type(nums.mycomplex) == complex
-        self.assertEqual(nums.serialize(), {'myint': 0, 'myfloat': 1.0, 'mycomplex': 1.})
+        assert isinstance(nums.mycomplex, complex)
+        serialized["mycomplex"] = 1.
+        self.assertEqual(nums.serialize(), serialized)
 
     def test_array(self):
 
@@ -415,13 +438,13 @@ class TestBasic(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             twop._props['opts'].assert_valid(twop)
-        twop.opacity = .5
         twop.opts.opacity = .5
+        twop.opts2.opacity = .5
         twop._props['opts'].assert_valid(twop)
-
+        twop.validate()
         self.assertEqual(len(twop.serialize()), 3)
-        twop2 = ThingWithOptions()
-        self.assertEqual(len(twop2.serialize()), 3)
+        twop2 = ThingWithOptions2()
+        # self.assertEqual(len(twop2.serialize()), 3)
         assert twop.opts.color == (255, 0, 0)
         # auto create the options.
         assert twop2.opts is not twop.opts
@@ -431,6 +454,13 @@ class TestBasic(unittest.TestCase):
         assert len(twop.moreopts) == 0
         assert twop.moreopts is twop.moreopts
         assert twop.moreopts is not twop2.moreopts
+
+        notprop = NotProperty()
+        opts.opacity = .5
+        twop2.opts = opts
+        twop2.opts2 = opts
+        twop2.notprop = notprop
+        twop2.validate()
 
         # test different validation routes
         twop = AThing()
@@ -530,7 +560,7 @@ class TestBasic(unittest.TestCase):
         model.description = 'I have a uid'
         assert isinstance(model.uid, uuid.UUID)
         self.assertRaises(AttributeError,
-                          lambda: setattr(model, 'uid', uuid.uuid4()));
+                          lambda: setattr(model, 'uid', uuid.uuid4()))
 
     def test_observer(self):
         opts = Location3()
@@ -565,15 +595,12 @@ class TestBasic(unittest.TestCase):
 
     def test_serialize(self):
 
-        class mySerializableThing(properties.HasProperties):
-            anystr = properties.String("a string!")
-            anotherstr = properties.String("a different string!", default='HELLO WORLD!')
-            myint = properties.Integer("an integer!")
-            myvector2 = properties.Vector2("a 2x2 vector!")
-
-        thing = mySerializableThing()
+        thing = SerializableThing()
         # should contain ', 'myvector2': []' ?
-        self.assertEqual(thing.serialize(), {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0})
+        self.assertEqual(
+            thing.serialize(),
+            {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0}
+        )
 
         thing.anystr = 'a value'
         thing.anotherstr = ''
