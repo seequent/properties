@@ -5,10 +5,12 @@ from __future__ import unicode_literals
 
 import datetime
 from uuid import uuid4
+
+import numpy as np
 from six import integer_types
 from six import string_types
-import numpy as np
 import vectormath as vmath
+
 from .utils import undefined
 
 
@@ -107,6 +109,8 @@ class Property(GettableProperty):
                     cls=instance.__class__.__name__
                 )
             )
+        if value is not None:
+            self.validate(instance, value)
         return True
 
     def validate(self, instance, value):
@@ -282,9 +286,7 @@ class Float(Integer):
 
 
 class Complex(Property):
-    """
-        Complex number property
-    """
+    """Complex number property"""
 
     def validate(self, instance, value):
         if isinstance(value, (integer_types, float)):
@@ -344,6 +346,10 @@ class String(Property):
 
 
 class StringChoice(Property):
+
+    def __init__(self, help, choices, **kwargs):
+        self.choices = choices
+        super(StringChoice, self).__init__(help, **kwargs)
 
     @property
     def info_text(self):

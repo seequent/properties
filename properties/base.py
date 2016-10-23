@@ -29,6 +29,13 @@ class PropertyMetaclass(type):
             )
         }
 
+        validator_dict = {
+            key: value for key, value in classdict.items()
+            if (
+                isinstance(value, handlers.ClassValidator)
+            )
+        }
+
         # get pointers to all inherited properties
         _props = dict()
         for base in reversed(bases):
@@ -44,26 +51,37 @@ class PropertyMetaclass(type):
         classdict['_props'] = _props
 
         # get pointers to all inherited observers
-        _cls_observers = dict()
+        _prop_observers = dict()
         for base in reversed(bases):
-            if hasattr(base, '_cls_observers'):
-                _cls_observers.update({
-                    k: v for k, v in iteritems(base._cls_observers)
+            if hasattr(base, '_prop_observers'):
+                _prop_observers.update({
+                    k: v for k, v in iteritems(base._prop_observers)
                     # drop ones which are no longer observers
                     if not (k not in observer_dict and k in classdict)
                 })
-        _cls_observers.update(observer_dict)
+        _prop_observers.update(observer_dict)
         # save these to the class
-        classdict['_cls_observers'] = _cls_observers
+        classdict['_prop_observers'] = _prop_observers
 
+        _class_validators = dict()
+        for base in reversed(bases):
+            if hasattr(base, '_class_validators'):
+                _class_validators.update({
+                    k: v for k, v in iteritems(base._class_validators)
+                    # drop ones which are no longer observers
+                    if not (k not in validator_dict and k in classdict)
+                })
+        _class_validators.update(validator_dict)
+        # save these to the class
+        classdict['_class_validators'] = _class_validators
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             prop.name = key
             classdict[key] = prop.get_property()
 
-        # Overwrite observers with @property
+        # Overwrite observers with their function
         for key, obs in iteritems(observer_dict):
-            classdict[key] = obs.get_property()
+            classdict[key] = obs.func
 
         # Create some better documentation
         doc_str = classdict.get('__doc__', '')
@@ -86,7 +104,7 @@ class PropertyMetaclass(type):
         return newcls
 
 
-class HasProperties(with_metaclass(PropertyMetaclass)):
+class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     _backend_name = "dict"
     _backend_class = dict
@@ -98,7 +116,7 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
 
         # add the default listeners
         self._listeners = dict()
-        for k, v in iteritems(self._cls_observers):
+        for k, v in iteritems(self._prop_observers):
             handlers._set_listener(self, v)
 
         for k, v in iteritems(self._props):
@@ -149,17 +167,17 @@ class HasProperties(with_metaclass(PropertyMetaclass)):
             listener.func(self, change)
 
     def _set(self, name, value):
-
+        self._notify(dict(name=name, value=value, mode='validate'))
         self._backend[name] = value
+        self._notify(dict(name=name, value=value, mode='observe'))
 
-        self._notify(
-            dict(
-                name=name,
-                value=value
-            )
-        )
+    def validate(self):
+        for key, val in iteritems(self._class_validators):
+            val.func(self)
+        return True
 
-    def validate(self, silent=False):
+    @handlers.validator
+    def _validate_props(self):
         self._validating = True
         try:
             for k in self._props:

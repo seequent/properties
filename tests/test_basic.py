@@ -68,7 +68,7 @@ class Location3(properties.HasProperties):
     loc = properties.Vector3("My location")
     unit = properties.Vector3("My location", length=1)
 
-    @properties.observe('loc')
+    @properties.observer('loc')
     def _on_loc_change(self, change):
         self._last_change = change
 
@@ -569,7 +569,7 @@ class TestBasic(unittest.TestCase):
         assert hasattr(opts, '_last_change')
 
         assert not hasattr(opts, '_hello')
-        properties.observe(
+        properties.observer(
             opts,
             'loc',
             lambda self, change: setattr(self, '_hello', change)
