@@ -262,6 +262,11 @@ class Instance(basic.Property):
         else:
             raise TypeError('Cannot serialize type {}'.format(value.__class__))
 
+    def sphinx_class(self):
+        return ':class:`{cls} <.{cls}>`'.format(
+            cls=self.instance_class.__name__
+        )
+
 
 class List(basic.Property):
 
@@ -336,6 +341,9 @@ class List(basic.Property):
             if isinstance(v, HasProperties):
                 v.validate()
 
+    def sphinx_class(self):
+        return self.prop.sphinx_class()
+
 
 class Union(basic.Property):
 
@@ -365,6 +373,9 @@ class Union(basic.Property):
             except Exception:
                 continue
         self.error(instance, value)
+
+    def sphinx_class(self):
+        return ', '.join(p.sphinx_class() for p in self.props)
 
 
 class UidModel(HasProperties):

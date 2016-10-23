@@ -75,6 +75,23 @@ class GettableProperty(object):
     def startup(self, instance):
         pass
 
+    def sphinx(self):
+        return (
+            ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
+                name=self.name,
+                help=self.help,
+                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                default=('' if (self.default_value is undefined or
+                                self.default_value is None or
+                                self.default_value in ([], {}, ''))
+                         else ', Default: ' + str(self.default)),
+                cls=self.sphinx_class()
+            )
+        )
+
+    def sphinx_class(self):
+        return ':class:`{cls} <.{cls}>`'.format(cls=self.__class__.__name__)
+
 
 class Property(GettableProperty):
 
