@@ -9,28 +9,7 @@ from six import integer_types
 from six import string_types
 import numpy as np
 import vectormath as vmath
-from . import utils
-
-__all__ = [
-    "GettableProperty",
-    "Property",
-    "Union",
-    "Bool",
-    "Integer",
-    "Float",
-    "Complex",
-    "String",
-    "StringChoice",
-    "DateTime",
-    "Array",
-    "Vector3",
-    "Vector2",
-    "Color",
-    "Uid",
-    "undefined"
-]
-
-undefined = utils.Sentinel('undefined', 'undefined value for properties.')
+from .utils import undefined
 
 
 class GettableProperty(object):

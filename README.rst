@@ -33,7 +33,7 @@ Scope
 -----
 
 The :code:`properties` package allows you to create **strongly typed** objects in a
-consistent way. This allows you to hook into **notifications** and other libraries
+consistent way. This allows you to hook into **notifications** and other libraries.
 
 
 Goals

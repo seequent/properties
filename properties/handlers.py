@@ -2,11 +2,6 @@ from functools import wraps
 from six import string_types
 
 
-__all__ = [
-    "observe"
-]
-
-
 def _set_listener(instance, observer):
     """
         Add listeners to a Properties class instance
