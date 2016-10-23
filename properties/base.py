@@ -231,6 +231,9 @@ class Instance(basic.Property):
         assert isinstance(value, bool), 'auto_create must be a boolean'
         self._auto_create = value
 
+    def info(self):
+        return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
+
     def validate(self, instance, value):
         if isinstance(value, self.instance_class):
             return value
@@ -271,12 +274,18 @@ class List(basic.Property):
     def startup(self, instance):
         instance._set(self.name, [])
 
+    def info(self):
+        return 'a list; each item is {info}'.format(info=prop.info())
+
     def validate(self, instance, value):
         if not isinstance(value, (tuple, list)):
             self.error(instance, value)
         out = []
         for v in value:
-            out += [self.prop.validate(instance, v)]
+            try:
+                out += [self.prop.validate(instance, v)]
+            except ValueError:
+                self.error(instance, v, extra='This is an invalid list item.')
         return out
 
     def assert_valid(self, instance):
@@ -287,7 +296,8 @@ class List(basic.Property):
         if value is None:
             return True
         for v in value:
-            v.assert_valid(instance)
+            if isinstance(v, HasProperties):
+                v.validate()
 
 
 class Union(basic.Property):
@@ -305,6 +315,9 @@ class Union(basic.Property):
         self.props = new_props
 
         super(Union, self).__init__(help, **kwargs)
+
+    def info(self):
+        return ' or '.join([p.info() for p in props])
 
     def validate(self, instance, value):
         for prop in self.props:
