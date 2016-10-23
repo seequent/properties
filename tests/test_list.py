@@ -8,7 +8,7 @@ import unittest
 import properties as props
 
 class HasIntA(props.HasProperties):
-    a = props.Integer('int a')
+    a = props.Integer('int a', required=True)
 
 
 class HasIntList(props.HasProperties):
@@ -22,17 +22,24 @@ class HasTypeList(props.HasProperties):
     aaa = props.List('list of hasinta', HasIntA)
 
 
-class TestUnion(unittest.TestCase):
+class TestList(unittest.TestCase):
 
-    def test_union(self):
+    def test_list(self):
         li = HasIntList()
         li.aaa = [1, 2, 3]
         li.aaa = (1, 2, 3)
 
+        li.validate()
+
         list_instances = (HasInstanceList(), HasTypeList())
         for li in list_instances[1:]:
             li.aaa = (HasIntA(), HasIntA())
+            with self.assertRaises(ValueError):
+                li.validate()
             li.aaa = [{'a':1}, {'a':2}, {'a':3}]
+            li.validate()
+
+
 
 
 if __name__ == '__main__':
