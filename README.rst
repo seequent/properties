@@ -7,7 +7,7 @@ properties
     :alt: Latest PyPI version
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://github.com/properties/properties/blob/master/LICENSE
+    :target: https://github.com/3ptscience/properties/blob/master/LICENSE
     :alt: MIT license
 
 .. image:: https://travis-ci.org/3ptscience/properties.svg?branch=master
@@ -39,21 +39,21 @@ consistent way. This allows you to hook into **notifications** and other librari
 Goals
 -----
 
- * Keep a clean name space so that it can be used easily by users
- * Prioritize documentation
- * Connect to other libraries for interactive visualizations
+* Keep a clean name space so that it can be used easily by users
+* Prioritize documentation
+* Connect to other libraries for interactive visualizations
 
 Alternatives
 ------------
 
- * `traits <https://github.com/enthought/traits>`_ is used by Enthought
- * `traitlets <https://github.com/ipython/traitlets>`_ is used in the Jupyter project
- * `mypy <https://github.com/python/mypy>`_ and `PEP0484 <https://www.python.org/dev/peps/pep-0484/>`_ which document typing but do not include coercion or notifications
+* `traits <https://github.com/enthought/traits>`_ is used by Enthought
+* `traitlets <https://github.com/ipython/traitlets>`_ is used in the Jupyter project
+* `mypy <https://github.com/python/mypy>`_ and `PEP0484 <https://www.python.org/dev/peps/pep-0484/>`_ which document typing but do not include coercion or notifications
 
 Connections
 -----------
 
- * `steno3d <https://github.com/3ptscience/steno3dpy>`_ for the client API
+* `steno3d <https://github.com/3ptscience/steno3dpy>`_ for the client API
 
 Installation
 ------------
