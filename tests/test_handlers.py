@@ -7,6 +7,7 @@ import unittest
 
 import properties as props
 
+
 class ConsiderItHandled(props.HasProperties):
     a = props.Integer('int a')
     b = props.Integer('int b')
@@ -54,8 +55,6 @@ class TestHandlers(unittest.TestCase):
 
         hand._backend['a'] = 'not an int'
         self.assertRaises(ValueError, lambda: hand.validate())
-
-
 
 
 if __name__ == '__main__':

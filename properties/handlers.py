@@ -21,10 +21,6 @@ def _get_listeners(instance, change):
 class Observer(object):
     """Acts as a listener on a properties instance."""
 
-    # This is used for the type of observer
-    # kind = 'all'  # not currently implemented
-
-
     def __init__(self, names, mode):
         self.names = names
         self.mode = mode
@@ -62,9 +58,6 @@ class Observer(object):
 
 class ClassValidator(object):
     """Acts as a listener on class validation"""
-
-    # This is used for the type of observer
-    # kind = 'all'  # not currently implemented
 
     def __init__(self, func):
         self.func = func
