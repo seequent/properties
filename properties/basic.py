@@ -548,7 +548,12 @@ class Vector3(Array):
     """A vector trait that can define the length."""
 
     info_text = 'a list or Vector3'
-    wrapper = vmath.Vector3
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector3`
+        """
+        return vmath.Vector3
 
     @property
     def shape(self):
@@ -564,7 +569,9 @@ class Vector3(Array):
 
     @length.setter
     def length(self, value):
-        assert isinstance(value, (float, integer_types)), 'length must be a float'
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
         assert value > 0.0, 'length must be positive'
         self._length = float(value)
 
@@ -599,7 +606,12 @@ class Vector2(Array):
     """A vector trait that can define the length."""
 
     info_text = 'a list or Vector2'
-    wrapper = vmath.Vector2
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector2`
+        """
+        return vmath.Vector2
 
     @property
     def shape(self):
@@ -615,7 +627,9 @@ class Vector2(Array):
 
     @length.setter
     def length(self, value):
-        assert isinstance(value, (float, integer_types)), 'length must be a float'
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
         assert value > 0.0, 'length must be positive'
         self._length = value
 
