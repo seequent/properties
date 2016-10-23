@@ -50,7 +50,7 @@ UidModel
 Union
 -----
 
-.. autoclass:: properties.basic.Union
+.. autoclass:: properties.base.Union
     :members:
     :undoc-members:
 
