@@ -11,12 +11,33 @@ class Profile(properties.HasProperties):
 
 """
 
-from .base import *
-from .basic import *
-from .utils import *
-from .handlers import *
+from .base import (
+    HasProperties,
+    UidModel,
+    Instance,
+    List,
+    Union
+)
+from .basic import (
+    GettableProperty,
+    Property,
+    Bool,
+    Integer,
+    Float,
+    Complex,
+    String,
+    StringChoice,
+    DateTime,
+    Array,
+    Vector3,
+    Vector2,
+    Color,
+    Uid
+)
+from .utils import defaults, undefined
+from .handlers import observer, validator
 
-__version__ = '0.1.5'
+__version__ = '0.2.0'
 __author__ = '3point Science'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2016 3point Science,'

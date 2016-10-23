@@ -2,12 +2,6 @@ from functools import wraps
 from six import string_types
 
 
-__all__ = [
-    "observer",
-    "validator"
-]
-
-
 def _set_listener(instance, obs):
     """Add listeners to a Properties class instance"""
 
@@ -18,6 +12,7 @@ def _set_listener(instance, obs):
 
 
 def _get_listeners(instance, change):
+    """Gets listeners of changed property"""
     if change['name'] in instance._listeners:
         return instance._listeners[change['name']][change['mode']]
     return []
@@ -25,10 +20,6 @@ def _get_listeners(instance, change):
 
 class Observer(object):
     """Acts as a listener on a properties instance."""
-
-    # This is used for the type of observer
-    # kind = 'all'  # not currently implemented
-
 
     def __init__(self, names, mode):
         self.names = names
@@ -66,20 +57,14 @@ class Observer(object):
 
 
 class ClassValidator(object):
-    """
-        Acts as a listener on a properties instance.
-    """
-
-    # This is used for the type of observer
-    # kind = 'all'  # not currently implemented
+    """Acts as a listener on class validation"""
 
     def __init__(self, func):
         self.func = func
 
 
 def observer(names_or_instance, names=None, func=None):
-    """
-        Observe a change in a named property.
+    """Observe the result of a change in a named property
 
         You can use this inside a class as a wrapper, which will
         be applied to all class instances:
@@ -109,14 +94,15 @@ def observer(names_or_instance, names=None, func=None):
 
 
 def validator(names_or_instance, names=None, func=None):
-    """
-        Use this to register a function that will be called when validator
+    """Observe a pending change in a named property OR class validation
+
+        Use this to register a function that will be called when validate
         is called on a class:
 
         .. code::
 
             @properties.validator
-            def validate(self):
+            def _validate_instance(self):
                 print('is valid')
 
         ---- OR ----

@@ -3,7 +3,25 @@
 Basic Properties
 ================
 
-.. _properties_instance:
+
+Property
+--------
+
+.. autoclass:: properties.basic.Property
+    :members:
+    :undoc-members:
+
+
+:class:`.Property` inherits from :class:`.GettableProperty`
+
+
+GettableProperty
+----------------
+
+.. autoclass:: properties.GettableProperty
+    :members:
+    :undoc-members:
+
 
 Instance
 --------
@@ -12,16 +30,14 @@ Instance
     :members:
     :undoc-members:
 
-.. _properties_list:
 
 List
---------
+----
 
 .. autoclass:: properties.base.List
     :members:
     :undoc-members:
 
-.. _properties_uidmodel:
 
 UidModel
 --------
@@ -30,7 +46,6 @@ UidModel
     :members:
     :undoc-members:
 
-.. _properties_union:
 
 Union
 -----
@@ -39,7 +54,6 @@ Union
     :members:
     :undoc-members:
 
-.. _properties_bool:
 
 Bool
 ----
@@ -48,7 +62,6 @@ Bool
     :members:
     :undoc-members:
 
-.. _properties_integer:
 
 Integer
 -------
@@ -57,7 +70,6 @@ Integer
     :members:
     :undoc-members:
 
-.. _properties_float:
 
 Float
 -----
@@ -66,7 +78,6 @@ Float
     :members:
     :undoc-members:
 
-.. _properties_complex:
 
 Complex
 -------
@@ -75,7 +86,6 @@ Complex
     :members:
     :undoc-members:
 
-.. _properties_string:
 
 String
 ------
@@ -84,7 +94,6 @@ String
     :members:
     :undoc-members:
 
-.. _properties_stringchoice:
 
 StringChoice
 ------------
@@ -93,7 +102,6 @@ StringChoice
     :members:
     :undoc-members:
 
-.. _properties_datetime:
 
 DateTime
 --------
@@ -102,7 +110,6 @@ DateTime
     :members:
     :undoc-members:
 
-.. _properties_array:
 
 Array
 -----
@@ -111,7 +118,6 @@ Array
     :members:
     :undoc-members:
 
-.. _properties_color:
 
 Color
 -----
@@ -120,7 +126,6 @@ Color
     :members:
     :undoc-members:
 
-.. _properties_vector3:
 
 Vector3
 -------
@@ -129,7 +134,6 @@ Vector3
     :members:
     :undoc-members:
 
-.. _properties_vector2:
 
 Vector2
 -------
