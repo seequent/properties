@@ -8,16 +8,16 @@ import unittest
 import os
 
 
-class TestDocs(unittest.TestCase):
+def docs_dir():
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    return os.path.sep.join(dirname.split(os.path.sep)[:-1] + ['docs'])
 
-    @property
-    def docs_dir(self):
-        dirname, filename = os.path.split(os.path.abspath(__file__))
-        return os.path.sep.join(dirname.split(os.path.sep)[:-1] + ['docs'])
+
+class TestDocs(unittest.TestCase):
 
     def setUp(self):
         self.build_dir = os.path.sep.join(
-            self.docs_dir.split(os.path.sep) + ['_build']
+            docs_dir().split(os.path.sep) + ['_build']
         )
         if not os.path.isdir(self.build_dir):
             subprocess.call(["mkdir", "{0}".format(self.build_dir)])
@@ -38,7 +38,7 @@ class TestDocs(unittest.TestCase):
         check = subprocess.call([
             "sphinx-build", "-nW", "-b", "html", "-d",
             "{}".format(self.doctrees_dir),
-            "{}".format(self.docs_dir),
+            "{}".format(docs_dir()),
             "{}".format(self.html_dir)
         ])
         assert check == 0
@@ -47,7 +47,7 @@ class TestDocs(unittest.TestCase):
         check = subprocess.call([
             "sphinx-build", "-nW", "-b", "linkcheck", "-d",
             "{}".format(self.doctrees_dir),
-            "{}".format(self.docs_dir),
+            "{}".format(docs_dir()),
             "{}".format(self.build_dir)
         ])
         assert check == 0

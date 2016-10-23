@@ -3,37 +3,351 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from builtins import super, dict, int
-from future import standard_library
-standard_library.install_aliases()
-from builtins import str, range                                 # nopep8
-# ^-- NB: Order matters here; don't rearrange to group builtins --^
-from datetime import datetime                                   # nopep8
-import json                                                     # nopep8
-import numpy as np                                              # nopep8
-import six                                                      # nopep8
+import datetime
+from uuid import uuid4
+from six import integer_types
+from six import string_types
+import numpy as np
+import vectormath as vmath
+from .utils import undefined
 
-from .base import Property                                      # nopep8
-from . import exceptions                                        # nopep8
+
+class GettableProperty(object):
+    """
+        Base property class that establishes property behavior
+    """
+
+    info_text = 'corrected'
+    name = ''
+
+    def __init__(self, help, **kwargs):
+        self._base_help = help
+        for key in kwargs:
+            if key[0] == '_':
+                raise AttributeError(
+                    'Cannot set private property: "{}".'.format(key)
+                )
+            if not hasattr(self, key):
+                raise AttributeError(
+                    'Unknown key for property: "{}".'.format(key)
+                )
+            try:
+                setattr(self, key, kwargs[key])
+            except AttributeError:
+                raise AttributeError(
+                    'Cannot set property: "{}".'.format(key)
+                )
+
+    @property
+    def default(self):
+        """default value of the property"""
+        return getattr(self, '_default', undefined)
+
+    @default.setter
+    def default(self, value):
+        if hasattr(self, 'required') and self.required:
+            raise ValueError(
+                'Default can not be specified for required properties'
+            )
+        value = self.validate(None, value)
+        self._default = value
+
+    @property
+    def help(self):
+        if getattr(self, '_help', None) is None:
+            self._help = self._base_help
+        return self._help
+
+    def info(self):
+        return self.info_text
+
+    def assert_valid(self, scope):
+        return True
+
+    def get_property(self):
+        """establishes access of property values"""
+
+        scope = self
+
+        def fget(self):
+            return self._get(scope.name, scope.default)
+
+        return property(fget=fget, doc=scope.help)
+
+    def startup(self, instance):
+        pass
+
+
+class Property(GettableProperty):
+
+    def __init__(self, help, **kwargs):
+        if 'required' in kwargs:
+            self.required = kwargs.pop('required')
+        if not self.required and hasattr(self, '_class_default'):
+            self._default = self._class_default
+        super(Property, self).__init__(help, **kwargs)
+
+    @property
+    def required(self):
+        """required properties must be set for validation to pass"""
+        return getattr(self, '_required', False)
+
+    @required.setter
+    def required(self, value):
+        assert isinstance(value, bool), "Required must be a boolean."
+        self._required = value
+
+    def assert_valid(self, instance):
+        value = getattr(instance, self.name, None)
+        if (value is None) and self.required:
+            raise ValueError(
+                "The `{name}` property of a {cls} instance is required "
+                "and has not been set.".format(
+                    name=self.name,
+                    cls=instance.__class__.__name__
+                )
+            )
+        return True
+
+    def validate(self, instance, value):
+        """validates the property attributes"""
+        return value
+
+    def get_property(self):
+        """establishes access of property values"""
+
+        scope = self
+
+        def fget(self):
+            return self._get(scope.name, scope.default)
+
+        def fset(self, value):
+            value = scope.validate(self, value)
+            self._set(scope.name, value)
+
+        def fdel(self):
+            self._set(scope.name, undefined)
+
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
+
+    @staticmethod
+    def as_json(value):
+        return value
+
+    def as_pickle(self, instance):
+        return self.as_json(instance._get(self.name, self.default))
+
+    @staticmethod
+    def from_json(value):
+        return value
+
+    def error(self, instance, value, error=None, extra=''):
+        error = error if error is not None else ValueError
+        raise error(
+            "The `{name}` property of a {cls} instance must be {info}. "
+            "A value of {val!r} {vtype!r} was specified. {extra}".format(
+                name=self.name,
+                cls=instance.__class__.__name__,
+                info=self.info(),
+                val=value,
+                vtype=type(value),
+                extra=extra,
+            )
+        )
+
+
+class Union(Property):
+
+    def __init__(self, help, props, **kwargs):
+        assert isinstance(props, (tuple, list)), "props must be a list"
+        for prop in props:
+            assert isinstance(prop, Property), (
+                "all props must be Property instance"
+            )
+        self.props = props
+
+        super(Union, self).__init__(help, **kwargs)
+
+    def validate(self, instance, value):
+        for prop in self.props:
+            try:
+                return prop.validate(instance, value)
+            except ValueError:
+                continue
+        self.error(instance, value)
+
+
+class Bool(Property):
+
+    _class_default = False
+    info_text = 'a boolean'
+
+    def validate(self, instance, value):
+        if not isinstance(value, bool):
+            self.error(instance, value)
+        return value
+
+    @staticmethod
+    def from_json(value):
+        if isinstance(value, string_types):
+            value = value.upper()
+            if value in ('TRUE', 'Y', 'YES', 'ON'):
+                return True
+            elif value in ('FALSE', 'N', 'NO', 'OFF'):
+                return False
+        if isinstance(value, int):
+            return value
+        raise ValueError('Could not load boolean form JSON: {}'.format(value))
+
+
+def _in_bounds(prop, instance, value):
+    """Checks if the value is in the range (min, max)"""
+    if (
+        (prop.min is not None and value < prop.min) or
+        (prop.max is not None and value > prop.max)
+       ):
+        prop.error(instance, value)
+
+
+class Integer(Property):
+
+    _class_default = 0
+    info_text = 'an integer'
+
+    # @property
+    # def sphinx_extra(self):
+    #     if (getattr(self, 'min', None) is None and
+    #             getattr(self, 'max', None) is None):
+    #         return ''
+    #     return ', Range: [{mn}, {mx}]'.format(
+    #         mn='-inf' if getattr(self, 'min', None) is None else self.min,
+    #         mx='inf' if getattr(self, 'max', None) is None else self.max
+    #     )
+
+    @property
+    def min(self):
+        return getattr(self, '_min', None)
+
+    @min.setter
+    def min(self, value):
+        self._min = value
+
+    @property
+    def max(self):
+        return getattr(self, '_max', None)
+
+    @max.setter
+    def max(self, value):
+        self._max = value
+
+    def validate(self, instance, value):
+        if isinstance(value, float) and np.isclose(value, int(value)):
+            value = int(value)
+        if not isinstance(value, integer_types):
+            self.error(instance, value)
+        _in_bounds(self, instance, value)
+        return int(value)
+
+    @staticmethod
+    def as_json(value):
+        if value is None or np.isnan(value):
+            return None
+        return int(np.round(value))
+
+    @staticmethod
+    def from_json(value):
+        return int(str(value))
+
+
+class Float(Integer):
+
+    _class_default = 0.0
+    info_text = 'a float'
+
+    def validate(self, instance, value):
+        if isinstance(value, (float, integer_types)):
+            value = float(value)
+        _in_bounds(self, instance, value)
+        return value
+
+    @staticmethod
+    def as_json(value):
+        if value is None or np.isnan(value):
+            return None
+        return value
+
+    @staticmethod
+    def from_json(value):
+        return float(str(value))
+
+
+class Complex(Property):
+    """
+        Complex number property
+    """
+
+    def validate(self, instance, value):
+        if isinstance(value, (integer_types, float)):
+            value = complex(value)
+        if not isinstance(value, complex):
+            raise ValueError('{} must be complex'.format(self.name))
+        return value
+
+    @staticmethod
+    def as_json(value):
+        if value is None or np.isnan(value):
+            return None
+        return value
+
+    @staticmethod
+    def from_json(value):
+        return complex(str(value))
 
 
 class String(Property):
-    """class properties.String
 
-    String property, may be limited to certain choices
-    """
-    lowercase = False
-    strip = ' '
-
-    _sphinx_prefix = 'properties.basic'
+    _class_default = ''
+    info_text = 'a string'
 
     @property
-    def doc(self):
-        if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc
-            if self.choices is not None and len(self.choices) != 0:
-                self._doc += ', Choices: ' + ', '.join(self.choices)
-        return self._doc
+    def strip(self):
+        return getattr(self, '_strip', '')
+
+    @strip.setter
+    def strip(self, value):
+        assert isinstance(value, string_types), (
+            '`strip` property must be the string to strip'
+        )
+        self._strip = value
+
+    @property
+    def change_case(self):
+        return getattr(self, '_change_case', None)
+
+    @change_case.setter
+    def change_case(self, value):
+        assert value in (None, 'upper', 'lower'), (
+            "`change_case` property must be 'upper', 'lower' or None"
+        )
+        self._change_case = value
+
+    def validate(self, instance, value):
+        if not isinstance(value, string_types):
+            self.error(instance, value)
+        value = str(value)
+        value = value.strip(self.strip)
+        if self.change_case == 'upper':
+            value = value.upper()
+        elif self.change_case == 'lower':
+            value = value.lower()
+        return value
+
+
+class StringChoice(Property):
+
+    @property
+    def info_text(self):
+        return 'any of "{}"'.format('", "'.join(self.choices))
 
     @property
     def choices(self):
@@ -42,92 +356,329 @@ class String(Property):
     @choices.setter
     def choices(self, value):
         if not isinstance(value, (list, tuple, dict)):
-            raise AttributeError('choices must be a list, tuple, or dict')
+            raise ValueError('value must be a list, tuple, or dict')
         if isinstance(value, (list, tuple)):
-            value = {c: c for c in value}
+            value = {v: v for v in value}
         for k, v in value.items():
             if not isinstance(v, (list, tuple)):
                 value[k] = [v]
         for k, v in value.items():
-            if not isinstance(k, six.string_types):
-                raise AttributeError('choices must be strings')
+            if not isinstance(k, string_types):
+                raise ValueError('value must be strings')
             for val in v:
-                if not isinstance(val, six.string_types):
-                    raise AttributeError('choices must be strings')
+                if not isinstance(val, string_types):
+                    raise ValueError('value must be strings')
         self._choices = value
 
-    def validator(self, instance, value):
-        """check that input is string and in choices, if applicable"""
-        if not isinstance(value, six.string_types):
-            raise ValueError('{} must be a string'.format(self.name))
-        if self.strip is not None:
-            value = value.strip(self.strip)
-        if self.choices is not None and len(self.choices) != 0:
-            if value.upper() in [k.upper() for k in self.choices]:
-                return value.lower() if self.lowercase else value.upper()
-            for k, v in self.choices.items():
-                if value.upper() in [_.upper() for _ in v]:
-                    return k.lower() if self.lowercase else k
-            raise ValueError(
-                '{}: value must be in ["{}"]'.format(
-                    self.name, ('","'.join(self.choices))))
-        return value.lower() if self.lowercase else value
+    def validate(self, instance, value):
+        if not isinstance(value, string_types):
+            self.error(instance, value)
+        for k, v in self.choices.items():
+            if (
+                value.upper() == k.upper() or
+                value.upper() in [_.upper() for _ in v]
+               ):
+                return k
+        self.error(instance, value)
 
 
-class Object(Property):
-    """class properties.Object
-
-    basic JSON object property
+class DateTime(Property):
     """
 
-    _sphinx_prefix = 'properties.basic'
+        DateTime property using 'datetime.datetime'
 
-    def from_json(self, value):
-        return json.loads(value)
+        Two string formats are available:
 
+            1995/08/12
+            1995-08-12T18:00:00Z
 
-class Bool(Property):
-    """class properties.Bool
-
-    Boolean property, true or false
     """
 
-    _sphinx_prefix = 'properties.basic'
+    info_text = 'a datetime object'
+
+    def validate(self, instance, value):
+        if isinstance(value, datetime.datetime):
+            return value
+        if not isinstance(value, string_types):
+            self.error(value, instance)
+        try:
+            return self.from_json(value)
+        except ValueError:
+            self.error(value, instance)
+
+    @staticmethod
+    def as_json(value):
+        if value is None:
+            return
+        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    @staticmethod
+    def from_json(value):
+        if value is None or value == 'None':
+            return None
+        if len(value) == 10:
+            return datetime.datetime.strptime(
+                value.replace('-', '/'),
+                "%Y/%m/%d"
+            )
+        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+
+
+class Array(Property):
+    """A trait for serializable float or int arrays"""
+
+    info_text = 'a list or numpy array'
 
     @property
-    def doc(self):
-        if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc + ', True or False'
-        return self._doc
+    def wrapper(self):
+        """wraps the value in the validation call.
 
-    def validator(self, instance, value):
-        if not isinstance(value, bool):
-            raise ValueError('{} must be a bool'.format(self.name))
+        This is usually a :func:`numpy.array` but could also be a
+        :class:`tuple`, :class:`list` or :class:`vectormath.vector.Vector3`
+        """
+        return np.array
+
+    @property
+    def shape(self):
+        return getattr(self, '_shape', ('*',))
+
+    @shape.setter
+    def shape(self, value):
+        if not isinstance(value, tuple):
+            raise TypeError("{}: Invalid shape - must be a tuple "
+                            "(e.g. ('*',3) for an array of length-3 "
+                            "arrays)".format(value))
+        for s in value:
+            if s != '*' and not isinstance(s, integer_types):
+                raise TypeError("{}: Invalid shape - values "
+                                "must be '*' or int".format(value))
+        self._shape = value
+
+    @property
+    def dtype(self):
+        return getattr(self, '_dtype', (float, int))
+
+    @dtype.setter
+    def dtype(self, value):
+        if not isinstance(value, (list, tuple)):
+            value = (value,)
+        if (float not in value and
+                len(set(value).intersection(integer_types)) == 0):
+            raise TypeError("{}: Invalid dtype - must be int "
+                            "and/or float".format(value))
+        self._dtype = value
+
+    def info(self):
+        return '{info} of {type} with shape {shp}'.format(
+            info=self.info_text,
+            type=', '.join([str(t) for t in self.dtype]),
+            shp=self.shape
+        )
+
+    # @property
+    # def sphinx_extra(self):
+    #     return ', Shape: {shp}, Type: {dtype}'.format(
+    #         shp='(' + ', '.join(['\*' if s == '*' else str(s)
+    #                              for s in self.shape]) + ')',
+    #         dtype=self.dtype
+    #     )
+
+    def validate(self, instance, value):
+        """Determine if array is valid based on shape and dtype"""
+        if not isinstance(value, (tuple, list, np.ndarray)):
+            self.error(instance, value)
+        value = self.wrapper(value)
+        if isinstance(value, np.ndarray):
+            if (value.dtype.kind == 'i' and
+                    len(set(self.dtype).intersection(integer_types)) == 0):
+                self.error(instance, value)
+            if value.dtype.kind == 'f' and float not in self.dtype:
+                self.error(instance, value)
+            if len(self.shape) != value.ndim:
+                self.error(instance, value)
+            for i, s in enumerate(self.shape):
+                if s != '*' and value.shape[i] != s:
+                    self.error(instance, value)
+        else:
+            # TODO: Here we might be dealing with a tuple or something.
+            pass
+
         return value
 
-    def from_json(self, value):
-        return str(value).upper() in ['TRUE', 'ON', 'YES']
+
+VECTOR_DIRECTIONS = {
+    'ZERO': [0, 0, 0],
+    'X': [1, 0, 0],
+    'Y': [0, 1, 0],
+    'Z': [0, 0, 1],
+    '-X': [-1, 0, 0],
+    '-Y': [0, -1, 0],
+    '-Z': [0, 0, -1],
+    'EAST': [1, 0, 0],
+    'WEST': [-1, 0, 0],
+    'NORTH': [0, 1, 0],
+    'SOUTH': [0, -1, 0],
+    'UP': [0, 0, 1],
+    'DOWN': [0, 0, -1],
+}
+
+
+class Vector3(Array):
+    """A vector trait that can define the length."""
+
+    info_text = 'a list or Vector3'
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector3`
+        """
+        return vmath.Vector3
+
+    @property
+    def shape(self):
+        return (1, 3)
+
+    @property
+    def dtype(self):
+        return (float, int)
+
+    @property
+    def length(self):
+        return getattr(self, '_length', None)
+
+    @length.setter
+    def length(self, value):
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
+        assert value > 0.0, 'length must be positive'
+        self._length = float(value)
+
+    @staticmethod
+    def as_json(value):
+        if value is None:
+            return None
+        return list(map(float, value.flatten()))
+
+    def validate(self, obj, value):
+        """Determine if array is valid based on shape and dtype"""
+        if isinstance(value, string_types):
+            if value.upper() not in VECTOR_DIRECTIONS:
+                self.error(obj, value)
+            value = VECTOR_DIRECTIONS[value.upper()]
+
+        value = super(Vector3, self).validate(obj, value)
+
+        if self.length is not None:
+            try:
+                value.length = self.length
+            except ZeroDivisionError:
+                self.error(
+                    obj, value,
+                    error=ZeroDivisionError,
+                    extra='The vector must have a length specified.'
+                )
+        return value
+
+
+class Vector2(Array):
+    """A vector trait that can define the length."""
+
+    info_text = 'a list or Vector2'
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector2`
+        """
+        return vmath.Vector2
+
+    @property
+    def shape(self):
+        return (1, 2)
+
+    @property
+    def dtype(self):
+        return (float, int)
+
+    @property
+    def length(self):
+        return getattr(self, '_length', None)
+
+    @length.setter
+    def length(self, value):
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
+        assert value > 0.0, 'length must be positive'
+        self._length = value
+
+    @staticmethod
+    def as_json(value):
+        if value is None:
+            return None
+        return list(map(float, value.flatten()))
+
+    def validate(self, obj, value):
+        """Determine if array is valid based on shape and dtype"""
+        if isinstance(value, string_types):
+            if (
+                    value.upper() not in VECTOR_DIRECTIONS or
+                    value.upper() in ('Z', '-Z', 'UP', 'DOWN')
+               ):
+                self.error(obj, value)
+            value = VECTOR_DIRECTIONS[value.upper()][:2]
+
+        value = super(Vector2, self).validate(obj, value)
+
+        if self.length is not None:
+            try:
+                value.length = self.length
+            except ZeroDivisionError:
+                self.error(
+                    obj, value,
+                    error=ZeroDivisionError,
+                    extra='The vector must have a length specified.'
+                )
+        return value
+
+
+class Uid(GettableProperty):
+    """
+        Base property class that establishes property behavior
+    """
+
+    info_text = 'a unique identifier'
+
+    @property
+    def default(self):
+        """default value of the property"""
+        return getattr(self, '_default', undefined)
+
+    def startup(self, instance):
+        instance._set(self.name, uuid4())
+
+    @staticmethod
+    def as_json(value):
+        return str(value)
+
 
 
 class Color(Property):
-    """class properties.Color
-
-    Color property, allowed inputs are RBG, hex, named color, or
-    'random' for random color. This property converts all these to RBG.
+    """
+        Color property, allowed inputs are RBG, hex, named color, or
+        'random' for random color. This property converts all these to RBG.
     """
 
-    _sphinx_prefix = 'properties.basic'
+    # @property
+    # def doc(self):
+    #     if getattr(self, '_doc', None) is None:
+    #         self._doc = self._base_doc
+    #         self._doc += ', Format: RGB, hex, or predefined color'
+    #     return self._doc
 
-    @property
-    def doc(self):
-        if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc
-            self._doc += ', Format: RGB, hex, or predefined color'
-        return self._doc
-
-    def validator(self, instance, value):
+    def validate(self, instance, value):
         """check if input is valid color and converts to RBG"""
-        if isinstance(value, six.string_types):
+        if isinstance(value, string_types):
             if value in COLORS_NAMED:
                 value = COLORS_NAMED[value]
             if value.upper() == 'RANDOM':
@@ -143,175 +694,26 @@ class Color(Property):
                 value = [
                     int(value[i:i + 6 // 3], 16) for i in range(0, 6, 6 // 3)
                 ]
-            except ValueError as e:
+            except ValueError:
                 raise ValueError(
                     '{}: Hex color must be base 16 (0-F)'.format(value))
+
+        if isinstance(value, np.ndarray):
+            # conver numpy arrays to lists
+            value = value.tolist()
+
         if not isinstance(value, (list, tuple)):
             raise ValueError(
-                '{}: Color must be a list or tuple of length 3'.format(value))
+                '{}: Color must be a list or tuple of length 3'.format(value)
+            )
         if len(value) != 3:
             raise ValueError('{}: Color must be length 3'.format(value))
         for v in value:
-            if not isinstance(v, six.integer_types) or not (0 <= v <= 255):
+            if not isinstance(v, integer_types) or not (0 <= v <= 255):
                 raise ValueError(
                     '{}: Color values must be ints 0-255.'.format(value)
                 )
         return tuple(value)
-
-
-class Complex(Property):
-    """class properties.Complex
-
-    Complex number property
-    """
-
-    _sphinx_prefix = 'properties.basic'
-
-    def validator(self, instance, value):
-        if isinstance(value, (six.integer_types, float)):
-            value = complex(value)
-        if not isinstance(value, complex):
-            raise ValueError('{} must be complex'.format(self.name))
-        return value
-
-    def as_json(self, value):
-        if value is None or np.isnan(value):
-            return None
-        return value
-
-    def from_json(self, value):
-        return complex(str(value))
-
-
-class Float(Property):
-    """class properties.Float
-
-    Float property
-    """
-
-    _sphinx_prefix = 'properties.basic'
-
-    def validator(self, instance, value):
-        if isinstance(value, six.integer_types):
-            value = float(value)
-        if not isinstance(value, float):
-            raise ValueError('{} must be a float'.format(self.name))
-        return value
-
-    def as_json(self, value):
-        if value is None or np.isnan(value):
-            return None
-        return value
-
-    def from_json(self, value):
-        return float(str(value))
-
-
-class Int(Property):
-    """class properties.Int
-
-    Integer property
-    """
-
-    _sphinx_prefix = 'properties.basic'
-
-    def validator(self, instance, value):
-        if isinstance(value, float) and np.isclose(value, int(value)):
-            value = int(value)
-        if not isinstance(value, six.integer_types):
-            raise ValueError('{} must be a int'.format(self.name))
-        value = int(value)
-        return value
-
-    def as_json(self, value):
-        if value is None or np.isnan(value):
-            return None
-        return int(np.round(value))
-
-    def from_json(self, value):
-        return int(str(value))
-
-
-class BaseRange(Property):
-    """class properties.BaseRange
-
-    Base range property. Sets a lower and upper bound for any
-    comparable values.
-    """
-
-    _sphinx_prefix = 'properties.basic'
-
-    max_value = None   #: maximum value
-    min_value = None   #: minimum value
-
-    @property
-    def doc(self):
-        if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc + ', Range: ['
-            if self.min_value is None:
-                self._doc += '-inf, '
-            else:
-                self._doc += '{}, '.format(self.min_value)
-            if self.max_value is None:
-                self._doc += 'inf]'
-            else:
-                self._doc += '{}]'.format(self.max_value)
-        return self._doc
-
-    def validator(self, instance, value):
-        """check that value is in range in addition to other value validation
-        """
-        super().validator(instance, value)
-        if self.max_value is not None and value > self.max_value:
-            raise ValueError(
-                '{} must be less than {}'.format(
-                    self.name, self.max_value))
-        if self.min_value is not None and value < self.min_value:
-            raise ValueError(
-                '{} must be greater than {}'.format(
-                    self.name, self.min_value))
-        return value
-
-
-class Range(BaseRange, Float):
-    """class properties.Range
-
-    Range property for floats
-    """
-    pass
-
-
-class RangeInt(BaseRange, Int):
-    """class properties.RangeInt
-
-    Range property for ints
-    """
-    pass
-
-
-class DateTime(Property):
-    """class properties.DateTime
-
-    DateTime property using 'datetime.datetime'
-    """
-
-    short_date = False
-
-    _sphinx_prefix = 'properties.basic'
-
-    def as_json(self, value):
-        if value is None:
-            return
-        if self.short_date:
-            return value.strftime("%Y/%m/%d")
-        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    def from_json(self, value):
-        if value is None or value == 'None':
-            return None
-        if len(value) == 10:
-            return datetime.strptime(value, "%Y/%m/%d")
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
 COLORS_20 = [
