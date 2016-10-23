@@ -48,10 +48,6 @@ class GettableProperty(object):
 
     @default.setter
     def default(self, value):
-        if hasattr(self, 'required') and self.required:
-            raise ValueError(
-                'Default can not be specified for required properties'
-            )
         value = self.validate(None, value)
         self._default = value
 
@@ -102,7 +98,7 @@ class Property(GettableProperty):
 
     def assert_valid(self, instance):
         value = getattr(instance, self.name, None)
-        if (value is None) and self.required:
+        if value in (None, undefined) and self.required:
             raise ValueError(
                 "The `{name}` property of a {cls} instance is required "
                 "and has not been set.".format(
