@@ -76,14 +76,22 @@ class GettableProperty(object):
         pass
 
     def sphinx(self):
+        try:
+            if self.default is None or self.default is undefined:
+                printdefault = False
+            elif len(self.default) == 0:
+                printdefault = False
+            else:
+                printdefault = True
+        except TypeError:
+            printdefault = True
+
         return (
             ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
                 name=self.name,
                 help=self.help,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
-                default=('' if (self.default is undefined or
-                                self.default is None or
-                                self.default in ([], {}, ''))
+                default=('' if not printdefault
                          else ', Default: ' + str(self.default)),
                 cls=self.sphinx_class()
             )
