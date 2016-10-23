@@ -4,11 +4,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-from io import BytesIO
 from uuid import uuid4
 
 import numpy as np
-from png import Reader
 from six import integer_types
 from six import string_types
 import vectormath as vmath
@@ -648,38 +646,6 @@ class Vector2(Array):
                     extra='The vector must have a length specified.'
                 )
         return value
-
-
-class Image(Property):
-    """A Property for PNG images"""
-    info_text = 'a PNG image file'
-
-    def validate(self, obj, value):
-        """checks that image file is PNG and gets a copy"""
-        if getattr(value, '__valid__', False):
-            return value
-
-        try:
-            if hasattr(value, 'read'):
-                Reader(value).validate_signature()
-            else:
-                with open(value, 'rb') as v:
-                    Reader(v).validate_signature()
-        except Exception:
-            self.error(obj, value)
-
-        output = BytesIO()
-        output.name = 'texture.png'
-        output.__valid__ = True
-        if hasattr(value, 'read'):
-            fp = value
-            fp.seek(0)
-        else:
-            fp = open(value, 'rb')
-        output.write(fp.read())
-        output.seek(0)
-        fp.close()
-        return output
 
 
 class Uid(GettableProperty):

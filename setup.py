@@ -29,7 +29,6 @@ setup(
     install_requires=[
         'future',
         'numpy>=1.7',
-        'pypng',
         'six',
         'vectormath',
     ],
