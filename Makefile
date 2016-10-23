@@ -13,8 +13,10 @@ test:
 docs:
 	cd docs && make html
 
-coverage:
+coverage-run:
 	nosetests --logging-level=INFO --with-coverage --cover-package=properties --cover-html
+
+coverage: coverage-run
 	open cover/index.html
 
 lint:
