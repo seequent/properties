@@ -37,8 +37,10 @@ class PropertyMetaclass(type):
             )
         }
 
-        # get pointers to all inherited properties
+        # get pointers to all inherited properties, observers, and validators
         _props = dict()
+        _prop_observers = dict()
+        _class_validators = dict()
         for base in reversed(bases):
             if hasattr(base, '_props'):
                 _props.update({
@@ -46,35 +48,27 @@ class PropertyMetaclass(type):
                     # drop ones which are no longer properties
                     if not (k not in prop_dict and k in classdict)
                 })
-        # Overwrite with this classes properties
-        _props.update(prop_dict)
-        # save these to the class
-        classdict['_props'] = _props
-
-        # get pointers to all inherited observers
-        _prop_observers = dict()
-        for base in reversed(bases):
             if hasattr(base, '_prop_observers'):
                 _prop_observers.update({
                     k: v for k, v in iteritems(base._prop_observers)
                     # drop ones which are no longer observers
                     if not (k not in observer_dict and k in classdict)
                 })
-        _prop_observers.update(observer_dict)
-        # save these to the class
-        classdict['_prop_observers'] = _prop_observers
-
-        _class_validators = dict()
-        for base in reversed(bases):
             if hasattr(base, '_class_validators'):
                 _class_validators.update({
                     k: v for k, v in iteritems(base._class_validators)
                     # drop ones which are no longer observers
                     if not (k not in validator_dict and k in classdict)
                 })
+        # Overwrite with this classes properties
+        _props.update(prop_dict)
+        _prop_observers.update(observer_dict)
         _class_validators.update(validator_dict)
         # save these to the class
+        classdict['_props'] = _props
+        classdict['_prop_observers'] = _prop_observers
         classdict['_class_validators'] = _class_validators
+
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             prop.name = key
@@ -84,15 +78,28 @@ class PropertyMetaclass(type):
         for key, obs in iteritems(observer_dict):
             classdict[key] = obs.func
 
-        # Create some better documentation
+        # Document Properties
         doc_str = classdict.get('__doc__', '')
-        # TODO:
-        #       This will probably be more sphinx like documentation,
-        #       it may depend on the environment e.g. __IPYTHON__
-        doc_str += '\n'.join(
-            (value.help for key, value in iteritems(_props))
-        )
-        classdict["__doc__"] = __doc__
+        req = {key: value for key, value in iteritems(_props)
+               if getattr(value, 'required', False)}
+        opt = {key: value for key, value in iteritems(_props)
+               if not getattr(value, 'required', True)}
+        imm = {key: value for key, value in iteritems(_props)
+               if not hasattr(value, 'required')}
+
+        if req:
+            doc_str += '\n\n**Required**\n\n' + '\n'.join(
+                (v.sphinx() for k, v in iteritems(req))
+            )
+        if opt:
+            doc_str += '\n\n**Optional**\n\n' + '\n'.join(
+                (v.sphinx() for k, v in iteritems(opt))
+            )
+        if imm:
+            doc_str += '\n\n**Immutable**\n\n' + '\n'.join(
+                (v.sphinx() for k, v in iteritems(imm))
+            )
+        classdict['__doc__'] = doc_str
 
         # Create the new class
         newcls = super(PropertyMetaclass, mcs).__new__(
@@ -364,7 +371,7 @@ class Union(basic.Property):
         super(Union, self).__init__(help, **kwargs)
 
     def info(self):
-        return ' or '.join([p.info() for p in props])
+        return ' or '.join([p.info() for p in self.props])
 
     def validate(self, instance, value):
         for prop in self.props:
