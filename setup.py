@@ -24,13 +24,13 @@ with open("README.rst") as f:
 
 setup(
     name="properties",
-    version="0.2.0",
+    version="0.2.1",
     packages=find_packages(),
     install_requires=[
-        'numpy>=1.7',
-        'vectormath',
         'future',
+        'numpy>=1.7',
         'six',
+        'vectormath',
     ],
     author="3point Science",
     author_email="info@3ptscience.com",
