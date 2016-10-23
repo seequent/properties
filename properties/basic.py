@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-from uuid import uuid4
+import uuid
 
 import numpy as np
 from six import integer_types
@@ -59,7 +59,7 @@ class GettableProperty(object):
     def info(self):
         return self.info_text
 
-    def assert_valid(self, scope):
+    def assert_valid(self, instance):
         return True
 
     def get_property(self):
@@ -81,9 +81,9 @@ class GettableProperty(object):
                 name=self.name,
                 help=self.help,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
-                default=('' if (self.default_value is undefined or
-                                self.default_value is None or
-                                self.default_value in ([], {}, ''))
+                default=('' if (self.default is undefined or
+                                self.default is None or
+                                self.default in ([], {}, ''))
                          else ', Default: ' + str(self.default)),
                 cls=self.sphinx_class()
             )
@@ -647,7 +647,7 @@ class Uid(GettableProperty):
         Base property class that establishes property behavior
     """
 
-    info_text = 'a unique identifier'
+    info_text = 'an auto-generated unique identifier'
 
     @property
     def default(self):
@@ -655,7 +655,19 @@ class Uid(GettableProperty):
         return getattr(self, '_default', undefined)
 
     def startup(self, instance):
-        instance._set(self.name, uuid4())
+        instance._set(self.name, uuid.uuid4())
+
+    def assert_valid(self, instance):
+        value = getattr(instance, self.name, None)
+        if not isinstance(value, uuid.UUID) or not value.version == 4:
+            raise ValueError(
+                "The `{name}` property of a {cls} instance must be a unique "
+                "ID generated with uuid.uuid4().".format(
+                    name=self.name,
+                    cls=instance.__class__.__name__
+                )
+            )
+        return True
 
     @staticmethod
     def as_json(value):
