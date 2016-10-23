@@ -21,6 +21,12 @@ class HasInstanceList(props.HasProperties):
 class HasTypeList(props.HasProperties):
     aaa = props.List('list of hasinta', HasIntA)
 
+class HasLengthLists(props.HasProperties):
+    short_list = props.List('short list of hasinta', HasIntA, max_length=3)
+    long_list = props.List('long list of hasinta', HasIntA, min_length=3)
+    constrained_list = props.List('constrained list of hasinta', HasIntA,
+                                  min_length=3, max_length=3)
+
 
 class TestList(unittest.TestCase):
 
@@ -39,7 +45,19 @@ class TestList(unittest.TestCase):
             li.aaa = [{'a':1}, {'a':2}, {'a':3}]
             li.validate()
 
-
+        li = HasLengthLists()
+        li.short_list = [HasIntA(), HasIntA(), HasIntA()]
+        with self.assertRaises(ValueError):
+            li.short_list += [HasIntA()]
+        li.long_list = [HasIntA(), HasIntA(), HasIntA(), HasIntA()]
+        li.long_list = li.long_list[:-1]
+        with self.assertRaises(ValueError):
+            li.long_list  = li.long_list[:-1]
+        li.constrained_list = [HasIntA(), HasIntA(), HasIntA()]
+        with self.assertRaises(ValueError):
+            li.constrained_list  = li.constrained_list[:-1]
+        with self.assertRaises(ValueError):
+            li.constrained_list  += [HasIntA()]
 
 
 if __name__ == '__main__':

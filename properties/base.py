@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from six import with_metaclass
+from six import integer_types
 from six import iteritems
 from . import basic
 from . import handlers
@@ -274,11 +275,43 @@ class List(basic.Property):
     def startup(self, instance):
         instance._set(self.name, [])
 
+    @property
+    def min_length(self):
+        return getattr(self, '_min_length', None)
+
+    @min_length.setter
+    def min_length(self, value):
+        assert isinstance(value, integer_types) and value >= 0, (
+            'min_length must be integer >= 0'
+        )
+        assert self.max_length is None or value <= self.max_length, (
+            'min_length must be <= max_length'
+        )
+        self._min_length = value
+
+    @property
+    def max_length(self):
+        return getattr(self, '_max_length', None)
+
+    @max_length.setter
+    def max_length(self, value):
+        assert isinstance(value, integer_types) and value >= 0, (
+            'max_length must be integer >= 0'
+        )
+        assert self.min_length is None or value >= self.min_length, (
+            'max_length must be >= min_length'
+        )
+        self._max_length = value
+
     def info(self):
-        return 'a list; each item is {info}'.format(info=prop.info())
+        return 'a list; each item is {info}'.format(info=self.prop.info())
 
     def validate(self, instance, value):
         if not isinstance(value, (tuple, list)):
+            self.error(instance, value)
+        if self.min_length is not None and len(value) < self.min_length:
+            self.error(instance, value)
+        if self.max_length is not None and len(value) > self.max_length:
             self.error(instance, value)
         out = []
         for v in value:
