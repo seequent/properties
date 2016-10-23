@@ -39,14 +39,6 @@ List
     :undoc-members:
 
 
-UidModel
---------
-
-.. autoclass:: properties.base.UidModel
-    :members:
-    :undoc-members:
-
-
 Union
 -----
 
@@ -139,5 +131,13 @@ Vector2
 -------
 
 .. autoclass:: properties.basic.Vector2
+    :members:
+    :undoc-members:
+
+
+UID
+___
+
+.. autoclass:: properties.basic.Uid
     :members:
     :undoc-members:
