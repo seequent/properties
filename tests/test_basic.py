@@ -177,6 +177,12 @@ class TakesMultipleArgs(properties.HasProperties):
 class AThing(properties.HasProperties):
     aprop = properties.Instance('My prop', TakesMultipleArgs)
 
+class UidModel(properties.HasProperties):
+    """UidModel is a HasProperties object with uid, name, and description"""
+    uid = properties.Uuid("Unique identifier")
+    title = properties.String("Title")
+    description = properties.String("Description")
+
 
 class TestBasic(unittest.TestCase):
 
@@ -555,7 +561,7 @@ class TestBasic(unittest.TestCase):
         self.assertNotEqual(mydate.serialize(), {})
 
     def test_uid(self):
-        model = properties.UidModel()
+        model = UidModel()
         model.title = 'UID model'
         model.description = 'I have a uid'
         assert isinstance(model.uid, uuid.UUID)
