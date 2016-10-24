@@ -7,6 +7,7 @@ import unittest
 
 import properties as props
 
+
 class HasIntA(props.HasProperties):
     a = props.Integer('int a', required=True)
 
@@ -18,14 +19,23 @@ class HasIntList(props.HasProperties):
 class HasInstanceList(props.HasProperties):
     aaa = props.List('list of hasinta', props.Instance('', HasIntA))
 
+
 class HasTypeList(props.HasProperties):
     aaa = props.List('list of hasinta', HasIntA)
+
 
 class HasLengthLists(props.HasProperties):
     short_list = props.List('short list of hasinta', HasIntA, max_length=3)
     long_list = props.List('long list of hasinta', HasIntA, min_length=3)
     constrained_list = props.List('constrained list of hasinta', HasIntA,
                                   min_length=3, max_length=3)
+
+
+class HasListOfUnion(props.HasProperties):
+    bool_or_color = props.List(
+        'List of bool or color',
+        prop=props.Union('', props=(props.Bool(''), props.Color('')))
+    )
 
 
 class TestList(unittest.TestCase):
@@ -59,6 +69,16 @@ class TestList(unittest.TestCase):
         with self.assertRaises(ValueError):
             li.constrained_list  += [HasIntA()]
 
+        bcl = HasListOfUnion()
+        bcl.bool_or_color = [True, True, False]
+        bcl.bool_or_color = ['red', [100, 100, 100], '#24415F']
+        bcl.bool_or_color = [True, 'blue']
+        bcl.validate()
+        bcl.bool_or_color[1] = 'green'
+        bcl.validate()
+
+        with self.assertRaises(ValueError):
+            bcl.bool_or_color = 1.5
 
 if __name__ == '__main__':
     unittest.main()

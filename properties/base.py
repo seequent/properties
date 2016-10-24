@@ -266,11 +266,12 @@ class Instance(basic.Property):
             return self.instance_class(**value)
         return self.instance_class(value)
 
-    def assert_valid(self, instance):
-        valid = super(Instance, self).assert_valid(instance)
+    def assert_valid(self, instance, value=None):
+        valid = super(Instance, self).assert_valid(instance, value)
         if valid is False:
             return valid
-        value = getattr(instance, self.name, None)
+        if value is None:
+            value = getattr(instance, self.name, None)
         if isinstance(value, HasProperties):
             value.validate()
         return True
@@ -312,6 +313,15 @@ class List(basic.Property):
 
     def startup(self, instance):
         instance._set(self.name, [])
+
+    @property
+    def name(self):
+        return getattr(self, '_name', '')
+
+    @name.setter
+    def name(self, value):
+        self.prop.name = value
+        self._name = value
 
     @property
     def min_length(self):
@@ -359,16 +369,17 @@ class List(basic.Property):
                 self.error(instance, v, extra='This is an invalid list item.')
         return out
 
-    def assert_valid(self, instance):
-        valid = super(List, self).assert_valid(instance)
+    def assert_valid(self, instance, value=None):
+        valid = super(List, self).assert_valid(instance, value)
         if valid is False:
             return valid
-        value = getattr(instance, self.name, None)
+        if value is None:
+            value = getattr(instance, self.name, None)
         if value is None:
             return True
         for v in value:
-            if isinstance(v, HasProperties):
-                v.validate()
+            self.prop.assert_valid(instance, v)
+        return True
 
     def sphinx_class(self):
         return self.prop.sphinx_class()
@@ -395,11 +406,23 @@ class Union(basic.Property):
             )
             new_props += (prop,)
         self.props = new_props
-
         super(Union, self).__init__(help, **kwargs)
 
     def info(self):
         return ' or '.join([p.info() for p in self.props])
+
+    def startup(self, instance):
+        self.props[0].startup(instance)
+
+    @property
+    def name(self):
+        return getattr(self, '_name', '')
+
+    @name.setter
+    def name(self, value):
+        for prop in self.props:
+            prop.name = value
+        self._name = value
 
     def validate(self, instance, value):
         for prop in self.props:
@@ -408,6 +431,23 @@ class Union(basic.Property):
             except Exception:
                 continue
         self.error(instance, value)
+
+    def assert_valid(self, instance, value=None):
+        valid = super(Union, self).assert_valid(instance, value)
+        if valid is False:
+            return valid
+        for prop in self.props:
+            try:
+                return prop.assert_valid(instance, value)
+            except Exception:
+                continue
+        raise ValueError(
+            "The `{name}` property of a {cls} instance has not been set "
+            "correctly.".format(
+                name=self.name,
+                cls=instance.__class__.__name__
+            )
+        )
 
     def sphinx_class(self):
         return ', '.join(p.sphinx_class() for p in self.props)

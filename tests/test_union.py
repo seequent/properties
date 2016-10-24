@@ -23,10 +23,22 @@ class HasInstanceUnion(props.HasProperties):
     ab = props.Union('union of a and b', (props.Instance('', HasIntA),
                                           props.Instance('', HasIntB)))
 
+
 class HasMixedUnion(props.HasProperties):
     ab = props.Union(
         'union of a, b, and a boolean',
         (HasIntA, props.Instance('', HasIntB), props.Bool('')))
+
+
+class HasIntC(props.HasProperties):
+    c = props.Integer('int c', required=True)
+
+
+class HasUnionWithList(props.HasProperties):
+    one_or_more = props.Union(
+        'One or more HasIntC',
+        props=(props.List('', prop=HasIntC), HasIntC)
+    )
 
 
 class TestUnion(unittest.TestCase):
@@ -39,6 +51,18 @@ class TestUnion(unittest.TestCase):
             ui.ab = {'b': 5}
 
         union_instances[2].ab = False
+
+        unionlist = HasUnionWithList()
+        unionlist.one_or_more = HasIntC()
+        with self.assertRaises(ValueError):
+            unionlist.validate()
+
+        unionlist.one_or_more = [HasIntC(), HasIntC()]
+        with self.assertRaises(ValueError):
+            unionlist.validate()
+
+
+
 
 
 if __name__ == '__main__':

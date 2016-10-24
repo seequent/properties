@@ -62,7 +62,7 @@ class GettableProperty(object):
     def info(self):
         return self.info_text
 
-    def assert_valid(self, instance):
+    def assert_valid(self, instance, value=None):
         return True
 
     def get_property(self):
@@ -129,8 +129,9 @@ class Property(GettableProperty):
         assert isinstance(value, bool), "Required must be a boolean."
         self._required = value
 
-    def assert_valid(self, instance):
-        value = getattr(instance, self.name, None)
+    def assert_valid(self, instance, value=None):
+        if value is None:
+            value = getattr(instance, self.name, None)
         if value in (None, undefined) and self.required:
             raise ValueError(
                 "The `{name}` property of a {cls} instance is required "
@@ -140,7 +141,7 @@ class Property(GettableProperty):
                 )
             )
         if value is not None:
-            instance._backend[self.name] = self.validate(instance, value)
+            self.validate(instance, value)
         return True
 
     def validate(self, instance, value):
@@ -688,8 +689,9 @@ class Uuid(GettableProperty):
     def startup(self, instance):
         instance._set(self.name, uuid.uuid4())
 
-    def assert_valid(self, instance):
-        value = getattr(instance, self.name, None)
+    def assert_valid(self, instance, value=None):
+        if value is None:
+            value = getattr(instance, self.name, None)
         if not isinstance(value, uuid.UUID) or not value.version == 4:
             raise ValueError(
                 "The `{name}` property of a {cls} instance must be a unique "
