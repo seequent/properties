@@ -101,7 +101,10 @@ class GettableProperty(object):
         )
 
     def sphinx_class(self):
-        return ':class:`{cls} <.{cls}>`'.format(cls=self.__class__.__name__)
+        return ':class:`{cls} <{pref}.{cls}>`'.format(
+            cls=self.__class__.__name__,
+            pref=self.__module__
+        )
 
 
 class Property(GettableProperty):
@@ -132,7 +135,7 @@ class Property(GettableProperty):
     def assert_valid(self, instance, value=None):
         if value is None:
             value = getattr(instance, self.name, None)
-        if value in (None, undefined) and self.required:
+        if (value is None or value is undefined) and self.required:
             raise ValueError(
                 "The `{name}` property of a {cls} instance is required "
                 "and has not been set.".format(
