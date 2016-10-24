@@ -12,11 +12,12 @@ Property
     :undoc-members:
 
 
-:class:`.Property` inherits from :class:`.GettableProperty`
 
 
 GettableProperty
 ----------------
+
+:class:`.Property` inherits from :class:`.GettableProperty`
 
 .. autoclass:: properties.basic.GettableProperty
     :members:
@@ -95,10 +96,10 @@ StringChoice
     :undoc-members:
 
 
-DateTime
---------
+Color
+-----
 
-.. autoclass:: properties.basic.DateTime
+.. autoclass:: properties.basic.Color
     :members:
     :undoc-members:
 
@@ -107,14 +108,6 @@ Array
 -----
 
 .. autoclass:: properties.basic.Array
-    :members:
-    :undoc-members:
-
-
-Color
------
-
-.. autoclass:: properties.basic.Color
     :members:
     :undoc-members:
 
@@ -139,5 +132,12 @@ UUID
 ----
 
 .. autoclass:: properties.basic.Uuid
+    :members:
+    :undoc-members:
+
+DateTime
+--------
+
+.. autoclass:: properties.basic.DateTime
     :members:
     :undoc-members:
