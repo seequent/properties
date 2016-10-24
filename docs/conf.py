@@ -316,6 +316,7 @@ intersphinx_mapping = {
     'https://docs.scipy.org/doc/scipy/reference/': None,
     'http://vectormath.readthedocs.io/en/latest/': None,
 }
+linkcheck_ignore = ['https://docs.scipy.org/doc/numpy/reference/']
 linkcheck_retries = 10
 
 
