@@ -11,6 +11,11 @@ from . import handlers
 
 
 class PropertyMetaclass(type):
+    """PropertyMetaClass to set up behaviour of HasProperties classes
+
+    Establish property dictionary, set up listeners, auto-generate
+    docstrings, and add HasProperties class to Registry
+    """
 
     def __new__(mcs, name, bases, classdict):
 
@@ -113,6 +118,7 @@ class PropertyMetaclass(type):
 
 
 class HasProperties(with_metaclass(PropertyMetaclass, object)):
+    """HasProperties class with properties"""
 
     _backend_name = "dict"
     _backend_class = dict
@@ -220,6 +226,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
 
 class Instance(basic.Property):
+    """Instance property
+
+    Allowed keywords:
+        instance_class - the allowed class for the property
+        auto_create - if True, create an instance of the class on
+                      startup. Note: auto_create passes no arguments.
+                      auto_create cannot be true for an instance_class
+                      that requires arguments.
+    """
 
     info_text = 'an instance'
 
@@ -276,6 +291,13 @@ class Instance(basic.Property):
 
 
 class List(basic.Property):
+    """List property of other property types
+
+    Allowed keywords:
+        prop - type of property allowed in the list. prop may also be a
+               HasProperties class.
+        min_length/max_length - valid length limits of the list
+    """
 
     info_text = 'a list'
 
@@ -353,6 +375,12 @@ class List(basic.Property):
 
 
 class Union(basic.Property):
+    """Union property of multiple property types
+
+    Allowed keywords:
+        props - a list of the different valid property types. May also
+                be HasProperties classes
+    """
 
     info_text = 'a union of multiple property types'
 
@@ -383,9 +411,3 @@ class Union(basic.Property):
 
     def sphinx_class(self):
         return ', '.join(p.sphinx_class() for p in self.props)
-
-
-class UidModel(HasProperties):
-    uid = basic.Uid("Unique identifier")
-    title = basic.String("Title")
-    description = basic.String("Description")
