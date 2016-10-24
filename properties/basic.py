@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-from uuid import uuid4
+import uuid
 
 import numpy as np
 from six import integer_types
@@ -15,8 +15,11 @@ from .utils import undefined
 
 
 class GettableProperty(object):
-    """
-        Base property class that establishes property behavior
+    """Base property class that establishes gettable property behavior
+
+    Available keywords:
+    help - property's custom help string
+    default - property's default value
     """
 
     info_text = 'corrected'
@@ -47,10 +50,6 @@ class GettableProperty(object):
 
     @default.setter
     def default(self, value):
-        if hasattr(self, 'required') and self.required:
-            raise ValueError(
-                'Default can not be specified for required properties'
-            )
         value = self.validate(None, value)
         self._default = value
 
@@ -63,7 +62,7 @@ class GettableProperty(object):
     def info(self):
         return self.info_text
 
-    def assert_valid(self, scope):
+    def assert_valid(self, instance, value=None):
         return True
 
     def get_property(self):
@@ -79,8 +78,42 @@ class GettableProperty(object):
     def startup(self, instance):
         pass
 
+    def sphinx(self):
+        try:
+            if self.default is None or self.default is undefined:
+                printdefault = False
+            elif len(self.default) == 0:
+                printdefault = False
+            else:
+                printdefault = True
+        except TypeError:
+            printdefault = True
+
+        return (
+            ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
+                name=self.name,
+                help=self.help,
+                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                default=('' if not printdefault
+                         else ', Default: ' + str(self.default)),
+                cls=self.sphinx_class()
+            )
+        )
+
+    def sphinx_class(self):
+        return ':class:`{cls} <{pref}.{cls}>`'.format(
+            cls=self.__class__.__name__,
+            pref=self.__module__
+        )
+
 
 class Property(GettableProperty):
+    """Property class that establishes set and get property behavior
+
+    Available keywords:
+    required - if True, property must be given a value for containing
+    HasProperties instance to be valid
+    """
 
     def __init__(self, help, **kwargs):
         if 'required' in kwargs:
@@ -99,9 +132,10 @@ class Property(GettableProperty):
         assert isinstance(value, bool), "Required must be a boolean."
         self._required = value
 
-    def assert_valid(self, instance):
-        value = getattr(instance, self.name, None)
-        if (value is None) and self.required:
+    def assert_valid(self, instance, value=None):
+        if value is None:
+            value = getattr(instance, self.name, None)
+        if (value is None or value is undefined) and self.required:
             raise ValueError(
                 "The `{name}` property of a {cls} instance is required "
                 "and has not been set.".format(
@@ -160,28 +194,8 @@ class Property(GettableProperty):
         )
 
 
-class Union(Property):
-
-    def __init__(self, help, props, **kwargs):
-        assert isinstance(props, (tuple, list)), "props must be a list"
-        for prop in props:
-            assert isinstance(prop, Property), (
-                "all props must be Property instance"
-            )
-        self.props = props
-
-        super(Union, self).__init__(help, **kwargs)
-
-    def validate(self, instance, value):
-        for prop in self.props:
-            try:
-                return prop.validate(instance, value)
-            except ValueError:
-                continue
-        self.error(instance, value)
-
-
 class Bool(Property):
+    """Boolean property"""
 
     _class_default = False
     info_text = 'a boolean'
@@ -214,19 +228,14 @@ def _in_bounds(prop, instance, value):
 
 
 class Integer(Property):
+    """Integer property
+
+    Available keywords:
+    min/max - set valid bounds of property
+    """
 
     _class_default = 0
     info_text = 'an integer'
-
-    # @property
-    # def sphinx_extra(self):
-    #     if (getattr(self, 'min', None) is None and
-    #             getattr(self, 'max', None) is None):
-    #         return ''
-    #     return ', Range: [{mn}, {mx}]'.format(
-    #         mn='-inf' if getattr(self, 'min', None) is None else self.min,
-    #         mx='inf' if getattr(self, 'max', None) is None else self.max
-    #     )
 
     @property
     def min(self):
@@ -252,6 +261,16 @@ class Integer(Property):
         _in_bounds(self, instance, value)
         return int(value)
 
+    def info(self):
+        if (getattr(self, 'min', None) is None and
+                getattr(self, 'max', None) is None):
+            return self.info_text
+        return '{txt} in range [{mn}, {mx}]'.format(
+            txt=self.info_text,
+            mn='-inf' if getattr(self, 'min', None) is None else self.min,
+            mx='inf' if getattr(self, 'max', None) is None else self.max
+        )
+
     @staticmethod
     def as_json(value):
         if value is None or np.isnan(value):
@@ -264,6 +283,7 @@ class Integer(Property):
 
 
 class Float(Integer):
+    """Float property"""
 
     _class_default = 0.0
     info_text = 'a float'
@@ -288,6 +308,8 @@ class Float(Integer):
 class Complex(Property):
     """Complex number property"""
 
+    info_text = 'a complex number'
+
     def validate(self, instance, value):
         if isinstance(value, (integer_types, float)):
             value = complex(value)
@@ -307,6 +329,12 @@ class Complex(Property):
 
 
 class String(Property):
+    """String property
+
+    Available keywords:
+    strip - substring to strip off input
+    change_case - forces 'lower', 'upper', or None
+    """
 
     _class_default = ''
     info_text = 'a string'
@@ -346,6 +374,13 @@ class String(Property):
 
 
 class StringChoice(Property):
+    """String property where only certain choices are allowed
+
+    Available keywords:
+    choices - either a list/tuple of allowed strings
+    OR a dictionary of string key and list-of-string value pairs,
+    where any string in the value list is coerced into the key string.
+    """
 
     def __init__(self, help, choices, **kwargs):
         self.choices = choices
@@ -389,15 +424,12 @@ class StringChoice(Property):
 
 
 class DateTime(Property):
-    """
-
-        DateTime property using 'datetime.datetime'
+    """DateTime property using 'datetime.datetime'
 
         Two string formats are available:
 
             1995/08/12
             1995-08-12T18:00:00Z
-
     """
 
     info_text = 'a datetime object'
@@ -431,7 +463,13 @@ class DateTime(Property):
 
 
 class Array(Property):
-    """A trait for serializable float or int arrays"""
+    """Serializable float or int array property
+
+    Available keywords:
+    shape - tuple with integer or '*' entries corresponding to valid
+    array dimension shapes. If '*', dimension can be any length
+    dtype - float, int, or (float, int) if both are allowed
+    """
 
     info_text = 'a list or numpy array'
 
@@ -478,16 +516,9 @@ class Array(Property):
         return '{info} of {type} with shape {shp}'.format(
             info=self.info_text,
             type=', '.join([str(t) for t in self.dtype]),
-            shp=self.shape
+            shp='(' + ', '.join(['\*' if s == '*' else str(s)
+                                 for s in self.shape]) + ')',
         )
-
-    # @property
-    # def sphinx_extra(self):
-    #     return ', Shape: {shp}, Type: {dtype}'.format(
-    #         shp='(' + ', '.join(['\*' if s == '*' else str(s)
-    #                              for s in self.shape]) + ')',
-    #         dtype=self.dtype
-    #     )
 
     def validate(self, instance, value):
         """Determine if array is valid based on shape and dtype"""
@@ -530,7 +561,7 @@ VECTOR_DIRECTIONS = {
 
 
 class Vector3(Array):
-    """A vector trait that can define the length."""
+    """3D vector property"""
 
     info_text = 'a list or Vector3'
 
@@ -564,7 +595,7 @@ class Vector3(Array):
     def as_json(value):
         if value is None:
             return None
-        return list(map(float, value.flatten()))
+        return [float(v) for v in value.flatten()]
 
     def validate(self, obj, value):
         """Determine if array is valid based on shape and dtype"""
@@ -588,7 +619,7 @@ class Vector3(Array):
 
 
 class Vector2(Array):
-    """A vector trait that can define the length."""
+    """2D vector property"""
 
     info_text = 'a list or Vector2'
 
@@ -648,39 +679,44 @@ class Vector2(Array):
         return value
 
 
-class Uid(GettableProperty):
-    """
-        Base property class that establishes property behavior
-    """
+class Uuid(GettableProperty):
+    """Unique identifier generated on startup"""
 
-    info_text = 'a unique identifier'
+    info_text = 'an auto-generated unique identifier'
 
     @property
     def default(self):
-        """default value of the property"""
         return getattr(self, '_default', undefined)
 
     def startup(self, instance):
-        instance._set(self.name, uuid4())
+        instance._set(self.name, uuid.uuid4())
+
+    def assert_valid(self, instance, value=None):
+        if value is None:
+            value = getattr(instance, self.name, None)
+        if not isinstance(value, uuid.UUID) or not value.version == 4:
+            raise ValueError(
+                "The `{name}` property of a {cls} instance must be a unique "
+                "ID generated with uuid.uuid4().".format(
+                    name=self.name,
+                    cls=instance.__class__.__name__
+                )
+            )
+        return True
 
     @staticmethod
     def as_json(value):
         return str(value)
 
 
-
 class Color(Property):
-    """
-        Color property, allowed inputs are RBG, hex, named color, or
-        'random' for random color. This property converts all these to RBG.
+    """Color property for RGB colors
+
+    Allowed inputs are RBG, hex, named color, or 'random' for random
+    color. This property converts all these to RBG.
     """
 
-    # @property
-    # def doc(self):
-    #     if getattr(self, '_doc', None) is None:
-    #         self._doc = self._base_doc
-    #         self._doc += ', Format: RGB, hex, or predefined color'
-    #     return self._doc
+    info_text = 'a color'
 
     def validate(self, instance, value):
         """check if input is valid color and converts to RBG"""
@@ -705,7 +741,7 @@ class Color(Property):
                     '{}: Hex color must be base 16 (0-F)'.format(value))
 
         if isinstance(value, np.ndarray):
-            # conver numpy arrays to lists
+            # convert numpy arrays to lists
             value = value.tolist()
 
         if not isinstance(value, (list, tuple)):
@@ -715,7 +751,7 @@ class Color(Property):
         if len(value) != 3:
             raise ValueError('{}: Color must be length 3'.format(value))
         for v in value:
-            if not isinstance(v, integer_types) or not (0 <= v <= 255):
+            if not isinstance(v, integer_types) or not 0 <= v <= 255:
                 raise ValueError(
                     '{}: Color values must be ints 0-255.'.format(value)
                 )
@@ -779,5 +815,6 @@ COLORS_NAMED = dict(
     tan="D2B48C", teal="008080", thistle="D8BFD8",
     tomato="FF6347", turquoise="40E0D0", violet="EE82EE",
     wheat="F5DEB3", white="FFFFFF", whitesmoke="F5F5F5",
-    yellow="FFFF00", yellowgreen="9ACD32"
+    yellow="FFFF00", yellowgreen="9ACD32", k="000000", b="0000FF",
+    c="00FFFF", g="00FF00", m="FF00FF", r="FF0000", w="FFFFFF", y="FFFF00"
 )

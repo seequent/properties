@@ -25,7 +25,7 @@ with open("README.rst") as f:
 setup(
     name="properties",
     version="0.2.1",
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests',)),
     install_requires=[
         'future',
         'numpy>=1.7',

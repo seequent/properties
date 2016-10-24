@@ -18,7 +18,7 @@ Property
 GettableProperty
 ----------------
 
-.. autoclass:: properties.GettableProperty
+.. autoclass:: properties.basic.GettableProperty
     :members:
     :undoc-members:
 
@@ -26,7 +26,7 @@ GettableProperty
 Instance
 --------
 
-.. autoclass:: properties.Instance
+.. autoclass:: properties.base.Instance
     :members:
     :undoc-members:
 
@@ -39,18 +39,10 @@ List
     :undoc-members:
 
 
-UidModel
---------
-
-.. autoclass:: properties.base.UidModel
-    :members:
-    :undoc-members:
-
-
 Union
 -----
 
-.. autoclass:: properties.basic.Union
+.. autoclass:: properties.base.Union
     :members:
     :undoc-members:
 
@@ -114,7 +106,7 @@ DateTime
 Array
 -----
 
-.. autoclass:: properties.Array
+.. autoclass:: properties.basic.Array
     :members:
     :undoc-members:
 
@@ -139,5 +131,13 @@ Vector2
 -------
 
 .. autoclass:: properties.basic.Vector2
+    :members:
+    :undoc-members:
+
+
+UUID
+----
+
+.. autoclass:: properties.basic.Uuid
     :members:
     :undoc-members:
