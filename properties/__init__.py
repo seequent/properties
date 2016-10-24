@@ -13,14 +13,13 @@ class Profile(properties.HasProperties):
 
 from .base import (
     HasProperties,
-    UidModel,
     Instance,
-    List
+    List,
+    Union
 )
 from .basic import (
     GettableProperty,
     Property,
-    Union,
     Bool,
     Integer,
     Float,
@@ -32,12 +31,12 @@ from .basic import (
     Vector3,
     Vector2,
     Color,
-    Uid
+    Uuid
 )
 from .utils import defaults, undefined
 from .handlers import observer, validator
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 __author__ = '3point Science'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2016 3point Science,'

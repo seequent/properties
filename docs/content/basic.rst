@@ -12,13 +12,14 @@ Property
     :undoc-members:
 
 
-:class:`.Property` inherits from :class:`.GettableProperty`
 
 
 GettableProperty
 ----------------
 
-.. autoclass:: properties.GettableProperty
+:class:`.Property` inherits from :class:`.GettableProperty`
+
+.. autoclass:: properties.basic.GettableProperty
     :members:
     :undoc-members:
 
@@ -26,7 +27,7 @@ GettableProperty
 Instance
 --------
 
-.. autoclass:: properties.Instance
+.. autoclass:: properties.base.Instance
     :members:
     :undoc-members:
 
@@ -39,18 +40,10 @@ List
     :undoc-members:
 
 
-UidModel
---------
-
-.. autoclass:: properties.base.UidModel
-    :members:
-    :undoc-members:
-
-
 Union
 -----
 
-.. autoclass:: properties.basic.Union
+.. autoclass:: properties.base.Union
     :members:
     :undoc-members:
 
@@ -103,10 +96,10 @@ StringChoice
     :undoc-members:
 
 
-DateTime
---------
+Color
+-----
 
-.. autoclass:: properties.basic.DateTime
+.. autoclass:: properties.basic.Color
     :members:
     :undoc-members:
 
@@ -114,15 +107,7 @@ DateTime
 Array
 -----
 
-.. autoclass:: properties.Array
-    :members:
-    :undoc-members:
-
-
-Color
------
-
-.. autoclass:: properties.basic.Color
+.. autoclass:: properties.basic.Array
     :members:
     :undoc-members:
 
@@ -139,5 +124,20 @@ Vector2
 -------
 
 .. autoclass:: properties.basic.Vector2
+    :members:
+    :undoc-members:
+
+
+UUID
+----
+
+.. autoclass:: properties.basic.Uuid
+    :members:
+    :undoc-members:
+
+DateTime
+--------
+
+.. autoclass:: properties.basic.DateTime
     :members:
     :undoc-members:
