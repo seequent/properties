@@ -18,8 +18,9 @@ class GettableProperty(object):
     """Base property class that establishes gettable property behavior
 
     Available keywords:
-    help - property's custom help string
-    default - property's default value
+
+    * **help** - property's custom help string
+    * **default** - property's default value
     """
 
     info_text = 'corrected'
@@ -111,8 +112,9 @@ class Property(GettableProperty):
     """Property class that establishes set and get property behavior
 
     Available keywords:
-    required - if True, property must be given a value for containing
-    HasProperties instance to be valid
+
+    * **required** - if True, property must be given a value for containing
+      HasProperties instance to be valid
     """
 
     def __init__(self, help, **kwargs):
@@ -231,7 +233,8 @@ class Integer(Property):
     """Integer property
 
     Available keywords:
-    min/max - set valid bounds of property
+
+    * **min**/**max** - set valid bounds of property
     """
 
     _class_default = 0
@@ -332,8 +335,10 @@ class String(Property):
     """String property
 
     Available keywords:
-    strip - substring to strip off input
-    change_case - forces 'lower', 'upper', or None
+
+    * **strip** - substring to strip off input
+
+    * **change_case** - forces 'lower', 'upper', or None
     """
 
     _class_default = ''
@@ -377,9 +382,10 @@ class StringChoice(Property):
     """String property where only certain choices are allowed
 
     Available keywords:
-    choices - either a list/tuple of allowed strings
-    OR a dictionary of string key and list-of-string value pairs,
-    where any string in the value list is coerced into the key string.
+
+    * **choices** - either a list/tuple of allowed strings
+      OR a dictionary of string key and list-of-string value pairs,
+      where any string in the value list is coerced into the key string.
     """
 
     def __init__(self, help, choices, **kwargs):
@@ -428,8 +434,7 @@ class DateTime(Property):
 
         Two string formats are available:
 
-            1995/08/12
-            1995-08-12T18:00:00Z
+            1995/08/12 and 1995-08-12T18:00:00Z
     """
 
     info_text = 'a datetime object'
@@ -466,9 +471,10 @@ class Array(Property):
     """Serializable float or int array property
 
     Available keywords:
-    shape - tuple with integer or '*' entries corresponding to valid
-    array dimension shapes. If '*', dimension can be any length
-    dtype - float, int, or (float, int) if both are allowed
+
+    * **shape** - tuple with integer or '*' entries corresponding to valid
+    * **array** dimension shapes. If '*', dimension can be any length
+      dtype - float, int, or (float, int) if both are allowed
     """
 
     info_text = 'a list or numpy array'

@@ -229,11 +229,13 @@ class Instance(basic.Property):
     """Instance property
 
     Allowed keywords:
-    instance_class - the allowed class for the property
-    auto_create - if True, create an instance of the class on
-    startup. Note: auto_create passes no arguments.
-    auto_create cannot be true for an instance_class
-    that requires arguments.
+
+    * **instance_class** - the allowed class for the property
+
+    * **auto_create** - if True, create an instance of the class on
+      startup. Note: auto_create passes no arguments.
+      auto_create cannot be true for an instance_class
+      that requires arguments.
     """
 
     info_text = 'an instance'
@@ -295,9 +297,11 @@ class List(basic.Property):
     """List property of other property types
 
     Allowed keywords:
-    prop - type of property allowed in the list. prop may also be a
-    HasProperties class.
-    min_length/max_length - valid length limits of the list
+
+    * **prop** - type of property allowed in the list. prop may also be a
+      HasProperties class.
+
+    * **min_length**/**max_length** - valid length limits of the list
     """
 
     info_text = 'a list'
@@ -389,8 +393,9 @@ class Union(basic.Property):
     """Union property of multiple property types
 
     Allowed keywords:
-    props - a list of the different valid property types. May also
-    be HasProperties classes
+
+    * **props** - a list of the different valid property types. May also
+      be HasProperties classes
     """
 
     info_text = 'a union of multiple property types'
