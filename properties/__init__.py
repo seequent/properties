@@ -13,7 +13,6 @@ class Profile(properties.HasProperties):
 
 from .base import (
     HasProperties,
-    UidModel,
     Instance,
     List,
     Union
@@ -32,7 +31,7 @@ from .basic import (
     Vector3,
     Vector2,
     Color,
-    Uid
+    Uuid
 )
 from .utils import defaults, undefined
 from .handlers import observer, validator
