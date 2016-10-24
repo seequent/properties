@@ -135,9 +135,9 @@ Vector2
     :undoc-members:
 
 
-UID
+UUID
 ___
 
-.. autoclass:: properties.basic.Uid
+.. autoclass:: properties.basic.Uuid
     :members:
     :undoc-members:
