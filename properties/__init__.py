@@ -36,7 +36,7 @@ from .basic import (
 from .utils import defaults, undefined
 from .handlers import observer, validator
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 __author__ = '3point Science'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2016 3point Science,'
