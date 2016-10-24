@@ -15,8 +15,11 @@ from .utils import undefined
 
 
 class GettableProperty(object):
-    """
-        Base property class that establishes property behavior
+    """Base property class that establishes gettable property behavior
+
+    Available keywords:
+        help - property's custom help string
+        default - property's default value
     """
 
     info_text = 'corrected'
@@ -102,6 +105,12 @@ class GettableProperty(object):
 
 
 class Property(GettableProperty):
+    """Property class that establishes set and get property behavior
+
+    Available keywords:
+        required - if True, property must be given a value for containing
+                   HasProperties instance to be valid
+    """
 
     def __init__(self, help, **kwargs):
         if 'required' in kwargs:
@@ -182,6 +191,7 @@ class Property(GettableProperty):
 
 
 class Bool(Property):
+    """Boolean property"""
 
     _class_default = False
     info_text = 'a boolean'
@@ -214,6 +224,11 @@ def _in_bounds(prop, instance, value):
 
 
 class Integer(Property):
+    """Integer property
+
+    Available keywords:
+        min/max - set valid bounds of property
+    """
 
     _class_default = 0
     info_text = 'an integer'
@@ -264,6 +279,7 @@ class Integer(Property):
 
 
 class Float(Integer):
+    """Float property"""
 
     _class_default = 0.0
     info_text = 'a float'
@@ -309,6 +325,12 @@ class Complex(Property):
 
 
 class String(Property):
+    """String property
+
+    Avaliable keywords:
+        strip - substring to strip off input
+        change_case - forces 'lower', 'upper', or None
+    """
 
     _class_default = ''
     info_text = 'a string'
@@ -348,6 +370,13 @@ class String(Property):
 
 
 class StringChoice(Property):
+    """String property where only certain choices are allowed
+
+    Available keywords:
+        choices - either a list/tuple of allowed strings
+        OR a dictionary of string key and list-of-string value pairs,
+        where any string in the value list is coerced into the key string.
+    """
 
     def __init__(self, help, choices, **kwargs):
         self.choices = choices
@@ -391,9 +420,7 @@ class StringChoice(Property):
 
 
 class DateTime(Property):
-    """
-
-        DateTime property using 'datetime.datetime'
+    """DateTime property using 'datetime.datetime'
 
         Two string formats are available:
 
@@ -433,7 +460,14 @@ class DateTime(Property):
 
 
 class Array(Property):
-    """A trait for serializable float or int arrays"""
+    """Serializable float or int array property
+
+    Available keywords:
+        shape - tuple with integer or '*' entries corresponding to
+                valid array dimension shapes. If '*', dimension can be
+                any length
+        dtype - float, int, or (float, int) if both are allowed
+        """
 
     info_text = 'a list or numpy array'
 
@@ -532,7 +566,7 @@ VECTOR_DIRECTIONS = {
 
 
 class Vector3(Array):
-    """A vector trait that can define the length."""
+    """3D vector property"""
 
     info_text = 'a list or Vector3'
 
@@ -590,7 +624,7 @@ class Vector3(Array):
 
 
 class Vector2(Array):
-    """A vector trait that can define the length."""
+    """2D vector property"""
 
     info_text = 'a list or Vector2'
 
@@ -650,16 +684,13 @@ class Vector2(Array):
         return value
 
 
-class Uid(GettableProperty):
-    """
-        Base property class that establishes property behavior
-    """
+class Uuid(GettableProperty):
+    """Unique identifier generated on startup"""
 
     info_text = 'an auto-generated unique identifier'
 
     @property
     def default(self):
-        """default value of the property"""
         return getattr(self, '_default', undefined)
 
     def startup(self, instance):
@@ -684,18 +715,13 @@ class Uid(GettableProperty):
 
 
 class Color(Property):
-    """
-        Color property, allowed inputs are RBG, hex, named color, or
-        'random' for random color. This property converts all these to RBG.
+    """Color property for RGB colors
+
+    Allowed inputs are RBG, hex, named color, or 'random' for random
+    color. This property converts all these to RBG.
     """
 
     info_text = 'a color'
-    # @property
-    # def doc(self):
-    #     if getattr(self, '_doc', None) is None:
-    #         self._doc = self._base_doc
-    #         self._doc += ', Format: RGB, hex, or predefined color'
-    #     return self._doc
 
     def validate(self, instance, value):
         """check if input is valid color and converts to RBG"""
