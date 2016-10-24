@@ -233,16 +233,6 @@ class Integer(Property):
     _class_default = 0
     info_text = 'an integer'
 
-    # @property
-    # def sphinx_extra(self):
-    #     if (getattr(self, 'min', None) is None and
-    #             getattr(self, 'max', None) is None):
-    #         return ''
-    #     return ', Range: [{mn}, {mx}]'.format(
-    #         mn='-inf' if getattr(self, 'min', None) is None else self.min,
-    #         mx='inf' if getattr(self, 'max', None) is None else self.max
-    #     )
-
     @property
     def min(self):
         return getattr(self, '_min', None)
@@ -266,6 +256,16 @@ class Integer(Property):
             self.error(instance, value)
         _in_bounds(self, instance, value)
         return int(value)
+
+    def info(self):
+        if (getattr(self, 'min', None) is None and
+                getattr(self, 'max', None) is None):
+            return self.info_text
+        return '{txt} in range [{mn}, {mx}]'.format(
+            txt=self.info_text,
+            mn='-inf' if getattr(self, 'min', None) is None else self.min,
+            mx='inf' if getattr(self, 'max', None) is None else self.max
+        )
 
     @staticmethod
     def as_json(value):
@@ -327,7 +327,7 @@ class Complex(Property):
 class String(Property):
     """String property
 
-    Avaliable keywords:
+    Available keywords:
         strip - substring to strip off input
         change_case - forces 'lower', 'upper', or None
     """
@@ -426,7 +426,6 @@ class DateTime(Property):
 
             1995/08/12
             1995-08-12T18:00:00Z
-
     """
 
     info_text = 'a datetime object'
@@ -467,7 +466,7 @@ class Array(Property):
                 valid array dimension shapes. If '*', dimension can be
                 any length
         dtype - float, int, or (float, int) if both are allowed
-        """
+    """
 
     info_text = 'a list or numpy array'
 
@@ -514,16 +513,9 @@ class Array(Property):
         return '{info} of {type} with shape {shp}'.format(
             info=self.info_text,
             type=', '.join([str(t) for t in self.dtype]),
-            shp=self.shape
+            shp='(' + ', '.join(['\*' if s == '*' else str(s)
+                                 for s in self.shape]) + ')',
         )
-
-    # @property
-    # def sphinx_extra(self):
-    #     return ', Shape: {shp}, Type: {dtype}'.format(
-    #         shp='(' + ', '.join(['\*' if s == '*' else str(s)
-    #                              for s in self.shape]) + ')',
-    #         dtype=self.dtype
-    #     )
 
     def validate(self, instance, value):
         """Determine if array is valid based on shape and dtype"""
@@ -600,7 +592,7 @@ class Vector3(Array):
     def as_json(value):
         if value is None:
             return None
-        return list(map(float, value.flatten()))
+        return [float(v) for v in value.flatten()]
 
     def validate(self, obj, value):
         """Determine if array is valid based on shape and dtype"""
@@ -713,7 +705,6 @@ class Uuid(GettableProperty):
         return str(value)
 
 
-
 class Color(Property):
     """Color property for RGB colors
 
@@ -746,7 +737,7 @@ class Color(Property):
                     '{}: Hex color must be base 16 (0-F)'.format(value))
 
         if isinstance(value, np.ndarray):
-            # conver numpy arrays to lists
+            # convert numpy arrays to lists
             value = value.tolist()
 
         if not isinstance(value, (list, tuple)):
@@ -756,7 +747,7 @@ class Color(Property):
         if len(value) != 3:
             raise ValueError('{}: Color must be length 3'.format(value))
         for v in value:
-            if not isinstance(v, integer_types) or not (0 <= v <= 255):
+            if not isinstance(v, integer_types) or not 0 <= v <= 255:
                 raise ValueError(
                     '{}: Color values must be ints 0-255.'.format(value)
                 )
@@ -820,5 +811,6 @@ COLORS_NAMED = dict(
     tan="D2B48C", teal="008080", thistle="D8BFD8",
     tomato="FF6347", turquoise="40E0D0", violet="EE82EE",
     wheat="F5DEB3", white="FFFFFF", whitesmoke="F5F5F5",
-    yellow="FFFF00", yellowgreen="9ACD32"
+    yellow="FFFF00", yellowgreen="9ACD32", k="000000", b="0000FF",
+    c="00FFFF", g="00FF00", m="FF00FF", r="FF0000", w="FFFFFF", y="FFFF00"
 )
