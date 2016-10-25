@@ -164,6 +164,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             setattr(self, key, kwargs[key])
 
     def _get(self, name, default):
+        # Fixes initial default value so ie 'random' states become fixed
         if name not in self._backend and default is not basic.undefined:
             self._backend[name] = self._props[name].validate(self, default)
         if name in self._backend:

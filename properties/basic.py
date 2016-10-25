@@ -25,6 +25,9 @@ class GettableProperty(object):
 
     info_text = 'corrected'
     name = ''
+    #: _class_default is used for properties that (1) are not required and
+    #  (2) do not define their own default
+    _class_default = undefined
 
     def __init__(self, help, **kwargs):
         self._base_help = help
