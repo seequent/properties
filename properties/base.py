@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
 from six import with_metaclass
 from six import integer_types
 from six import iteritems
@@ -285,7 +286,12 @@ class Instance(basic.Property):
         elif value is None:
             return None
         else:
-            raise TypeError('Cannot serialize type {}'.format(value.__class__))
+            try:
+                serialized = json.loads(json.dumps(value))
+            except TypeError:
+                raise TypeError('Cannot serialize type {}'.format(value.__class__))
+            else:
+                return serialized
 
     def sphinx_class(self):
         return ':class:`{cls} <.{cls}>`'.format(
