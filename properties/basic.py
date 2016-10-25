@@ -583,7 +583,7 @@ class Vector3(Array):
 
     @property
     def dtype(self):
-        return (float, int)
+        return (float,)
 
     @property
     def length(self):
@@ -641,7 +641,7 @@ class Vector2(Array):
 
     @property
     def dtype(self):
-        return (float, int)
+        return (float,)
 
     @property
     def length(self):
