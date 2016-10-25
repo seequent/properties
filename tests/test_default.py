@@ -19,6 +19,9 @@ class HasReqInt(props.HasProperties):
 class HasDefReqInt(props.HasProperties):
     a = props.Integer('int a', default=5)
 
+class HasColor(props.HasProperties):
+    col = props.Color('a color', default='random')
+
 class TestDefault(unittest.TestCase):
 
     def test_default(self):
@@ -46,6 +49,11 @@ class TestDefault(unittest.TestCase):
         del(hdri.a)
         with self.assertRaises(ValueError):
             hdri.validate()
+
+        hc = HasColor()
+        assert hc._props['col'].default == 'random'
+        assert hc.col != 'random'
+
 
 
 if __name__ == '__main__':

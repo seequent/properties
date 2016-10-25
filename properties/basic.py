@@ -51,7 +51,8 @@ class GettableProperty(object):
 
     @default.setter
     def default(self, value):
-        value = self.validate(None, value)
+        if value is not undefined:
+            self.validate(None, value)
         self._default = value
 
     @property
@@ -62,6 +63,9 @@ class GettableProperty(object):
 
     def info(self):
         return self.info_text
+
+    def validate(self, instance, value):
+        return True
 
     def assert_valid(self, instance, value=None):
         return True
@@ -121,7 +125,7 @@ class Property(GettableProperty):
         if 'required' in kwargs:
             self.required = kwargs.pop('required')
         if not self.required and hasattr(self, '_class_default'):
-            self._default = self._class_default
+            self.default = self._class_default
         super(Property, self).__init__(help, **kwargs)
 
     @property
@@ -137,7 +141,7 @@ class Property(GettableProperty):
     def assert_valid(self, instance, value=None):
         if value is None:
             value = getattr(instance, self.name, None)
-        if (value is None or value is undefined) and self.required:
+        if value is None and self.required:
             raise ValueError(
                 "The `{name}` property of a {cls} instance is required "
                 "and has not been set.".format(

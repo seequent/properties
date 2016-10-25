@@ -164,16 +164,12 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             setattr(self, key, kwargs[key])
 
     def _get(self, name, default):
-        # print(name)
+        if name not in self._backend and default is not basic.undefined:
+            self._backend[name] = self._props[name].validate(self, default)
         if name in self._backend:
-            value = self._backend[name]
+            return self._backend[name]
         else:
-            value = default
-        if value is basic.undefined:
             return None
-        # if value is None:
-        #     return default
-        return value
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -182,6 +178,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def _set(self, name, value):
         self._notify(dict(name=name, value=value, mode='validate'))
+        if value is basic.undefined:
+            value = None
         self._backend[name] = value
         self._notify(dict(name=name, value=value, mode='observe'))
 
@@ -209,7 +207,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return props
 
     def __setstate__(self, newstate):
-        # print('setting state: ', newstate)
         for k, v in iteritems(newstate):
             setattr(self, k, v)
 
@@ -221,7 +218,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             value = self._props[p].as_pickle(self)
             if value is not None:
                 props[p] = value
-        # print(props)
         return (self.__class__, (), props)
 
 

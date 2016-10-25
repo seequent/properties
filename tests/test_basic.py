@@ -49,7 +49,8 @@ class APrimitive(properties.HasProperties):
         "My range",
         min=0.,
         max=1.,
-        required=True
+        required=True,
+        default=properties.undefined
     )
     color = properties.Float("Not a color!", required=False)
 
@@ -83,7 +84,8 @@ class SomeOptions(APrimitive):
 
 
 class ReqOptions(APrimitive):
-    color = properties.Color("My color", required=True)
+    color = properties.Color("My color", required=True,
+                             default=properties.undefined)
 
 
 class ReqDefOptions(APrimitive):
