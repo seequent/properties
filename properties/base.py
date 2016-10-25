@@ -248,9 +248,11 @@ class Instance(basic.Property):
 
     info_text = 'an instance'
 
-    def __init__(self, help, instance_class, **kwargs):
+    def __init__(self, help, instance_class, serializer=None, **kwargs):
         assert isinstance(instance_class, type)
         self.instance_class = instance_class
+        if callable(serializer):
+            self._serializer = serializer
         super(Instance, self).__init__(help, **kwargs)
 
     def startup(self, instance):
@@ -286,8 +288,9 @@ class Instance(basic.Property):
             value.validate()
         return True
 
-    @staticmethod
-    def as_json(value):
+    def as_json(self, value):
+        if hasattr(self, '_serializer'):
+            return self._serializer(value)
         if isinstance(value, HasProperties):
             return value.serialize(using='json')
         elif value is None:
