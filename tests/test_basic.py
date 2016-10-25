@@ -12,9 +12,10 @@ import properties
 
 
 class NumPrimitive(properties.HasProperties):
-    mycomplex = properties.Complex("its complicated")
-    myfloat = properties.Float("something that floats", default=1)
-    myint = properties.Integer("an integer")
+    mycomplex = properties.Complex("its complicated", required=False)
+    myfloat = properties.Float("something that floats", default=1,
+                               required=False)
+    myint = properties.Integer("an integer", required=False)
 
 
 class BoolPrimitive(properties.HasProperties):
@@ -22,22 +23,25 @@ class BoolPrimitive(properties.HasProperties):
     athing = properties.Union("", (
         properties.String("a string"),
         properties.Bool("temp")
-    ))
+    ), required=False)
 
 
 class StrPrimitive(properties.HasProperties):
-    anystr = properties.String("a string!")
-    stripstr = properties.String("a string!", strip=' ')
-    lowerstr = properties.String("a string!", change_case='lower')
-    upperstr = properties.String("a string!", change_case='upper')
+    anystr = properties.String("a string!", required=False)
+    stripstr = properties.String("a string!", strip=' ', required=False)
+    lowerstr = properties.String("a string!", change_case='lower',
+                                 required=False)
+    upperstr = properties.String("a string!", change_case='upper',
+                                 required=False)
 
 
 class StrChoicePrimitive(properties.HasProperties):
-    abc = properties.StringChoice("a, b or c", choices=['A', 'B', 'C'])
+    abc = properties.StringChoice("a, b or c", choices=['A', 'B', 'C'],
+                                  required=False)
     vowel = properties.StringChoice("vowels", choices={
         'vowel': ('a', 'e', 'i', 'o', 'u'),
         'maybe': 'y'
-    })
+    }, required=False)
 
 
 class APrimitive(properties.HasProperties):
@@ -47,7 +51,7 @@ class APrimitive(properties.HasProperties):
         max=1.,
         required=True
     )
-    color = properties.Float("Not a color!")
+    color = properties.Float("Not a color!", required=False)
 
 
 class AnotherPrimitive(properties.HasProperties):
@@ -55,18 +59,19 @@ class AnotherPrimitive(properties.HasProperties):
         'int range',
         default=0,
         min=0,
-        max=10
+        max=10,
+        required=False
     )
 
 
 class Location2(properties.HasProperties):
-    loc = properties.Vector2("My location")
-    unit = properties.Vector2("My location", length=1)
+    loc = properties.Vector2("My location", required=False)
+    unit = properties.Vector2("My location", length=1, required=False)
 
 
 class Location3(properties.HasProperties):
-    loc = properties.Vector3("My location")
-    unit = properties.Vector3("My location", length=1)
+    loc = properties.Vector3("My location", required=False)
+    unit = properties.Vector3("My location", length=1, required=False)
 
     @properties.observer('loc')
     def _on_loc_change(self, change):
@@ -74,7 +79,7 @@ class Location3(properties.HasProperties):
 
 
 class SomeOptions(APrimitive):
-    color = properties.Color("My color", default='blue')
+    color = properties.Color("My color", default='blue', required=False)
 
 
 class ReqOptions(APrimitive):
@@ -86,7 +91,8 @@ class ReqDefOptions(APrimitive):
 
 
 class DefaultColorOptions(APrimitive):
-    color = properties.Color("This color is random", default='random')
+    color = properties.Color("This color is random", default='random',
+                             required=False)
 
 
 class NotProperty(object):
@@ -98,7 +104,8 @@ class ThingWithOptions(properties.HasProperties):
     opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
     moreopts = properties.List(
         "List of options",
-        SomeOptions
+        SomeOptions,
+        required=False
     )
 
 
@@ -129,41 +136,46 @@ class ThingWithInheritedDefaults(ThingWithDefaults):
 
 
 class SerializableThing(properties.HasProperties):
-    anystr = properties.String("a string!")
+    anystr = properties.String("a string!", required=False)
     anotherstr = properties.String("another string!", default='HELLO WORLD!')
-    myint = properties.Integer("an integer!")
-    myvector2 = properties.Vector2("a 2x2 vector!")
+    myint = properties.Integer("an integer!", required=False)
+    myvector2 = properties.Vector2("a 2x2 vector!", required=False)
 
 
 class MyArray(properties.HasProperties):
     int_array = properties.Array(
         'some ints',
         shape=('*',),
-        dtype=int
+        dtype=int,
+        required=False
     )
     float_array = properties.Array(
         'some floats',
         shape=('*',),
-        dtype=float
+        dtype=float,
+        required=False
     )
     flexible_array = properties.Array(
         'some numbers',
         shape=('*',),
-        dtype=(float, int)
+        dtype=(float, int),
+        required=False
     )
     int_matrix = properties.Array(
         '3x3x3 matrix',
         shape=(3, 3, 3),
-        dtype=int
+        dtype=int,
+        required=False
     )
 
 
 class MyListOfArrays(properties.HasProperties):
-    arrays = properties.List('List of MyArray Instances', MyArray)
+    arrays = properties.List('List of MyArray Instances', MyArray,
+                             required=False)
 
 
 class MyDateTime(properties.HasProperties):
-    dt = properties.DateTime('My datetime')
+    dt = properties.DateTime('My datetime', required=False)
 
 
 class TakesMultipleArgs(properties.HasProperties):
@@ -171,17 +183,17 @@ class TakesMultipleArgs(properties.HasProperties):
         super(TakesMultipleArgs, self).__init__(**kwargs)
         self.col = something
 
-    col = properties.Color('a color')
+    col = properties.Color('a color', required=False)
 
 
 class AThing(properties.HasProperties):
-    aprop = properties.Instance('My prop', TakesMultipleArgs)
+    aprop = properties.Instance('My prop', TakesMultipleArgs, required=False)
 
 class UidModel(properties.HasProperties):
     """UidModel is a HasProperties object with uid, name, and description"""
     uid = properties.Uuid("Unique identifier")
-    title = properties.String("Title")
-    description = properties.String("Description")
+    title = properties.String("Title", required=False)
+    description = properties.String("Description", required=False)
 
 
 class TestBasic(unittest.TestCase):

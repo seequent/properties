@@ -127,7 +127,7 @@ class Property(GettableProperty):
     @property
     def required(self):
         """required properties must be set for validation to pass"""
-        return getattr(self, '_required', False)
+        return getattr(self, '_required', True)
 
     @required.setter
     def required(self, value):

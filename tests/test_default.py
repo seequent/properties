@@ -8,16 +8,16 @@ import unittest
 import properties as props
 
 class HasInt(props.HasProperties):
-    a = props.Integer('int a')
+    a = props.Integer('int a', required=False)
 
 class HasDefInt(props.HasProperties):
-    a = props.Integer('int a', default=5)
+    a = props.Integer('int a', default=5, required=False)
 
 class HasReqInt(props.HasProperties):
-    a = props.Integer('int a', required=True)
+    a = props.Integer('int a')
 
 class HasDefReqInt(props.HasProperties):
-    a = props.Integer('int a', default=5, required=True)
+    a = props.Integer('int a', default=5)
 
 class TestDefault(unittest.TestCase):
 
