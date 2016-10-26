@@ -88,16 +88,6 @@ class GettableProperty(object):
         return property(fget=fget, doc=scope.help)
 
     def sphinx(self):
-        try:
-            if self.default is None or self.default is undefined:
-                printdefault = False
-            elif len(self.default) == 0:
-                printdefault = False
-            else:
-                printdefault = True
-        except TypeError:
-            printdefault = True
-
         return (
             ':attribute {name}: {help}{info}'.format(
                 name=self.name,
@@ -199,26 +189,30 @@ class Property(GettableProperty):
         )
 
     def sphinx(self):
+        if callable(self.default):
+            default_val = self.default()
+            default_str = 'new instance of {}'.format(
+                default_val.__class__.__name__
+            )
+        else:
+            default_val = self.default
+            default_str = str(self.default)
         try:
-            if self.default is None or self.default is undefined:
-                defstr = ''
-            elif len(self.default) == 0:
-                defstr = ''
-            elif callable(self.default):
-                defstr = ', Default: {}'.format(
-                    self.default().__class__.__name__
-                )
+            if default_val is None or default_val is undefined:
+                default_str = ''
+            elif len(default_val) == 0:
+                default_str = ''
             else:
-                defstr = ', Default: {}'.format(self.default)
+                default_str = ', Default: {}'.format(default_str)
         except TypeError:
-            defstr = ', Default: {}'.format(self.default)
+            default_str = ', Default: {}'.format(default_str)
 
         return (
             ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
                 name=self.name,
                 help=self.help,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
-                default=defstr,
+                default=default_str,
                 cls=self.sphinx_class()
             )
         )
