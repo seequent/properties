@@ -25,6 +25,7 @@ class GettableProperty(object):
 
     info_text = 'corrected'
     name = ''
+    _class_default = undefined
 
     def __init__(self, help, **kwargs):
         self._base_help = help
@@ -47,11 +48,13 @@ class GettableProperty(object):
     @property
     def default(self):
         """default value of the property"""
-        return getattr(self, '_default', undefined)
+        return getattr(self, '_default', self._class_default)
 
     @default.setter
     def default(self, value):
-        if value is not undefined:
+        if callable(value):
+            self.validate(None, value())
+        elif value is not undefined:
             self.validate(None, value)
         self._default = value
 
@@ -68,6 +71,10 @@ class GettableProperty(object):
         return True
 
     def assert_valid(self, instance, value=None):
+        if value is None:
+            value = getattr(instance, self.name, None)
+        if value is not None:
+            self.validate(instance, value)
         return True
 
     def get_property(self):
@@ -76,12 +83,9 @@ class GettableProperty(object):
         scope = self
 
         def fget(self):
-            return self._get(scope.name, scope.default)
+            return self._get(scope.name)
 
         return property(fget=fget, doc=scope.help)
-
-    def startup(self, instance):
-        pass
 
     def sphinx(self):
         try:
@@ -161,7 +165,7 @@ class Property(GettableProperty):
         scope = self
 
         def fget(self):
-            return self._get(scope.name, scope.default)
+            return self._get(scope.name)
 
         def fset(self, value):
             value = scope.validate(self, value)
@@ -177,7 +181,7 @@ class Property(GettableProperty):
         return value
 
     def as_pickle(self, instance):
-        return self.as_json(instance._get(self.name, self.default))
+        return self.as_json(instance._get(self.name))
 
     @staticmethod
     def from_json(value):
@@ -690,10 +694,7 @@ class Uuid(GettableProperty):
 
     @property
     def default(self):
-        return getattr(self, '_default', undefined)
-
-    def startup(self, instance):
-        instance._set(self.name, uuid.uuid4())
+        return getattr(self, '_default', uuid.uuid4)
 
     def assert_valid(self, instance, value=None):
         if value is None:

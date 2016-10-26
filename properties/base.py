@@ -8,6 +8,7 @@ from six import integer_types
 from six import iteritems
 from . import basic
 from . import handlers
+from . import utils
 
 
 class PropertyMetaclass(type):
@@ -133,9 +134,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for k, v in iteritems(self._prop_observers):
             handlers._set_listener(self, v)
 
-        for k, v in iteritems(self._props):
-            v.startup(self)
-
         # set the defaults
         defaults = self._defaults or dict()
         for key, value in iteritems(defaults):
@@ -162,14 +160,20 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                                'property'.format(key))
             setattr(self, key, kwargs[key])
 
-    def _get(self, name, default):
-        # Fixes initial default value so ie 'random' states become fixed
-        if name not in self._backend and default is not basic.undefined:
-            self._backend[name] = self._props[name].validate(self, default)
+    def _get(self, name):
         if name in self._backend:
             return self._backend[name]
+
+        # Fixes initial default value so ie 'random' states become fixed
+        if self._defaults and name in self._defaults:
+            default = self._defaults[name]
         else:
-            return None
+            default = self._props[name].default
+        if callable(default):
+            self._backend[name] = self._props[name].validate(self, default())
+        elif default is not basic.undefined:
+            self._backend[name] = self._props[name].validate(self, default)
+        return self._backend.get(name, None)
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -178,9 +182,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def _set(self, name, value):
         self._notify(dict(name=name, value=value, mode='validate'))
-        if value is basic.undefined:
-            value = None
-        self._backend[name] = value
+        if value is basic.undefined and name in self._backend:
+            self._backend.pop(name)
+        else:
+            self._backend[name] = value
         self._notify(dict(name=name, value=value, mode='observe'))
 
     def validate(self):
@@ -201,7 +206,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def serialize(self, using='json'):
         assert using == 'json', "Only json is supported."
-        kv = ((k, v.as_json(self._get(v.name, v.default)))
+        kv = ((k, v.as_json(self._get(v.name)))
               for k, v in iteritems(self._props))
         props = {k: v for k, v in kv if v is not None}
         return props
@@ -228,8 +233,8 @@ class Instance(basic.Property):
 
     * **instance_class** - the allowed class for the property
 
-    * **auto_create** - if True, create an instance of the class on
-      startup. Note: auto_create passes no arguments.
+    * **auto_create** - if True, create an instance of the class as
+      default value. Note: auto_create passes no arguments.
       auto_create cannot be true for an instance_class
       that requires arguments.
     """
@@ -241,9 +246,12 @@ class Instance(basic.Property):
         self.instance_class = instance_class
         super(Instance, self).__init__(help, **kwargs)
 
-    def startup(self, instance):
+    @property
+    def _class_default(self):
+        """default value of the property"""
         if self.auto_create:
-            instance._set(self.name, self.instance_class())
+            return self.instance_class
+        return utils.undefined
 
     @property
     def auto_create(self):
@@ -301,6 +309,7 @@ class List(basic.Property):
     """
 
     info_text = 'a list'
+    _class_default = list
 
     def __init__(self, help, prop, **kwargs):
         if isinstance(prop, type) and issubclass(prop, HasProperties):
@@ -310,9 +319,6 @@ class List(basic.Property):
         )
         self.prop = prop
         super(List, self).__init__(help, **kwargs)
-
-    def startup(self, instance):
-        instance._set(self.name, [])
 
     @property
     def name(self):
@@ -412,9 +418,6 @@ class Union(basic.Property):
     def info(self):
         return ' or '.join([p.info() for p in self.props])
 
-    def startup(self, instance):
-        self.props[0].startup(instance)
-
     @property
     def name(self):
         return getattr(self, '_name', '')
@@ -424,6 +427,33 @@ class Union(basic.Property):
         for prop in self.props:
             prop.name = value
         self._name = value
+
+    @property
+    def default(self):
+        """default value of the property"""
+        prop_def = utils.undefined
+        for prop in self.props:
+            prop_def = prop.default
+            if prop.default is not utils.undefined:
+                break
+        return getattr(self, '_default', prop_def)
+
+    @default.setter
+    def default(self, value):
+        if value is utils.undefined:
+            self._default = value
+            return
+        for prop in self.props:
+            try:
+                if callable(value):
+                    prop.validate(None, value())
+                else:
+                    prop.validate(None, value)
+                self._default = value
+                return
+            except Exception:
+                continue
+        raise AssertionError('Invalid default for Union property')
 
     def validate(self, instance, value):
         for prop in self.props:
@@ -443,8 +473,8 @@ class Union(basic.Property):
             except Exception:
                 continue
         raise ValueError(
-            "The `{name}` property of a {cls} instance has not been set "
-            "correctly.".format(
+            'The "{name}" property of a {cls} instance has not been set '
+            'correctly'.format(
                 name=self.name,
                 cls=instance.__class__.__name__
             )
