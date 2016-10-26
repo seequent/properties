@@ -149,18 +149,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 setattr(self, key, value)
 
         # set the keywords
-        self._exclusive_kwargs = kwargs.pop(
-            '_exclusive_kwargs', getattr(self, '_exclusive_kwargs', False)
+        self._prop_only_kwargs = kwargs.pop(
+            '_prop_only_kwargs', getattr(self, '_prop_only_kwargs', True)
         )
 
         for key in kwargs:
-            if (
-                (self._exclusive_kwargs and key not in self._props.keys()) or
-                (not hasattr(self, key) and key not in self._props.keys())
-            ):
-                raise KeyError(
-                    'Keyword input "{:s}" is not a known property'.format(key)
-                )
+            if not hasattr(self, key) and key not in self._props.keys():
+                raise KeyError('Keyword input "{:s}" is not a known property '
+                               'or attribute'.format(key))
+            if self._prop_only_kwargs and key not in self._props.keys():
+                raise KeyError('Keyword input "{:s}" is not a '
+                               'property'.format(key))
             setattr(self, key, kwargs[key])
 
     def _get(self, name, default):
