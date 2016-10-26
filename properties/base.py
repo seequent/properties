@@ -361,7 +361,7 @@ class List(basic.Property):
         self._max_length = value
 
     def info(self):
-        return 'a list; each item is {info}'.format(info=self.prop.info())
+        return 'a list - each item is {info}'.format(info=self.prop.info())
 
     def validate(self, instance, value):
         if not isinstance(value, (tuple, list)):
@@ -391,7 +391,7 @@ class List(basic.Property):
         return True
 
     def sphinx_class(self):
-        return self.prop.sphinx_class()
+        return self.prop.sphinx_class().replace(':class:`', ':class:`list of ')
 
 
 class Union(basic.Property):
