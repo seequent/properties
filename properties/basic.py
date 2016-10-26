@@ -25,9 +25,6 @@ class GettableProperty(object):
 
     info_text = 'corrected'
     name = ''
-    #: _class_default is used for properties that (1) are not required and
-    #  (2) do not define their own default
-    _class_default = undefined
 
     def __init__(self, help, **kwargs):
         self._base_help = help
@@ -127,8 +124,6 @@ class Property(GettableProperty):
     def __init__(self, help, **kwargs):
         if 'required' in kwargs:
             self.required = kwargs.pop('required')
-        if not self.required and hasattr(self, '_class_default'):
-            self.default = self._class_default
         super(Property, self).__init__(help, **kwargs)
 
     @property
@@ -206,7 +201,6 @@ class Property(GettableProperty):
 class Bool(Property):
     """Boolean property"""
 
-    _class_default = False
     info_text = 'a boolean'
 
     def validate(self, instance, value):
@@ -244,7 +238,6 @@ class Integer(Property):
     * **min**/**max** - set valid bounds of property
     """
 
-    _class_default = 0
     info_text = 'an integer'
 
     @property
@@ -295,7 +288,6 @@ class Integer(Property):
 class Float(Integer):
     """Float property"""
 
-    _class_default = 0.0
     info_text = 'a float'
 
     def validate(self, instance, value):
@@ -348,7 +340,6 @@ class String(Property):
     * **change_case** - forces 'lower', 'upper', or None
     """
 
-    _class_default = ''
     info_text = 'a string'
 
     @property
