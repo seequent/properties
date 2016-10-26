@@ -581,7 +581,7 @@ class TestBasic(unittest.TestCase):
         assert isinstance(model.uid, uuid.UUID)
         self.assertRaises(AttributeError,
                           lambda: setattr(model, 'uid', uuid.uuid4()))
-
+        assert model.validate()
         model._backend['uid'] = 'hi'
         with self.assertRaises(ValueError):
             model.validate()
