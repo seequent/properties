@@ -717,7 +717,7 @@ class Uuid(GettableProperty):
 class Color(Property):
     """Color property for RGB colors
 
-    Allowed inputs are RBG, hex, named color, or 'random' for random
+    Allowed inputs are RGB, hex, named color, or 'random' for random
     color. This property converts all these to RBG.
     """
 
