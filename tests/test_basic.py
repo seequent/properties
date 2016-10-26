@@ -15,7 +15,7 @@ class NumPrimitive(properties.HasProperties):
     mycomplex = properties.Complex("its complicated", required=False)
     myfloat = properties.Float("something that floats", default=1,
                                required=False)
-    myint = properties.Integer("an integer", required=False)
+    myint = properties.Integer("an integer", default=0, required=False)
 
 
 class BoolPrimitive(properties.HasProperties):
@@ -27,12 +27,13 @@ class BoolPrimitive(properties.HasProperties):
 
 
 class StrPrimitive(properties.HasProperties):
-    anystr = properties.String("a string!", required=False)
-    stripstr = properties.String("a string!", strip=' ', required=False)
+    anystr = properties.String("a string!", default='', required=False)
+    stripstr = properties.String("a string!", default='', strip=' ',
+                                 required=False)
     lowerstr = properties.String("a string!", change_case='lower',
-                                 required=False)
+                                 default='', required=False)
     upperstr = properties.String("a string!", change_case='upper',
-                                 required=False)
+                                 default='', required=False)
 
 
 class StrChoicePrimitive(properties.HasProperties):
@@ -138,9 +139,9 @@ class ThingWithInheritedDefaults(ThingWithDefaults):
 
 
 class SerializableThing(properties.HasProperties):
-    anystr = properties.String("a string!", required=False)
+    anystr = properties.String("a string!", default='', required=False)
     anotherstr = properties.String("another string!", default='HELLO WORLD!')
-    myint = properties.Integer("an integer!", required=False)
+    myint = properties.Integer("an integer!", default=0, required=False)
     myvector2 = properties.Vector2("a 2x2 vector!", required=False)
 
 
