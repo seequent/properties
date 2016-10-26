@@ -99,13 +99,10 @@ class GettableProperty(object):
             printdefault = True
 
         return (
-            ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
+            ':attribute {name}: {help}{info}'.format(
                 name=self.name,
                 help=self.help,
-                info='' if self.info() == 'corrected' else ', ' + self.info(),
-                default=('' if not printdefault
-                         else ', Default: ' + str(self.default)),
-                cls=self.sphinx_class()
+                info='' if self.info() == 'corrected' else ', ' + self.info()
             )
         )
 
@@ -199,6 +196,37 @@ class Property(GettableProperty):
                 vtype=type(value),
                 extra=extra,
             )
+        )
+
+    def sphinx(self):
+        try:
+            if self.default is None or self.default is undefined:
+                defstr = ''
+            elif len(self.default) == 0:
+                defstr = ''
+            elif callable(self.default):
+                defstr = ', Default: {}'.format(
+                    self.default().__class__.__name__
+                )
+            else:
+                defstr = ', Default: {}'.format(self.default)
+        except TypeError:
+            defstr = ', Default: {}'.format(self.default)
+
+        return (
+            ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
+                name=self.name,
+                help=self.help,
+                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                default=defstr,
+                cls=self.sphinx_class()
+            )
+        )
+
+    def sphinx_class(self):
+        return ':class:`{cls} <{pref}.{cls}>`'.format(
+            cls=self.__class__.__name__,
+            pref=self.__module__
         )
 
 
@@ -688,9 +716,9 @@ class Vector2(Array):
 
 
 class Uuid(GettableProperty):
-    """Unique identifier generated on startup"""
+    """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
 
-    info_text = 'an auto-generated unique identifier'
+    info_text = 'an auto-generated :class:`UUID <properties.basic.Uuid>`'
 
     @property
     def default(self):
