@@ -68,7 +68,7 @@ class GettableProperty(object):
         return self.info_text
 
     def validate(self, instance, value):
-        return True
+        return value
 
     def assert_valid(self, instance, value=None):
         if value is None:
