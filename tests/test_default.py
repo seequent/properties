@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
+import warnings
 
 import properties as props
 
@@ -116,7 +117,7 @@ class TestDefault(unittest.TestCase):
         class HasUnionC(props.HasProperties):
             c = props.Union('union', (props.Integer(''),
                                       props.String('', default='hi'),
-                                      props.Integer('', default=5)))
+                                      props.Integer('')))
 
         hu = HasUnionC()
         assert hu.c == 'hi'
@@ -125,16 +126,35 @@ class TestDefault(unittest.TestCase):
         assert hu.c == 'hi'
 
         class HasUnionD(props.HasProperties):
-            d = props.Union('union', (props.Integer(''),
-                                      props.String('', default='hi'),
-                                      props.Integer('', default=5)),
-                            default=100)
+            d = props.Union('union', (
+                props.Integer(''),
+                props.String(''),
+                props.Integer('')
+            ), default=100)
 
         hu = HasUnionD()
         assert hu.d == 100
         hu.d = 5
         del(hu.d)
         assert hu.d == 100
+
+        with self.assertRaises(AssertionError):
+            props.Union('union', (props.Integer(''), props.Bool('')),
+                        default=0.5)
+
+        with warnings.catch_warnings(record=True) as w:
+            props.Union('union', (props.Integer('', default=5),
+                                  props.Bool('', default=True)))
+
+            assert len(w) == 1
+            assert issubclass(w[0].category, RuntimeWarning)
+
+        with warnings.catch_warnings(record=True) as w:
+            props.Union('union', (props.Integer('', default=5),
+                                  props.Bool('', default=True)),
+                        default=False)
+            assert len(w) > 0
+            assert issubclass(w[0].category, RuntimeWarning)
 
     def test_instance_default(self):
         class HasInt(props.HasProperties):

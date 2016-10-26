@@ -3,9 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from six import with_metaclass
+from warnings import warn
+
 from six import integer_types
 from six import iteritems
+from six import with_metaclass
+
 from . import basic
 from . import handlers
 from . import utils
@@ -165,7 +168,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             return self._backend[name]
 
         # Fixes initial default value so ie 'random' states become fixed
-        if self._defaults and name in self._defaults:
+        if self._defaults is not None and name in self._defaults:
             default = self._defaults[name]
         else:
             default = self._props[name].default
@@ -403,17 +406,18 @@ class Union(basic.Property):
     info_text = 'a union of multiple property types'
 
     def __init__(self, help, props, **kwargs):
-        assert isinstance(props, (tuple, list)), "props must be a list"
+        assert isinstance(props, (tuple, list)), 'props must be a list'
         new_props = tuple()
         for prop in props:
             if isinstance(prop, type) and issubclass(prop, HasProperties):
                 prop = Instance(help, prop)
             assert isinstance(prop, basic.Property), (
-                "all props must be Property instance or HasProperties class"
+                'all props must be Property instance or HasProperties class'
             )
             new_props += (prop,)
         self.props = new_props
         super(Union, self).__init__(help, **kwargs)
+        self._unused_default_warning()
 
     def info(self):
         return ' or '.join([p.info() for p in self.props])
@@ -431,12 +435,14 @@ class Union(basic.Property):
     @property
     def default(self):
         """default value of the property"""
-        prop_def = utils.undefined
+        prop_def = getattr(self, '_default', utils.undefined)
         for prop in self.props:
-            prop_def = prop.default
-            if prop.default is not utils.undefined:
+            if prop.default is utils.undefined:
+                continue
+            if prop_def is utils.undefined:
+                prop_def = prop.default
                 break
-        return getattr(self, '_default', prop_def)
+        return prop_def
 
     @default.setter
     def default(self, value):
@@ -454,6 +460,17 @@ class Union(basic.Property):
             except Exception:
                 continue
         raise AssertionError('Invalid default for Union property')
+
+    def _unused_default_warning(self):
+        prop_def = getattr(self, '_default', utils.undefined)
+        for prop in self.props:
+            if prop.default is utils.undefined:
+                continue
+            if prop_def is utils.undefined:
+                prop_def = prop.default
+            else:
+                warn('Union prop default ignored: {}'.format(prop.default),
+                     RuntimeWarning)
 
     def validate(self, instance, value):
         for prop in self.props:
