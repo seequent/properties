@@ -43,6 +43,12 @@ def defaults(func):
 
     return func_wrapper
 
+def filter_dict(cls, fields):
+    """Filter an input dict to contain only keys for which
+    a property exists on the present HasProperties subclass
+    """
+    return {k: v for k, v in iter(fields.items()) if k in cls._props}
+
 
 class Sentinel(object):
     def __init__(self, name, help):

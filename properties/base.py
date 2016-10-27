@@ -209,13 +209,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         props = {k: v for k, v in kv if v is not None}
         return props
 
-    @classmethod
-    def filter_dict(cls, fields):
-        """Filter an input dict to contain only keys for which
-        a property exists on the present HasProperties subclass
-        """
-        return {k: v for k, v in iter(fields.items()) if k in cls._props}
-
     def __setstate__(self, newstate):
         # print('setting state: ', newstate)
         for k, v in iteritems(newstate):

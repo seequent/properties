@@ -33,7 +33,7 @@ from .basic import (
     Color,
     Uuid
 )
-from .utils import defaults, undefined
+from .utils import defaults, filter_dict, undefined
 from .handlers import observer, validator
 
 __version__ = '0.2.2'
