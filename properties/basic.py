@@ -606,7 +606,7 @@ class Vector3(Array):
 
     @property
     def shape(self):
-        return (1, 3)
+        return (3,)
 
     @property
     def dtype(self):
@@ -630,21 +630,31 @@ class Vector3(Array):
             return None
         return [float(v) for v in value.flatten()]
 
-    def validate(self, obj, value):
+    def validate(self, instance, value):
         """Determine if array is valid based on shape and dtype"""
         if isinstance(value, string_types):
             if value.upper() not in VECTOR_DIRECTIONS:
-                self.error(obj, value)
+                self.error(instance, value)
             value = VECTOR_DIRECTIONS[value.upper()]
 
-        value = super(Vector3, self).validate(obj, value)
+        if not isinstance(value, (tuple, list, np.ndarray)):
+            self.error(instance, value)
+        value = self.wrapper(value)
+        if value.dtype.kind != 'f':
+            self.error(instance, value)
+        if value.ndim != 2 or value.shape[0] != 1 or value.shape[1] != 3:
+            self.error(instance, value)
+
+        # Return to this once  vmath is modified to separate Vector3 from
+        # a list of Vectors.
+        # value = super(Vector3, self).validate(instance, value)
 
         if self.length is not None:
             try:
                 value.length = self.length
             except ZeroDivisionError:
                 self.error(
-                    obj, value,
+                    instance, value,
                     error=ZeroDivisionError,
                     extra='The vector must have a length specified.'
                 )
@@ -664,7 +674,7 @@ class Vector2(Array):
 
     @property
     def shape(self):
-        return (1, 2)
+        return (2,)
 
     @property
     def dtype(self):
@@ -688,24 +698,34 @@ class Vector2(Array):
             return None
         return list(map(float, value.flatten()))
 
-    def validate(self, obj, value):
+    def validate(self, instance, value):
         """Determine if array is valid based on shape and dtype"""
         if isinstance(value, string_types):
             if (
                     value.upper() not in VECTOR_DIRECTIONS or
                     value.upper() in ('Z', '-Z', 'UP', 'DOWN')
                ):
-                self.error(obj, value)
+                self.error(instance, value)
             value = VECTOR_DIRECTIONS[value.upper()][:2]
 
-        value = super(Vector2, self).validate(obj, value)
+        if not isinstance(value, (tuple, list, np.ndarray)):
+            self.error(instance, value)
+        value = self.wrapper(value)
+        if value.dtype.kind != 'f':
+            self.error(instance, value)
+        if value.ndim != 2 or value.shape[0] != 1 or value.shape[1] != 2:
+            self.error(instance, value)
+
+        # Return to this once  vmath is modified to separate Vector2 from
+        # a list of Vectors.
+        # value = super(Vector2, self).validate(instance, value)
 
         if self.length is not None:
             try:
                 value.length = self.length
             except ZeroDivisionError:
                 self.error(
-                    obj, value,
+                    instance, value,
                     error=ZeroDivisionError,
                     extra='The vector must have a length specified.'
                 )
