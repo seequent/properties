@@ -35,6 +35,7 @@ from .basic import (
 )
 from .utils import defaults, filter_dict, undefined
 from .handlers import observer, validator
+from . import task
 
 __version__ = '0.2.2'
 __author__ = '3point Science'
