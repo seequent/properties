@@ -737,16 +737,21 @@ class Uuid(GettableProperty):
 
 
 class Color(Property):
-    """Color property for RGB colors
+    """Color property for RGB colors.
 
     Allowed inputs are RGB, hex, named color, or 'random' for random
-    color. This property converts all these to RBG.
+    color. All inputs are coerced into an RGB :class:`tuple` of
+    :class:`int`s between 0 and 255.
+    
+    For example, :code:`'red' or '#FF0000' or '#F00'` gets coerced
+    into :code:`(255, 0, 0)`. Color names can be selected from standard
+    `web-colors <https://en.wikipedia.org/wiki/Web_colors>`_.
     """
 
     info_text = 'a color'
 
     def validate(self, instance, value):
-        """check if input is valid color and converts to RBG"""
+        """check if input is valid color and converts to RGB"""
         if isinstance(value, string_types):
             if value in COLORS_NAMED:
                 value = COLORS_NAMED[value]
