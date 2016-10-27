@@ -418,6 +418,9 @@ class StringChoice(Property):
 
     @property
     def info_text(self):
+        if len(self.choices) == 2:
+            return 'either {} or {}'.format(list(self.choices)[0],
+                                            list(self.choices)[1])
         return 'any of "{}"'.format('", "'.join(self.choices))
 
     @property
@@ -742,7 +745,7 @@ class Color(Property):
     Allowed inputs are RGB, hex, named color, or 'random' for random
     color. All inputs are coerced into an RGB :class:`tuple` of
     :class:`int`s between 0 and 255.
-    
+
     For example, :code:`'red' or '#FF0000' or '#F00'` gets coerced
     into :code:`(255, 0, 0)`. Color names can be selected from standard
     `web-colors <https://en.wikipedia.org/wiki/Web_colors>`_.
