@@ -14,7 +14,7 @@ from .basic import Array
 class Vector3(Array):
     """3D vector property"""
 
-    info_text = 'a list or Vector3'
+    info_text = 'a 3D Vector'
 
     @property
     def wrapper(self):
@@ -82,7 +82,7 @@ class Vector3(Array):
 class Vector2(Array):
     """2D vector property"""
 
-    info_text = 'a list or Vector2'
+    info_text = 'a 2D Vector'
 
     @property
     def wrapper(self):
@@ -137,6 +137,131 @@ class Vector2(Array):
         # Return to this once  vmath is modified to separate Vector2 from
         # a list of Vectors.
         # value = super(Vector2, self).validate(instance, value)
+
+        if self.length is not None:
+            try:
+                value.length = self.length
+            except ZeroDivisionError:
+                self.error(
+                    instance, value,
+                    error=ZeroDivisionError,
+                    extra='The vector must have a length specified.'
+                )
+        return value
+
+
+class Vector3Array(Array):
+    """3D vector property"""
+
+    info_text = 'a list of Vector3'
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector3Array`
+        """
+        return vmath.Vector3Array
+
+    @property
+    def shape(self):
+        return ('*', 3)
+
+    @property
+    def dtype(self):
+        return (float,)
+
+    @property
+    def length(self):
+        return getattr(self, '_length', None)
+
+    @length.setter
+    def length(self, value):
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
+        assert value > 0.0, 'length must be positive'
+        self._length = float(value)
+
+    @staticmethod
+    def as_json(value):
+        if value is None:
+            return None
+        return [float(v) for v in value.flatten()]
+
+    def validate(self, instance, value):
+        """Determine if array is valid based on shape and dtype"""
+        if not isinstance(value, (tuple, list, np.ndarray)):
+            self.error(instance, value)
+        for i, v in enumerate(value):
+            if isinstance(v, string_types):
+                if v.upper() not in VECTOR_DIRECTIONS:
+                    self.error(instance, value)
+                value[i] = VECTOR_DIRECTIONS[v.upper()]
+
+        value = super(Vector3Array, self).validate(instance, value)
+
+        if self.length is not None:
+            try:
+                value.length = self.length
+            except ZeroDivisionError:
+                self.error(
+                    instance, value,
+                    error=ZeroDivisionError,
+                    extra='The vector must have a length specified.'
+                )
+        return value
+
+
+class Vector2Array(Array):
+    """2D vector property"""
+
+    info_text = 'a list of Vector2'
+
+    @property
+    def wrapper(self):
+        """:class:`vectormath.vector.Vector2Array`
+        """
+        return vmath.Vector2Array
+
+    @property
+    def shape(self):
+        return ('*', 2)
+
+    @property
+    def dtype(self):
+        return (float,)
+
+    @property
+    def length(self):
+        return getattr(self, '_length', None)
+
+    @length.setter
+    def length(self, value):
+        assert isinstance(value, (float, integer_types)), (
+            'length must be a float'
+        )
+        assert value > 0.0, 'length must be positive'
+        self._length = value
+
+    @staticmethod
+    def as_json(value):
+        if value is None:
+            return None
+        return list(map(float, value.flatten()))
+
+    def validate(self, instance, value):
+        """Determine if array is valid based on shape and dtype"""
+        if not isinstance(value, (tuple, list, np.ndarray)):
+            self.error(instance, value)
+        for i, v in enumerate(value):
+            if isinstance(value, string_types):
+                if (
+                        value.upper() not in VECTOR_DIRECTIONS or
+                        value.upper() in ('Z', '-Z', 'UP', 'DOWN')
+                   ):
+                    self.error(instance, value)
+                value[i] = VECTOR_DIRECTIONS[value.upper()][:2]
+
+        value = super(Vector2Array, self).validate(instance, value)
 
         if self.length is not None:
             try:
