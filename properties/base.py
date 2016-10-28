@@ -184,7 +184,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             listener.func(self, change)
 
     def _set(self, name, value):
-        self._notify(dict(name=name, value=value, mode='validate'))
+        out = self._notify(dict(name=name, value=value, mode='validate'))
+        if out is not None:
+            value = out
         if value is basic.undefined and name in self._backend:
             self._backend.pop(name)
         else:
