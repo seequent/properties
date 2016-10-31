@@ -317,6 +317,7 @@ class List(basic.Property):
         )
         self.prop = prop
         super(List, self).__init__(help, **kwargs)
+        self._unused_default_warning()
 
     @property
     def name(self):
@@ -357,6 +358,11 @@ class List(basic.Property):
 
     def info(self):
         return 'a list - each item is {info}'.format(info=self.prop.info())
+
+    def _unused_default_warning(self):
+        if self.prop.default is not utils.undefined:
+            warn('List prop default ignored: {}'.format(self.prop.default),
+                 RuntimeWarning)
 
     def validate(self, instance, value):
         if not isinstance(value, (tuple, list)):
