@@ -55,17 +55,7 @@ class Vector3(Array):
                 self.error(instance, value)
             value = VECTOR_DIRECTIONS[value.upper()]
 
-        if not isinstance(value, (tuple, list, np.ndarray)):
-            self.error(instance, value)
-        value = self.wrapper(value)
-        if value.dtype.kind != 'f':
-            self.error(instance, value)
-        if value.ndim != 2 or value.shape[0] != 1 or value.shape[1] != 3:
-            self.error(instance, value)
-
-        # Return to this once  vmath is modified to separate Vector3 from
-        # a list of Vectors.
-        # value = super(Vector3, self).validate(instance, value)
+        value = super(Vector3, self).validate(instance, value)
 
         if self.length is not None:
             try:
@@ -126,17 +116,7 @@ class Vector2(Array):
                 self.error(instance, value)
             value = VECTOR_DIRECTIONS[value.upper()][:2]
 
-        if not isinstance(value, (tuple, list, np.ndarray)):
-            self.error(instance, value)
-        value = self.wrapper(value)
-        if value.dtype.kind != 'f':
-            self.error(instance, value)
-        if value.ndim != 2 or value.shape[0] != 1 or value.shape[1] != 2:
-            self.error(instance, value)
-
-        # Return to this once  vmath is modified to separate Vector2 from
-        # a list of Vectors.
-        # value = super(Vector2, self).validate(instance, value)
+        value = super(Vector2, self).validate(instance, value)
 
         if self.length is not None:
             try:
