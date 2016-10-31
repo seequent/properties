@@ -187,6 +187,22 @@ class TestDefault(unittest.TestCase):
         assert isinstance(hl1.z, list)
         assert hl0.z is not hl1.z
 
+    def test_list_default(self):
+        class HasIntList(props.HasProperties):
+            intlist = props.List('list of ints', props.Integer(''))
+
+        hil = HasIntList()
+
+        assert isinstance(hil.intlist, list)
+        assert len(hil.intlist) == 0
+
+        assert hil.intlist is not HasIntList().intlist
+
+        with warnings.catch_warnings(record=True) as w:
+            props.List('list', props.Integer('', default=5))
+            assert len(w) == 1
+            assert issubclass(w[0].category, RuntimeWarning)
+
 
 if __name__ == '__main__':
     unittest.main()
