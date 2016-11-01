@@ -21,18 +21,17 @@ class TestUtils(unittest.TestCase):
         test_dict = {'int_a': 10, 'int_b': 9, 'int_c': 8, 'int_d': 7}
 
         for hint in (HasInts, HasInts()):
-            props_dict = props.isolate_props(hint, test_dict)
-            non_props_dict = props.isolate_non_props(hint, test_dict)
+            (props_dict, others_dict) = props.filter_props(hint, test_dict)
 
             assert 'int_a' in props_dict
             assert 'int_b' in props_dict
             assert 'int_c' not in props_dict
             assert 'int_d' not in props_dict
 
-            assert 'int_a' not in non_props_dict
-            assert 'int_b' not in non_props_dict
-            assert 'int_c' in non_props_dict
-            assert 'int_d' in non_props_dict
+            assert 'int_a' not in others_dict
+            assert 'int_b' not in others_dict
+            assert 'int_c' in others_dict
+            assert 'int_d' in others_dict
 
 
 if __name__ == '__main__':

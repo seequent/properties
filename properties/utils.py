@@ -51,26 +51,25 @@ def defaults(func):
     return func_wrapper
 
 
-def isolate_props(cls, input_dict):
-    """Keep only keys/value pairs that correspond to existing properties
+def filter_props(has_props_cls, input_dict):
+    """Separate key/value pairs that correspond to existing properties
 
     Parameters:
-        cls        - HasProperties class or instance
-        input_dict - dictionary that partially corresponds to the
-                     cls._props dictionary
+        has_props_cls - HasProperties class or instance
+        input_dict    - dictionary that partially corresponds to the
+                        cls._props dictionary
+
+    Output:
+        (props_dict, others_dict) - Tuple of two dicts. The first contains
+            key/value pairs from input_dict that correspond to the
+            has_props_cls props dictionary; the second contains the
+            remaining key/value pairs.
     """
-    return {k: v for k, v in iter(input_dict.items()) if k in cls._props}
-
-
-def isolate_non_props(cls, input_dict):
-    """Keep only keys/value pairs that do not correspond to existing properties
-
-    Parameters:
-        cls        - HasProperties class or instance
-        input_dict - dictionary that partially corresponds to the
-                     cls._props dictionary
-    """
-    return {k: v for k, v in iter(input_dict.items()) if k not in cls._props}
+    props_dict = {k: v for k, v in iter(input_dict.items())
+                  if k in has_props_cls._props}
+    others_dict = {k: v for k, v in iter(input_dict.items())
+                   if k not in has_props_cls._props}
+    return (props_dict, others_dict)
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
