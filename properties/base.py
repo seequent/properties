@@ -81,9 +81,10 @@ class PropertyMetaclass(type):
             prop.name = key
             classdict[key] = prop.get_property()
 
-        # Overwrite observers with their function
-        for key, obs in iteritems(observer_dict):
-            classdict[key] = obs.func
+        # Overwrite handlers with their function
+        observer_dict.update(validator_dict)
+        for key, hand in iteritems(observer_dict):
+            classdict[key] = hand.func
 
         # Document Properties
         doc_str = classdict.get('__doc__', '')

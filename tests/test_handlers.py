@@ -56,6 +56,8 @@ class TestHandlers(unittest.TestCase):
         hand._backend['a'] = 'not an int'
         self.assertRaises(ValueError, lambda: hand.validate())
 
+        hand._set_b_to_twelve()
+
 
 if __name__ == '__main__':
     unittest.main()
