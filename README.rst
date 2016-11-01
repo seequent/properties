@@ -12,9 +12,11 @@ properties
 
 .. image:: https://travis-ci.org/3ptscience/properties.svg?branch=master
     :target: https://travis-ci.org/3ptscience/properties
+    :alt: Travis tests
 
 .. image:: https://codecov.io/gh/3ptscience/properties/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/3ptscience/properties
+    :alt: Code coverage
 
 .. image:: https://www.quantifiedcode.com/api/v1/project/f79abeb2219a4a2d9b683f8d57bcdab5/badge.svg
     :target: https://www.quantifiedcode.com/app/project/f79abeb2219a4a2d9b683f8d57bcdab5
@@ -80,62 +82,87 @@ Lets start by making a class to organize your coffee habits.
 
 .. code:: python
 
-    import properties
-    class CoffeeProfile(properties.HasProperties):
-        name = properties.String('What should I call you?', required=True)
-        count = properties.Integer('number of coffees today')
-        haz_enough_coffee = properties.Bool('Have you had enough coffee today?', default=False)
-        caffeine_choice = properties.StringChoice('How do you take your caffeine?' , choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'])
+        import properties
+        class CoffeeProfile(properties.HasProperties):
+            name = properties.String('What should I call you?')
+            count = properties.Integer(
+                'How many coffees have you had today?',
+                default=0
+            )
+            had_enough_coffee = properties.Bool(
+                'Have you had enough coffee today?',
+                default=False
+            )
+            caffeine_choice = properties.StringChoice(
+                'How do you take your caffeine?' ,
+                choices=['coffee', 'tea', 'latte', 'cappuccino', 'something fancy'],
+                required=False
+            )
 
 
-The :code:`CoffeeProfile` class has 4 properties, one of which is required
-(:code:`name`). All of them are documented! At a minimum, we need to
-instantiate the class with a name.
+The :code:`CoffeeProfile` class has 4 properties, all of which are documented!
+These can be set on class instantiation:
 
 .. code:: python
 
     profile = CoffeeProfile(name='Bob')
-    print profile.name
-    >> "Bob"
+    print(profile.name)
 
-Since a default value was provided for :code:`haz_enough_coffee`, the response is (naturally)
+    Out [1]: Bob
+
+Since a default value was provided for :code:`had_enough_coffee`, the response is (naturally)
 
 .. code:: python
 
-    print profile.haz_enough_coffee
-    >> False
+    print profile.had_enough_coffee
 
-We can set Bob's :code:`caffeine_choice`, his default is coffee
+    Out [2]: False
+
+We can set Bob's :code:`caffeine_choice` to one of the available choices; he likes coffee
 
 .. code:: python
 
     profile.caffeine_choice = 'coffee'
 
+Also, Bob is half way through his fourth cup of coffee today:
 
-He also likes macchiatos, so we try to set that, but that will error. Our
-:code:`caffeine_choice` property has a select set of choices. Clearly,
-macchiatos fall into the :code:`'something fancy'` category.
+.. code:: python
 
+    profile.count = 3.5
 
-Property Classes are auto-documented! When you ask for the docs of
+    Out [3]: ValueError: The 'count' property of a CoffeeProfile instance must
+             be an integer.
+
+Ok, Bob, chug that coffee:
+
+.. code:: python
+
+    profile.count = 4
+
+Now that Bob's :code:`CoffeeProfile` is established, :code:`properties` can
+check that it is valid:
+
+.. code:: python
+
+    profile.validate()
+
+    Out [4]: True
+
+Property Classes are auto-documented! When you ask for the doc string of
 :code:`CoffeeProfile`, you get
 
 .. code:: rst
 
-    Init signature: CoffeeProfile(self, **kwargs)
-    Docstring:
-    Required:
+    **Required**
 
-    :param name: What should I call you?
-    :type name: :class:`.String`
+    :param count: How many coffees have you had today?, an integer, Default: 0
+    :type count: :class:`Integer <properties.basic.Integer>`
+    :param had_enough_coffee: Have you had enough coffee today?, a boolean, Default: False
+    :type had_enough_coffee: :class:`Bool <properties.basic.Bool>`
+    :param name: What should I call you?, a string
+    :type name: :class:`String <properties.basic.String>`
 
-    Optional:
+    **Optional**
 
-    :param count: number of coffees today
-    :type count: :class:`.Integer`
-    :param haz_enough_coffee: Have you had enough coffee today?
-    :type haz_enough_coffee: :class:`.Bool`
-    :param caffeine_choice: How do you take your caffeine?, Choices: something fancy, tea, coffee, cappuccino, latte
-    :type caffeine_choice: :class:`.String`
-    File:           ~/git/python_symlinks/properties/base.py
-    Type:           _PropertyMetaClass
+    :param caffeine_choice: How do you take your caffeine?, any of "something fancy", "tea", "coffee", "cappuccino", "latte"
+    :type caffeine_choice: :class:`StringChoice <properties.basic.StringChoice>`
