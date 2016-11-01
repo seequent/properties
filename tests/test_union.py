@@ -7,6 +7,7 @@ import unittest
 
 import properties as props
 
+
 class HasIntA(props.HasProperties):
     a = props.Integer('int a')
 
@@ -60,9 +61,6 @@ class TestUnion(unittest.TestCase):
         unionlist.one_or_more = [HasIntC(), HasIntC()]
         with self.assertRaises(ValueError):
             unionlist.validate()
-
-
-
 
 
 if __name__ == '__main__':
