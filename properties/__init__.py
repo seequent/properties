@@ -37,7 +37,7 @@ from .math import (
     Vector3Array,
     Vector2Array,
 )
-from .utils import defaults, undefined
+from .utils import defaults, undefined, isolate_props, isolate_non_props
 from .handlers import observer, validator
 
 __version__ = '0.2.2'
