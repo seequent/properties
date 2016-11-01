@@ -114,7 +114,7 @@ Since a default value was provided for :code:`had_enough_coffee`, the response i
 
 .. code:: python
 
-    print profile.had_enough_coffee
+    print(profile.had_enough_coffee)
 
     Out [2]: False
 
