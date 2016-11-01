@@ -385,7 +385,8 @@ class List(basic.Property):
         return 'a list - each item is {info}'.format(info=self.prop.info())
 
     def _unused_default_warning(self):
-        if self.prop.default is not utils.undefined:
+        if (self.prop.default is not utils.undefined and
+                self.prop.default != self.default):
             warn('List prop default ignored: {}'.format(self.prop.default),
                  RuntimeWarning)
 
@@ -507,7 +508,7 @@ class Union(basic.Property):
                 continue
             if prop_def is utils.undefined:
                 prop_def = prop.default
-            else:
+            elif prop_def != prop.default:
                 warn('Union prop default ignored: {}'.format(prop.default),
                      RuntimeWarning)
 
