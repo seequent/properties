@@ -14,9 +14,8 @@ addons:
 install:
   - pip install -r requirements_dev.txt
 
-# Run test
 script:
-  - nosetests --with-cov --cov properties --cov-config .coveragerc -v -s
+  - make tests
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
