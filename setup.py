@@ -30,7 +30,7 @@ setup(
         'future',
         'numpy>=1.7',
         'six',
-        'vectormath',
+        'vectormath>=0.1.0',
     ],
     author="3point Science",
     author_email="info@3ptscience.com",
