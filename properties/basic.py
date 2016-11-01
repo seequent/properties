@@ -628,12 +628,12 @@ class Color(Property):
     """Color property for RGB colors.
 
     Allowed inputs are RGB, hex, named color, or 'random' for random
-    color. All inputs are coerced into an RGB :class:`tuple` of
-    :class:`int`s between 0 and 255.
+    color. All inputs are coerced into an RGB :code:`tuple` of
+    :code:`int` values between 0 and 255.
 
-    For example, :code:`'red' or '#FF0000' or '#F00'` gets coerced
-    into :code:`(255, 0, 0)`. Color names can be selected from standard
-    `web-colors <https://en.wikipedia.org/wiki/Web_colors>`_.
+    For example, :code:`'red'` or :code:`'#FF0000'` or :code:`'#F00'` gets
+    coerced into :code:`(255, 0, 0)`. Color names can be selected from
+    standard `web-colors <https://en.wikipedia.org/wiki/Web_colors>`_.
     """
 
     info_text = 'a color'

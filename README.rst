@@ -148,8 +148,8 @@ check that it is valid:
 
     Out [4]: True
 
-Property Classes are auto-documented! When you ask for the doc string of
-:code:`CoffeeProfile`, you get
+Property Classes are auto-documented in Sphinx-style reStructuredText!
+When you ask for the doc string of :code:`CoffeeProfile`, you get
 
 .. code:: rst
 
