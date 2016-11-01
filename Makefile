@@ -1,6 +1,6 @@
 PACKAGE_NAME=properties
 
-.PHONY: install publish coverage-run coverage lint lint-tml graph docs tests
+.PHONY: install publish coverage-run coverage lint lint-html graph docs tests
 
 install:
 	python setup.py install
