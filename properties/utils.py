@@ -51,6 +51,28 @@ def defaults(func):
     return func_wrapper
 
 
+def isolate_props(cls, input_dict):
+    """Keep only keys/value pairs that correspond to existing properties
+
+    Parameters:
+        cls        - HasProperties class or instance
+        input_dict - dictionary that partially corresponds to the
+                     cls._props dictionary
+    """
+    return {k: v for k, v in iter(input_dict.items()) if k in cls._props}
+
+
+def isolate_non_props(cls, input_dict):
+    """Keep only keys/value pairs that do not correspond to existing properties
+
+    Parameters:
+        cls        - HasProperties class or instance
+        input_dict - dictionary that partially corresponds to the
+                     cls._props dictionary
+    """
+    return {k: v for k, v in iter(input_dict.items()) if k not in cls._props}
+
+
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
     """A basic object with a name and help string
 
