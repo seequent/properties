@@ -496,7 +496,7 @@ class Union(basic.Property):
                     prop.validate(None, value)
                 self._default = value
                 return
-            except (ValueError, AssertionError):
+            except (ValueError, KeyError, TypeError, AssertionError):
                 continue
         raise AssertionError('Invalid default for Union property')
 
@@ -516,7 +516,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.validate(instance, value)
-            except (ValueError, KeyError):
+            except (ValueError, KeyError, TypeError):
                 continue
         self.error(instance, value)
 
@@ -528,7 +528,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)
-            except (ValueError, KeyError):
+            except (ValueError, KeyError, TypeError):
                 continue
         raise ValueError(
             'The "{name}" property of a {cls} instance has not been set '
