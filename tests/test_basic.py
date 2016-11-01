@@ -631,13 +631,15 @@ class TestBasic(unittest.TestCase):
         thing.anotherstr = ''
         thing.myint = -15
         thing.myvector2 = [3.1415926535, 42]
-        self.assertEqual(thing.serialize(),
-                         {
-                            'anystr': 'a value',
-                            'anotherstr': '',
-                            'myint': -15,
-                            'myvector2': [3.1415926535, 42],
-                         })
+        self.assertEqual(
+            thing.serialize(), {
+                'anystr': 'a value',
+                'anotherstr': '',
+                'myint': -15,
+                'myvector2': [3.1415926535, 42],
+            }
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
