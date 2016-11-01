@@ -597,6 +597,32 @@ class Array(Property):
 
         return value
 
+    def error(self, instance, value, error=None, extra=''):
+        """Generates a ValueError on setting property to an invalid value"""
+        error = error if error is not None else ValueError
+        if not isinstance(value, (list, tuple, np.ndarray)):
+            super(Array, self).error(instance, value, error, extra)
+        if isinstance(value, (list, tuple)):
+            val_description = 'A {typ} of length {len}'.format(
+                typ=value.__class__.__name__,
+                len=len(value)
+            )
+        else:
+            val_description = 'An array of shape {shp} and dtype {typ}'.format(
+                shp=value.shape,
+                typ=value.dtype
+            )
+        raise error(
+            'The \'{name}\' property of a {cls} instance must be {info}. '
+            '{desc} was specified. {extra}'.format(
+                name=self.name,
+                cls=instance.__class__.__name__,
+                info=self.info(),
+                desc=val_description,
+                extra=extra,
+            )
+        )
+
 
 class Color(Property):
     """Color property for RGB colors.
