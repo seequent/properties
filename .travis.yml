@@ -20,7 +20,7 @@ script:
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-  - openssl aes-256-cbc -K $encrypted_d9740cb7b868_key -iv $encrypted_d9740cb7b868_iv -in .pypirc.enc -out ~/.pypirc -d
+  - openssl aes-256-cbc -K $encrypted_aabb4e75ff1f_key -iv $encrypted_aabb4e75ff1f_iv -in .pypirc.enc -out ~/.pypirc -d
   - if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" -a $TRAVIS_PYTHON_VERSION == "2.7" ]; then
       make publish;
     fi
