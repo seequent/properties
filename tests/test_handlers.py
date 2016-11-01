@@ -9,9 +9,9 @@ import properties as props
 
 
 class ConsiderItHandled(props.HasProperties):
-    a = props.Integer('int a')
-    b = props.Integer('int b')
-    c = props.Integer('int c')
+    a = props.Integer('int a', required=False)
+    b = props.Integer('int b', required=False)
+    c = props.Integer('int c', required=False)
 
     @props.observer('a')
     def _mirror_to_b(self, change):
@@ -55,6 +55,8 @@ class TestHandlers(unittest.TestCase):
 
         hand._backend['a'] = 'not an int'
         self.assertRaises(ValueError, lambda: hand.validate())
+
+        hand._set_b_to_twelve()
 
 
 if __name__ == '__main__':

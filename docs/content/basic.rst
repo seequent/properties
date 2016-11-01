@@ -3,16 +3,12 @@
 Basic Properties
 ================
 
-
 Property
 --------
 
 .. autoclass:: properties.basic.Property
     :members:
     :undoc-members:
-
-
-
 
 GettableProperty
 ----------------
@@ -96,14 +92,6 @@ StringChoice
     :undoc-members:
 
 
-Color
------
-
-.. autoclass:: properties.basic.Color
-    :members:
-    :undoc-members:
-
-
 Array
 -----
 
@@ -111,27 +99,10 @@ Array
     :members:
     :undoc-members:
 
+Color
+-----
 
-Vector3
--------
-
-.. autoclass:: properties.basic.Vector3
-    :members:
-    :undoc-members:
-
-
-Vector2
--------
-
-.. autoclass:: properties.basic.Vector2
-    :members:
-    :undoc-members:
-
-
-UUID
-----
-
-.. autoclass:: properties.basic.Uuid
+.. autoclass:: properties.basic.Color
     :members:
     :undoc-members:
 
@@ -141,3 +112,45 @@ DateTime
 .. autoclass:: properties.basic.DateTime
     :members:
     :undoc-members:
+
+UUID
+----
+
+.. autoclass:: properties.basic.Uuid
+    :members:
+    :undoc-members:
+
+
+Math Properties
+===============
+
+Vector3
+-------
+
+.. autoclass:: properties.math.Vector3
+    :members:
+    :undoc-members:
+
+
+Vector2
+-------
+
+.. autoclass:: properties.math.Vector2
+    :members:
+    :undoc-members:
+
+Vector3Array
+------------
+
+.. autoclass:: properties.math.Vector3Array
+    :members:
+    :undoc-members:
+
+
+Vector2Array
+------------
+
+.. autoclass:: properties.math.Vector2Array
+    :members:
+    :undoc-members:
+

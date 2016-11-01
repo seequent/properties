@@ -1,10 +1,14 @@
-from functools import wraps
+"""handlers.py contains Observer classes, wrappers, and register functions"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from six import string_types
 
 
 def _set_listener(instance, obs):
     """Add listeners to a Properties class instance"""
-
     for name in obs.names:
         if name not in instance._listeners:
             instance._listeners[name] = {'validate': [], 'observe': []}
@@ -19,7 +23,7 @@ def _get_listeners(instance, change):
 
 
 class Observer(object):
-    """Acts as a listener on a properties instance."""
+    """Acts as a listener on a properties instance"""
 
     def __init__(self, names, mode):
         self.names = names
@@ -31,18 +35,24 @@ class Observer(object):
 
     @property
     def names(self):
+        """Name of the property being observed"""
         return getattr(self, '_names')
 
     @names.setter
     def names(self, value):
         if not isinstance(value, (tuple, list)):
             value = [value]
-        for v in value:
-            assert isinstance(v, string_types)
+        for val in value:
+            assert isinstance(val, string_types)
         self._names = tuple(value)
 
     @property
     def mode(self):
+        """Observation mode
+
+        validate - acts on change before value is set
+        observe - acts on change after value is set
+        """
         return getattr(self, '_mode')
 
     @mode.setter
@@ -52,11 +62,7 @@ class Observer(object):
         self._mode = value
 
 
-    def get_property(self):
-        return self.func
-
-
-class ClassValidator(object):
+class ClassValidator(object):                                                  #pylint: disable=too-few-public-methods
     """Acts as a listener on class validation"""
 
     def __init__(self, func):
@@ -87,7 +93,6 @@ def observer(names_or_instance, names=None, func=None):
 
     if names is None and func is None:
         return Observer(names_or_instance, 'observe')
-
     obs = Observer(names, 'observe')(func)
     _set_listener(names_or_instance, obs)
     return obs
@@ -97,7 +102,7 @@ def validator(names_or_instance, names=None, func=None):
     """Observe a pending change in a named property OR class validation
 
         Use this to register a function that will be called when validate
-        is called on a class:
+        is called on a HasProperties instance:
 
         .. code::
 
@@ -132,7 +137,6 @@ def validator(names_or_instance, names=None, func=None):
         if callable(names_or_instance):
             return ClassValidator(names_or_instance)
         return Observer(names_or_instance, 'validate')
-
     val = Observer(names, 'validate')(func)
     _set_listener(names_or_instance, val)
     return val

@@ -15,7 +15,7 @@ from .base import (
     HasProperties,
     Instance,
     List,
-    Union
+    Union,
 )
 from .basic import (
     GettableProperty,
@@ -28,12 +28,16 @@ from .basic import (
     StringChoice,
     DateTime,
     Array,
+    Color,
+    Uuid,
+)
+from .math import (
     Vector3,
     Vector2,
-    Color,
-    Uuid
+    Vector3Array,
+    Vector2Array,
 )
-from .utils import defaults, undefined
+from .utils import defaults, undefined, filter_props
 from .handlers import observer, validator
 
 __version__ = '0.2.2'
