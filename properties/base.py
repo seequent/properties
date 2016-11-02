@@ -241,11 +241,9 @@ class Instance(basic.Property):
 
     info_text = 'an instance'
 
-    def __init__(self, help, instance_class, serializer=None, **kwargs):
+    def __init__(self, help, instance_class, **kwargs):
         assert isinstance(instance_class, type)
         self.instance_class = instance_class
-        if callable(serializer):
-            self._serializer = serializer
         super(Instance, self).__init__(help, **kwargs)
 
     def startup(self, instance):
@@ -260,6 +258,17 @@ class Instance(basic.Property):
     def auto_create(self, value):
         assert isinstance(value, bool), 'auto_create must be a boolean'
         self._auto_create = value
+
+    @property
+    def serializer(self):
+        """Callable to serialize the instance"""
+        return getattr(self, '_serializer', None)
+
+    @serializer.setter
+    def serializer(self, value):
+        if not callable(value):
+            raise TypeError('serializer must be a callable')
+        self._serializer = value
 
     def info(self):
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
@@ -282,8 +291,8 @@ class Instance(basic.Property):
         return True
 
     def as_json(self, value):
-        if hasattr(self, '_serializer'):
-            return self._serializer(value)
+        if self.serializer:
+            return self.serializer(value)
         if isinstance(value, HasProperties):
             return value.serialize(using='json')
         elif value is None:
