@@ -317,7 +317,7 @@ class Instance(basic.Property):
         return self.from_json(value)
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         """Convert instance to JSON"""
         if isinstance(value, HasProperties):
             return value.serialize()
@@ -472,7 +472,7 @@ class List(basic.Property):
         return [self.prop.deserialize(val) for val in value]
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         """Return a copy of the list
 
         If the list contains HasProperties instances, they are serialized.
@@ -621,7 +621,7 @@ class Union(basic.Property):
                 return prop.serialize(value)
             except (ValueError, KeyError, TypeError):
                 continue
-        return self.as_json(value)
+        return self.to_json(value)
 
     def deserialize(self, value):
         """Return a deserialized value
@@ -642,7 +642,7 @@ class Union(basic.Property):
         return self.from_json(value)
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         """Return value, serialized if value is a HasProperties instance"""
         if isinstance(value, HasProperties):
             return value.serialize()
