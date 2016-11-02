@@ -59,6 +59,17 @@ class GettableProperty(object):
         self._default = value
 
     @property
+    def serializer(self):
+        """Callable to serialize the property"""
+        return getattr(self, '_serializer', None)
+
+    @serializer.setter
+    def serializer(self, value):
+        if not callable(value):
+            raise TypeError('serializer must be a callable')
+        self._serializer = value
+
+    @property
     def help(self):
         """Get the help documentation of a Property instance"""
         if getattr(self, '_help', None) is None:

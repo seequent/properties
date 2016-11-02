@@ -264,17 +264,6 @@ class Instance(basic.Property):
         assert isinstance(value, bool), 'auto_create must be a boolean'
         self._auto_create = value
 
-    @property
-    def serializer(self):
-        """Callable to serialize the instance"""
-        return getattr(self, '_serializer', None)
-
-    @serializer.setter
-    def serializer(self, value):
-        if not callable(value):
-            raise TypeError('serializer must be a callable')
-        self._serializer = value
-
     def info(self):
         """Description of the property, supplemental to the help doc"""
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
