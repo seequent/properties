@@ -122,6 +122,8 @@ class GettableProperty(object):
         """
         if self.serializer:
             return self.serializer(value)
+        if value is None:
+            return None
         return self.as_json(value)
 
     def deserialize(self, value):
@@ -131,16 +133,24 @@ class GettableProperty(object):
         """
         if self.deserializer:
             return self.deserializer(value)
+        if value is None:
+            return None
         return self.from_json(value)
 
     @staticmethod
     def as_json(value):
-        """Convert a value to JSON"""
+        """Convert a value to JSON
+
+        as_json assumes that value has passed validation.
+        """
         return value
 
     @staticmethod
     def from_json(value):
-        """Load a value from JSON"""
+        """Load a value from JSON
+
+        as_json assumes that value read from JSON is valid
+        """
         return value
 
     def sphinx(self):
@@ -301,7 +311,7 @@ class Bool(Property):
                 return False
         if isinstance(value, int):
             return value
-        raise ValueError('Could not load boolean form JSON: {}'.format(value))
+        raise ValueError('Could not load boolean from JSON: {}'.format(value))
 
 
 def _in_bounds(prop, instance, value):
@@ -362,9 +372,9 @@ class Integer(Property):
 
     @staticmethod
     def as_json(value):
-        if value is None or np.isnan(value):
+        if np.isnan(value):
             return None
-        return int(np.round(value))
+        return value
 
     @staticmethod
     def from_json(value):
@@ -388,7 +398,7 @@ class Float(Integer):
 
     @staticmethod
     def as_json(value):
-        if value is None or np.isnan(value):
+        if np.isnan(value):
             return None
         return value
 
@@ -415,7 +425,7 @@ class Complex(Property):
 
     @staticmethod
     def as_json(value):
-        if value is None or np.isnan(value):
+        if np.isnan(value):
             return None
         return value
 
@@ -659,6 +669,14 @@ class Array(Property):
             )
         )
 
+    @staticmethod
+    def as_json(value):
+        return value.tolist()
+
+    @staticmethod
+    def from_json(value):
+        return np.array(value)
+
 
 class Color(Property):
     """Color property for RGB colors.
@@ -737,19 +755,13 @@ class DateTime(Property):
 
     @staticmethod
     def as_json(value):
-        if value is None:
-            return
         return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @staticmethod
     def from_json(value):
-        if value is None or value == 'None':
-            return None
         if len(value) == 10:
-            return datetime.datetime.strptime(
-                value.replace('-', '/'),
-                "%Y/%m/%d"
-            )
+            return datetime.datetime.strptime(value.replace('-', '/'),
+                                              "%Y/%m/%d")
         return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -778,8 +790,11 @@ class Uuid(GettableProperty):
 
     @staticmethod
     def as_json(value):
-        """Serialize UUID to JSON"""
         return str(value)
+
+    @staticmethod
+    def from_json(value):
+        return uuid.UUID(str(value))
 
 
 COLORS_20 = [
