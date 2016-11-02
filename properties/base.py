@@ -204,10 +204,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._validating = False
         return True
 
-    def serialize(self, using='json'):
+    def serialize(self):
         """Serializes a HasProperties instance to JSON"""
-        assert using == 'json', "Only json is supported."
-        jsondict = ((k, v.as_json(self._get(v.name)))
+        jsondict = ((k, v.serialize(self._get(v.name)))
                     for k, v in iteritems(self._props))
         props = {k: v for k, v in jsondict if v is not None}
         return props
@@ -302,7 +301,7 @@ class Instance(basic.Property):
         if self.serializer:
             return self.serializer(value)
         if isinstance(value, HasProperties):
-            return value.serialize(using='json')
+            return value.serialize()
         elif value is None:
             return None
         else:
