@@ -669,6 +669,18 @@ class Array(Property):
             )
         )
 
+    def deserialize(self, value):
+        """De-serialize the property value from JSON
+
+        If no deserializer has been registered, this converts the value
+        to the wrapper class with given dtype.
+        """
+        if self.deserializer:
+            return self.deserializer(value)
+        if value is None:
+            return None
+        return self.wrapper(value).astype(self.dtype[0])
+
     @staticmethod
     def as_json(value):
         return value.tolist()
