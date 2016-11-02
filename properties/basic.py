@@ -70,6 +70,17 @@ class GettableProperty(object):
         self._serializer = value
 
     @property
+    def deserializer(self):
+        """Callable to serialize the property"""
+        return getattr(self, '_deserializer', None)
+
+    @deserializer.setter
+    def deserializer(self, value):
+        if not callable(value):
+            raise TypeError('deserializer must be a callable')
+        self._deserializer = value
+
+    @property
     def help(self):
         """Get the help documentation of a Property instance"""
         if getattr(self, '_help', None) is None:
@@ -103,6 +114,34 @@ class GettableProperty(object):
             return self._get(scope.name)
 
         return property(fget=fget, doc=scope.help)
+
+    def serialize(self, value):
+        """Serialize the property value to JSON
+
+        If no serializer has been registered, this uses as_json
+        """
+        if self.serializer:
+            return self.serializer(value)
+        return self.as_json(value)
+
+    def deserialize(self, value):
+        """De-serialize the property value from JSON
+
+        If no deserializer has been registered, this uses from_json
+        """
+        if self.deserializer:
+            return self.deserializer(value)
+        return self.from_json(value)
+
+    @staticmethod
+    def as_json(value):
+        """Convert a value to JSON"""
+        return value
+
+    @staticmethod
+    def from_json(value):
+        """Load a value from JSON"""
+        return value
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -186,20 +225,6 @@ class Property(GettableProperty):
             self._set(scope.name, undefined)
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
-
-    @staticmethod
-    def as_json(value):
-        """Serialize value of property to JSON"""
-        return value
-
-    def as_pickle(self, instance):
-        """Serialize the property value on an instance to JSON"""
-        return self.as_json(instance._get(self.name))
-
-    @staticmethod
-    def from_json(value):
-        """Load property value from JSON"""
-        return value
 
     def error(self, instance, value, error=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
