@@ -39,6 +39,7 @@ from .math import (
 )
 from .utils import defaults, undefined, filter_props
 from .handlers import observer, validator
+from . import task
 
 __version__ = '0.2.3'
 __author__ = '3point Science'
