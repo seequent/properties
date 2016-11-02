@@ -1,14 +1,19 @@
+"""base.py contains HasProperties class and Instance, Union, and List props"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
-from six import with_metaclass
+from warnings import warn
+
 from six import integer_types
 from six import iteritems
+from six import with_metaclass
+
 from . import basic
 from . import handlers
+from . import utils
 
 
 class PropertyMetaclass(type):
@@ -18,24 +23,21 @@ class PropertyMetaclass(type):
     docstrings, and add HasProperties class to Registry
     """
 
-    def __new__(mcs, name, bases, classdict):
+    def __new__(mcs, name, bases, classdict):                                  #pylint: disable=too-many-locals
 
-        # Grab all the properties
+        # Grab all the properties, observers, and validators
         prop_dict = {
             key: value for key, value in classdict.items()
             if (
                 isinstance(value, basic.GettableProperty)
             )
         }
-
-        # Grab all the observers
         observer_dict = {
             key: value for key, value in classdict.items()
             if (
                 isinstance(value, handlers.Observer)
             )
         }
-
         validator_dict = {
             key: value for key, value in classdict.items()
             if (
@@ -80,9 +82,10 @@ class PropertyMetaclass(type):
             prop.name = key
             classdict[key] = prop.get_property()
 
-        # Overwrite observers with their function
-        for key, obs in iteritems(observer_dict):
-            classdict[key] = obs.func
+        # Overwrite handlers with their function
+        observer_dict.update(validator_dict)
+        for key, hand in iteritems(observer_dict):
+            classdict[key] = hand.func
 
         # Document Properties
         doc_str = classdict.get('__doc__', '')
@@ -131,11 +134,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
         # add the default listeners
         self._listeners = dict()
-        for k, v in iteritems(self._prop_observers):
-            handlers._set_listener(self, v)
-
-        for k, v in iteritems(self._props):
-            v.startup(self)
+        for _, val in iteritems(self._prop_observers):
+            handlers._set_listener(self, val)
 
         # set the defaults
         defaults = self._defaults or dict()
@@ -150,31 +150,26 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 setattr(self, key, value)
 
         # set the keywords
-        self._exclusive_kwargs = kwargs.pop(
-            '_exclusive_kwargs', getattr(self, '_exclusive_kwargs', False)
-        )
-
         for key in kwargs:
-            if (
-                (self._exclusive_kwargs and key not in self._props.keys()) or
-                (not hasattr(self, key) and key not in self._props.keys())
-            ):
-                raise KeyError(
-                    'Keyword input "{:s}" is not a known property'.format(key)
-                )
+            if not hasattr(self, key) and key not in self._props.keys():
+                raise KeyError('Keyword input "{:s}" is not a known property '
+                               'or attribute'.format(key))
             setattr(self, key, kwargs[key])
 
-    def _get(self, name, default):
-        # print(name)
+    def _get(self, name):
         if name in self._backend:
-            value = self._backend[name]
+            return self._backend[name]
+
+        # Fixes initial default value so ie 'random' states become fixed
+        if self._defaults is not None and name in self._defaults:              #pylint: disable=unsupported-membership-test
+            default = self._defaults[name]                                     #pylint: disable=unsubscriptable-object
         else:
-            value = default
-        if value is basic.undefined:
-            return None
-        # if value is None:
-        #     return default
-        return value
+            default = self._props[name].default
+        if callable(default):
+            self._backend[name] = self._props[name].validate(self, default())
+        elif default is not basic.undefined:
+            self._backend[name] = self._props[name].validate(self, default)
+        return self._backend.get(name, None)
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -182,17 +177,24 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             listener.func(self, change)
 
     def _set(self, name, value):
-        self._notify(dict(name=name, value=value, mode='validate'))
-        self._backend[name] = value
+        out = self._notify(dict(name=name, value=value, mode='validate'))
+        if out is not None:
+            value = out
+        if value is basic.undefined and name in self._backend:
+            self._backend.pop(name)
+        else:
+            self._backend[name] = value
         self._notify(dict(name=name, value=value, mode='observe'))
 
     def validate(self):
-        for key, val in iteritems(self._class_validators):
+        """Call all the registered ClassValidators"""
+        for _, val in iteritems(self._class_validators):
             val.func(self)
         return True
 
     @handlers.validator
     def _validate_props(self):
+        """Assert that all the properties are valid on validate()"""
         self._validating = True
         try:
             for k in self._props:
@@ -203,26 +205,25 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return True
 
     def serialize(self, using='json'):
+        """Serializes a HasProperties instance to JSON"""
         assert using == 'json', "Only json is supported."
-        kv = ((k, v.as_json(self._get(v.name, v.default)))
-              for k, v in iteritems(self._props))
-        props = {k: v for k, v in kv if v is not None}
+        jsondict = ((k, v.as_json(self._get(v.name)))
+                    for k, v in iteritems(self._props))
+        props = {k: v for k, v in jsondict if v is not None}
         return props
 
     def __setstate__(self, newstate):
-        # print('setting state: ', newstate)
-        for k, v in iteritems(newstate):
-            setattr(self, k, v)
+        for key, val in iteritems(newstate):
+            setattr(self, key, val)
 
     def __reduce__(self):
         props = dict()
-        for p in self._props:
-            if not hasattr(self._props[p], 'as_pickle'):
+        for prop in self._props:
+            if not hasattr(self._props[prop], 'as_pickle'):
                 continue
-            value = self._props[p].as_pickle(self)
+            value = self._props[prop].as_pickle(self)
             if value is not None:
-                props[p] = value
-        # print(props)
+                props[prop] = value
         return (self.__class__, (), props)
 
 
@@ -233,25 +234,29 @@ class Instance(basic.Property):
 
     * **instance_class** - the allowed class for the property
 
-    * **auto_create** - if True, create an instance of the class on
-      startup. Note: auto_create passes no arguments.
+    * **auto_create** - if True, create an instance of the class as
+      default value. Note: auto_create passes no arguments.
       auto_create cannot be true for an instance_class
       that requires arguments.
     """
 
     info_text = 'an instance'
 
-    def __init__(self, help, instance_class, **kwargs):
-        assert isinstance(instance_class, type)
+    def __init__(self, helpdoc, instance_class, **kwargs):
+        assert isinstance(instance_class, type), 'instance_class must be class'
         self.instance_class = instance_class
-        super(Instance, self).__init__(help, **kwargs)
+        super(Instance, self).__init__(helpdoc, **kwargs)
 
-    def startup(self, instance):
+    @property
+    def _class_default(self):
+        """Default value of the property"""
         if self.auto_create:
-            instance._set(self.name, self.instance_class())
+            return self.instance_class
+        return utils.undefined
 
     @property
     def auto_create(self):
+        """Determines if the default value is a class instance or undefined"""
         return getattr(self, '_auto_create', False)
 
     @auto_create.setter
@@ -271,16 +276,29 @@ class Instance(basic.Property):
         self._serializer = value
 
     def info(self):
+        """Description of the property, supplemental to the help doc"""
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
 
     def validate(self, instance, value):
-        if isinstance(value, self.instance_class):
-            return value
-        elif isinstance(value, dict):
-            return self.instance_class(**value)
-        return self.instance_class(value)
+        """Check if value is valid type of instance_class
+
+        If value is an instance of instance_class, it is returned unmodified.
+        If value is either (1) a keyword dictionary with valid parameters
+        to construct an instance of instance_class or (2) a valid input
+        argument to construct instance_class, then a new instance is
+        created and returned.
+        """
+        try:
+            if isinstance(value, self.instance_class):
+                return value
+            elif isinstance(value, dict):
+                return self.instance_class(**value)
+            return self.instance_class(value)
+        except (ValueError, KeyError):
+            self.error(instance, value)
 
     def assert_valid(self, instance, value=None):
+        """Checks if valid, including HasProperty instances pass validation"""
         valid = super(Instance, self).assert_valid(instance, value)
         if valid is False:
             return valid
@@ -291,6 +309,7 @@ class Instance(basic.Property):
         return True
 
     def as_json(self, value):
+        """Serializes HasProperties instances to JSON"""
         if self.serializer:
             return self.serializer(value)
         if isinstance(value, HasProperties):
@@ -306,6 +325,7 @@ class Instance(basic.Property):
                 return serialized
 
     def sphinx_class(self):
+        """Redefine sphinx class so documentation links to instance_class"""
         return ':class:`{cls} <.{cls}>`'.format(
             cls=self.instance_class.__name__
         )
@@ -323,21 +343,24 @@ class List(basic.Property):
     """
 
     info_text = 'a list'
+    _class_default = list
 
-    def __init__(self, help, prop, **kwargs):
+    def __init__(self, helpdoc, prop, **kwargs):
         if isinstance(prop, type) and issubclass(prop, HasProperties):
-            prop = Instance(help, prop)
+            prop = Instance(helpdoc, prop)
         assert isinstance(prop, basic.Property), (
             'prop must be a Property or HasProperties class'
         )
         self.prop = prop
-        super(List, self).__init__(help, **kwargs)
-
-    def startup(self, instance):
-        instance._set(self.name, [])
+        super(List, self).__init__(helpdoc, **kwargs)
+        self._unused_default_warning()
 
     @property
     def name(self):
+        """The name of the property on a HasProperties class
+
+        This is set in the metaclass. For lists, prop inherits the name
+        """
         return getattr(self, '_name', '')
 
     @name.setter
@@ -347,6 +370,7 @@ class List(basic.Property):
 
     @property
     def min_length(self):
+        """Minimum allowed length of the list"""
         return getattr(self, '_min_length', None)
 
     @min_length.setter
@@ -361,6 +385,7 @@ class List(basic.Property):
 
     @property
     def max_length(self):
+        """Maximum allowed length of the list"""
         return getattr(self, '_max_length', None)
 
     @max_length.setter
@@ -374,9 +399,21 @@ class List(basic.Property):
         self._max_length = value
 
     def info(self):
-        return 'a list; each item is {info}'.format(info=self.prop.info())
+        """Description of the property, supplemental to the help doc"""
+        return 'a list - each item is {info}'.format(info=self.prop.info())
+
+    def _unused_default_warning(self):
+        if (self.prop.default is not utils.undefined and
+                self.prop.default != self.default):
+            warn('List prop default ignored: {}'.format(self.prop.default),
+                 RuntimeWarning)
 
     def validate(self, instance, value):
+        """Check the length of the list and each element in the list
+
+        This returns a copy of the list to prevent unwanted sharing of
+        list pointers.
+        """
         if not isinstance(value, (tuple, list)):
             self.error(instance, value)
         if self.min_length is not None and len(value) < self.min_length:
@@ -384,14 +421,16 @@ class List(basic.Property):
         if self.max_length is not None and len(value) > self.max_length:
             self.error(instance, value)
         out = []
-        for v in value:
+        for val in value:
             try:
-                out += [self.prop.validate(instance, v)]
+                out += [self.prop.validate(instance, val)]
             except ValueError:
-                self.error(instance, v, extra='This is an invalid list item.')
+                self.error(instance, val,
+                           extra='This is an invalid list item.')
         return out
 
     def assert_valid(self, instance, value=None):
+        """Check if list and contained properties are valid"""
         valid = super(List, self).assert_valid(instance, value)
         if valid is False:
             return valid
@@ -399,12 +438,13 @@ class List(basic.Property):
             value = getattr(instance, self.name, None)
         if value is None:
             return True
-        for v in value:
-            self.prop.assert_valid(instance, v)
+        for val in value:
+            self.prop.assert_valid(instance, val)
         return True
 
     def sphinx_class(self):
-        return self.prop.sphinx_class()
+        """Redefine sphinx class to point to prop class"""
+        return self.prop.sphinx_class().replace(':class:`', ':class:`list of ')
 
 
 class Union(basic.Property):
@@ -418,27 +458,30 @@ class Union(basic.Property):
 
     info_text = 'a union of multiple property types'
 
-    def __init__(self, help, props, **kwargs):
-        assert isinstance(props, (tuple, list)), "props must be a list"
+    def __init__(self, helpdoc, props, **kwargs):
+        assert isinstance(props, (tuple, list)), 'props must be a list'
         new_props = tuple()
         for prop in props:
             if isinstance(prop, type) and issubclass(prop, HasProperties):
                 prop = Instance(help, prop)
             assert isinstance(prop, basic.Property), (
-                "all props must be Property instance or HasProperties class"
+                'all props must be Property instance or HasProperties class'
             )
             new_props += (prop,)
         self.props = new_props
-        super(Union, self).__init__(help, **kwargs)
+        super(Union, self).__init__(helpdoc, **kwargs)
+        self._unused_default_warning()
 
     def info(self):
+        """Description of the property, supplemental to the help doc"""
         return ' or '.join([p.info() for p in self.props])
-
-    def startup(self, instance):
-        self.props[0].startup(instance)
 
     @property
     def name(self):
+        """The name of the property on a HasProperties class
+
+        This is set in the metaclass. For Unions, props inherit the name
+        """
         return getattr(self, '_name', '')
 
     @name.setter
@@ -447,30 +490,73 @@ class Union(basic.Property):
             prop.name = value
         self._name = value
 
+    @property
+    def default(self):
+        """Default value of the property"""
+        prop_def = getattr(self, '_default', utils.undefined)
+        for prop in self.props:
+            if prop.default is utils.undefined:
+                continue
+            if prop_def is utils.undefined:
+                prop_def = prop.default
+                break
+        return prop_def
+
+    @default.setter
+    def default(self, value):
+        if value is utils.undefined:
+            self._default = value
+            return
+        for prop in self.props:
+            try:
+                if callable(value):
+                    prop.validate(None, value())
+                else:
+                    prop.validate(None, value)
+                self._default = value
+                return
+            except (ValueError, KeyError, TypeError, AssertionError):
+                continue
+        raise AssertionError('Invalid default for Union property')
+
+    def _unused_default_warning(self):
+        prop_def = getattr(self, '_default', utils.undefined)
+        for prop in self.props:
+            if prop.default is utils.undefined:
+                continue
+            if prop_def is utils.undefined:
+                prop_def = prop.default
+            elif prop_def != prop.default:
+                warn('Union prop default ignored: {}'.format(prop.default),
+                     RuntimeWarning)
+
     def validate(self, instance, value):
+        """Check if value is a valid type of one of the Union props"""
         for prop in self.props:
             try:
                 return prop.validate(instance, value)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 continue
         self.error(instance, value)
 
     def assert_valid(self, instance, value=None):
+        """Check if the Union has a valid value"""
         valid = super(Union, self).assert_valid(instance, value)
         if valid is False:
             return valid
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 continue
         raise ValueError(
-            "The `{name}` property of a {cls} instance has not been set "
-            "correctly.".format(
+            'The "{name}" property of a {cls} instance has not been set '
+            'correctly'.format(
                 name=self.name,
                 cls=instance.__class__.__name__
             )
         )
 
     def sphinx_class(self):
+        """Redefine sphinx class to provide doc links to types of props"""
         return ', '.join(p.sphinx_class() for p in self.props)

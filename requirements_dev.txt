@@ -1,3 +1,5 @@
 sphinx
 sphinxcontrib-pyexec
 nose-cov
+pylint
+-e .

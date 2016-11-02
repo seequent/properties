@@ -15,7 +15,7 @@ from .base import (
     HasProperties,
     Instance,
     List,
-    Union
+    Union,
 )
 from .basic import (
     GettableProperty,
@@ -28,16 +28,20 @@ from .basic import (
     StringChoice,
     DateTime,
     Array,
+    Color,
+    Uuid,
+)
+from .math import (
     Vector3,
     Vector2,
-    Color,
-    Uuid
+    Vector3Array,
+    Vector2Array,
 )
-from .utils import defaults, filter_dict, undefined
+from .utils import defaults, undefined, filter_props
 from .handlers import observer, validator
 from . import task
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 __author__ = '3point Science'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2016 3point Science,'
