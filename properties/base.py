@@ -221,14 +221,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             setattr(self, key, val)
 
     def __reduce__(self):
-        props = dict()
-        for prop in self._props:
-            if not hasattr(self._props[prop], 'as_pickle'):
-                continue
-            value = self._props[prop].as_pickle(self)
-            if value is not None:
-                props[prop] = value
-        return (self.__class__, (), props)
+        return (self.__class__, (), self.serialize())
 
 
 class Instance(basic.Property):
