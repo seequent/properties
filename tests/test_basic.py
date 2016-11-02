@@ -609,15 +609,6 @@ class TestBasic(unittest.TestCase):
         aopts.loc = 'x'
         assert not hasattr(aopts, '_last_change')
 
-    def test_pickle(self):
-        x = Location2()
-        del x.loc
-        x.loc = [7, 2]
-
-        xp = pickle.loads(pickle.dumps(x))
-        assert xp.loc.x == 7
-        assert xp.loc.y == 2
-
     def test_serialize(self):
 
         thing = SerializableThing()
