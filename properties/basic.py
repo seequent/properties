@@ -118,13 +118,13 @@ class GettableProperty(object):
     def serialize(self, value):
         """Serialize the property value to JSON
 
-        If no serializer has been registered, this uses as_json
+        If no serializer has been registered, this uses to_json
         """
         if self.serializer:
             return self.serializer(value)
         if value is None:
             return None
-        return self.as_json(value)
+        return self.to_json(value)
 
     def deserialize(self, value):
         """De-serialize the property value from JSON
@@ -138,10 +138,10 @@ class GettableProperty(object):
         return self.from_json(value)
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         """Convert a value to JSON
 
-        as_json assumes that value has passed validation.
+        to_json assumes that value has passed validation.
         """
         return value
 
@@ -149,7 +149,7 @@ class GettableProperty(object):
     def from_json(value):
         """Load a value from JSON
 
-        as_json assumes that value read from JSON is valid
+        to_json assumes that value read from JSON is valid
         """
         return value
 
@@ -371,7 +371,7 @@ class Integer(Property):
         )
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         if np.isnan(value):
             return None
         return value
@@ -397,7 +397,7 @@ class Float(Integer):
         return value
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         if np.isnan(value):
             return None
         return value
@@ -424,7 +424,7 @@ class Complex(Property):
         return value
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         if np.isnan(value):
             return None
         return value
@@ -682,7 +682,7 @@ class Array(Property):
         return self.wrapper(value).astype(self.dtype[0])
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         return value.tolist()
 
     @staticmethod
@@ -766,7 +766,7 @@ class DateTime(Property):
             self.error(value, instance)
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @staticmethod
@@ -801,7 +801,7 @@ class Uuid(GettableProperty):
         return True
 
     @staticmethod
-    def as_json(value):
+    def to_json(value):
         return str(value)
 
     @staticmethod
