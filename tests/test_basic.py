@@ -358,7 +358,7 @@ class TestBasic(unittest.TestCase):
                             'athing': True,
                             'abool': False,
                          })
-        json = properties.Bool.as_json(opt.abool)
+        json = properties.Bool.to_json(opt.abool)
         self.assertFalse(json)
         self.assertEqual(properties.Bool.from_json(json), False)
         with self.assertRaises(ValueError):
@@ -567,7 +567,7 @@ class TestBasic(unittest.TestCase):
         mydate.validate()
 
         now = datetime.datetime.today()
-        json = properties.DateTime.as_json(now)
+        json = properties.DateTime.to_json(now)
         self.assertIsNotNone(json)
         self.assertIsNotNone(properties.DateTime.from_json(json))
 
