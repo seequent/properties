@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
 from warnings import warn
 
 from six import integer_types
@@ -263,6 +264,17 @@ class Instance(basic.Property):
         assert isinstance(value, bool), 'auto_create must be a boolean'
         self._auto_create = value
 
+    @property
+    def serializer(self):
+        """Callable to serialize the instance"""
+        return getattr(self, '_serializer', None)
+
+    @serializer.setter
+    def serializer(self, value):
+        if not callable(value):
+            raise TypeError('serializer must be a callable')
+        self._serializer = value
+
     def info(self):
         """Description of the property, supplemental to the help doc"""
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
@@ -296,15 +308,21 @@ class Instance(basic.Property):
             value.validate()
         return True
 
-    @staticmethod
-    def as_json(value):
+    def as_json(self, value):
         """Serializes HasProperties instances to JSON"""
+        if self.serializer:
+            return self.serializer(value)
         if isinstance(value, HasProperties):
             return value.serialize(using='json')
         elif value is None:
             return None
         else:
-            raise TypeError('Cannot serialize type {}'.format(value.__class__))
+            try:
+                serialized = json.loads(json.dumps(value))
+            except TypeError:
+                raise TypeError('Cannot serialize type {}'.format(value.__class__))
+            else:
+                return serialized
 
     def sphinx_class(self):
         """Redefine sphinx class so documentation links to instance_class"""

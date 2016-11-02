@@ -50,7 +50,6 @@ def defaults(func):
 
     return func_wrapper
 
-
 def filter_props(has_props_cls, input_dict):
     """Separate key/value pairs that correspond to existing properties
 
