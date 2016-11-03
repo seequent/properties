@@ -392,7 +392,7 @@ class Float(Integer):
 
     @staticmethod
     def to_json(value):
-        if np.isnan(value) or np.isinf(value):
+        if np.isnan(value) or np.isinf(value):                                 #pylint: disable=no-member
             return str(value)
         return value
 
