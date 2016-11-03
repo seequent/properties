@@ -156,10 +156,11 @@ class GettableProperty(object):
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
         return (
-            ':attribute {name}: {help}{info}'.format(
+            ':attribute {name}: ({cls}) - {help}{info}'.format(
                 name=self.name,
                 help=self.help,
-                info='' if self.info() == 'corrected' else ', ' + self.info()
+                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                cls=self.sphinx_class(),
             )
         )
 
@@ -277,15 +278,8 @@ class Property(GettableProperty):
                 help=self.help,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
                 default=default_str,
-                cls=self.sphinx_class()
+                cls=self.sphinx_class(),
             )
-        )
-
-    def sphinx_class(self):
-        """Property class name formatted for Sphinx doc linking"""
-        return ':class:`{cls} <{pref}.{cls}>`'.format(
-            cls=self.__class__.__name__,
-            pref=self.__module__
         )
 
 
@@ -780,7 +774,7 @@ class DateTime(Property):
 class Uuid(GettableProperty):
     """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
 
-    info_text = 'an auto-generated :class:`UUID <properties.basic.Uuid>`'
+    info_text = 'an auto-generated UUID'
 
     @property
     def default(self):
