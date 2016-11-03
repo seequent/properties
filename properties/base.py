@@ -318,7 +318,7 @@ class Instance(basic.Property):
             return json.loads(json.dumps(value))
         except TypeError:
             raise TypeError(
-                'Cannot convert type {} to JSON without a calling `serialize` '
+                'Cannot convert type {} to JSON without calling `serialize` '
                 'on an instance of Instance Property and registering a custom '
                 'serializer'.format(value.__class__.__name__)
             )

@@ -392,18 +392,12 @@ class Float(Integer):
 
     @staticmethod
     def to_json(value):
-        if value is np.nan:
-            return 'nan'
-        if value is np.inf:
-            return 'inf'
+        if np.isnan(value) or np.isinf(value):
+            return str(value)
         return value
 
     @staticmethod
     def from_json(value):
-        if value == 'nan':
-            return np.nan
-        if value == 'inf':
-            return np.inf
         return float(str(value))
 
 
