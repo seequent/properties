@@ -334,6 +334,9 @@ class Integer(Property):
 
     @min.setter
     def min(self, value):
+        assert self.max is None or value <= self.max, (
+            'min must be <= max'
+        )
         self._min = value
 
     @property
@@ -343,6 +346,9 @@ class Integer(Property):
 
     @max.setter
     def max(self, value):
+        assert self.min is None or value >= self.min, (
+            'max must be >= min'
+        )
         self._max = value
 
     def validate(self, instance, value):
@@ -381,6 +387,8 @@ class Float(Integer):
         """
         if isinstance(value, (float, integer_types)):
             value = float(value)
+        if not isinstance(value, float):
+            self.error(instance, value)
         _in_bounds(self, instance, value)
         return value
 
