@@ -372,7 +372,7 @@ class Integer(Property):
 
     @staticmethod
     def from_json(value):
-        return int(str(value))
+        return int(value)
 
 
 class Float(Integer):
@@ -398,7 +398,7 @@ class Float(Integer):
 
     @staticmethod
     def from_json(value):
-        return float(str(value))
+        return float(value)
 
 
 class Complex(Property):
@@ -425,7 +425,7 @@ class Complex(Property):
 
     @staticmethod
     def from_json(value):
-        return complex(str(value))
+        return complex(value)
 
 
 class String(Property):
