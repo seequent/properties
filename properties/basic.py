@@ -120,7 +120,7 @@ class GettableProperty(object):
 
         If no serializer has been registered, this uses to_json
         """
-        if self.serializer:
+        if self.serializer is not None:
             return self.serializer(value)
         if value is None:
             return None
@@ -131,7 +131,7 @@ class GettableProperty(object):
 
         If no deserializer has been registered, this uses from_json
         """
-        if self.deserializer:
+        if self.deserializer is not None:
             return self.deserializer(value)
         if value is None:
             return None
@@ -371,12 +371,6 @@ class Integer(Property):
         )
 
     @staticmethod
-    def to_json(value):
-        if np.isnan(value):
-            return None
-        return value
-
-    @staticmethod
     def from_json(value):
         return int(str(value))
 
@@ -398,12 +392,18 @@ class Float(Integer):
 
     @staticmethod
     def to_json(value):
-        if np.isnan(value):
-            return None
+        if value is np.nan:
+            return 'nan'
+        if value is np.inf:
+            return 'inf'
         return value
 
     @staticmethod
     def from_json(value):
+        if value == 'nan':
+            return np.nan
+        if value == 'inf':
+            return np.inf
         return float(str(value))
 
 
@@ -675,7 +675,7 @@ class Array(Property):
         If no deserializer has been registered, this converts the value
         to the wrapper class with given dtype.
         """
-        if self.deserializer:
+        if self.deserializer is not None:
             return self.deserializer(value)
         if value is None:
             return None

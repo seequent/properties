@@ -301,7 +301,7 @@ class Instance(basic.Property):
         instance_class is a HasProperties subclass, an instance can be
         deserialized from a dictionary.
         """
-        if self.deserializer:
+        if self.deserializer is not None:
             return self.deserializer(value)
         if value is None:
             return None
@@ -318,17 +318,17 @@ class Instance(basic.Property):
             return json.loads(json.dumps(value))
         except TypeError:
             raise TypeError(
-                'Cannot convert type {} to JSON without a calling it on '
-                'an Instance Property instance and registering a custom '
-                'serializer '.format(value.__class__.__name__)
+                'Cannot convert type {} to JSON without a calling `serialize` '
+                'on an instance of Instance Property and registering a custom '
+                'serializer'.format(value.__class__.__name__)
             )
 
     @staticmethod
     def from_json(value):
         """Instance properties cannot statically convert from JSON"""
         raise TypeError('Instance properties cannot statically convert '
-                        'values to JSON. `deserialize` must be used on a '
-                        'Instance Property instance instead, and if the '
+                        'values from JSON. `deserialize` must be used on an '
+                        'instance of Instance Property instead, and if the '
                         'instance_class is not a HasProperties subclass a '
                         'custom deserializer must be registered')
 
@@ -452,7 +452,7 @@ class List(basic.Property):
 
     def serialize(self, value):
         """Return a serialized copy of the list"""
-        if self.serializer:
+        if self.serializer is not None:
             return self.serializer(value)
         if value is None:
             return None
@@ -460,7 +460,7 @@ class List(basic.Property):
 
     def deserialize(self, value):
         """Return a deserialized copy of the list"""
-        if self.deserializer:
+        if self.deserializer is not None:
             return self.deserializer(value)
         if value is None:
             return None
@@ -483,7 +483,7 @@ class List(basic.Property):
         Individual list elements cannot be converted statically since the
         list's prop type is unknown.
         """
-        return [val for val in value]
+        return list(value)
 
     def sphinx_class(self):
         """Redefine sphinx class to point to prop class"""
@@ -606,16 +606,16 @@ class Union(basic.Property):
         If no serializer is provided, it uses the serialize method of the
         prop corresponding to the value
         """
-        if self.serializer:
+        if self.serializer is not None:
             return self.serializer(value)
         if value is None:
             return None
         for prop in self.props:
             try:
                 prop.validate(None, value)
-                return prop.serialize(value)
             except (ValueError, KeyError, TypeError):
                 continue
+            return prop.serialize(value)
         return self.to_json(value)
 
     def deserialize(self, value):
@@ -624,13 +624,12 @@ class Union(basic.Property):
         If no deserializer is provided, it uses the deserialize method of the
         prop corresponding to the value
         """
-        if self.deserializer:
+        if self.deserializer is not None:
             return self.deserializer(value)
         if value is None:
             return None
         for prop in self.props:
             try:
-                prop.validate(None, value)
                 return prop.deserialize(value)
             except (ValueError, KeyError, TypeError):
                 continue
