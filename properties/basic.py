@@ -372,7 +372,7 @@ class Integer(Property):
 
     @staticmethod
     def from_json(value):
-        return int(str(value))
+        return int(value)
 
 
 class Float(Integer):
@@ -394,19 +394,13 @@ class Float(Integer):
 
     @staticmethod
     def to_json(value):
-        if value is np.nan:
-            return 'nan'
-        if value is np.inf:
-            return 'inf'
+        if np.isnan(value) or np.isinf(value):                                 #pylint: disable=no-member
+            return str(value)
         return value
 
     @staticmethod
     def from_json(value):
-        if value == 'nan':
-            return np.nan
-        if value == 'inf':
-            return np.inf
-        return float(str(value))
+        return float(value)
 
 
 class Complex(Property):
@@ -433,7 +427,7 @@ class Complex(Property):
 
     @staticmethod
     def from_json(value):
-        return complex(str(value))
+        return complex(value)
 
 
 class String(Property):
