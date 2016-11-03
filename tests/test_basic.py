@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import pickle
 import unittest
 import uuid
 
@@ -136,13 +135,6 @@ class ThingWithInheritedDefaults(ThingWithDefaults):
         return dict(
             opts2=lambda: SomeOptions(color='green'),
         )
-
-
-class SerializableThing(properties.HasProperties):
-    anystr = properties.String("a string!", default='', required=False)
-    anotherstr = properties.String("another string!", default='HELLO WORLD!')
-    myint = properties.Integer("an integer!", default=0, required=False)
-    myvector2 = properties.Vector2("a 2x2 vector!", required=False)
 
 
 class MyArray(properties.HasProperties):
@@ -492,73 +484,6 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(ValueError):
             twop.aprop = {'something': ''}
 
-    def test_defaults(self):
-        self.assertRaises(AttributeError, properties.defaults, lambda: {})
-
-        twd = ThingWithDefaults()
-        twd2 = ThingWithDefaults()
-        assert len(twd.moreopts) == 1
-        assert twd.moreopts[0] is not twd2.moreopts[0]
-        assert twd.opts is twd2.opts
-        assert twd.opts2 is not twd2.opts2
-
-        twid = ThingWithInheritedDefaults()
-        assert twid.opts is twd.opts
-        assert len(twid.moreopts) == 1
-        assert twid.opts2.color == (0, 128, 0)
-
-    def test_vector3(self):
-
-        opts = Location3()
-        self.assertEqual(len(opts.serialize()), 0)
-        assert opts.loc is opts.loc
-        opts.loc = [1.5, 0, 0]
-        assert np.all(opts.loc == [1.5, 0, 0])
-        opts.loc = 'x'
-        assert np.allclose(opts.loc, [1, 0, 0])
-        opts.loc = 'y'
-        assert np.allclose(opts.loc, [0, 1, 0])
-        opts.loc = 'z'
-        assert np.allclose(opts.loc, [0, 0, 1])
-        assert opts.loc.x == 0.0
-        assert opts.loc.y == 0.0
-        assert opts.loc.z == 1.0
-        assert opts.loc.length == 1.0
-
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', [5, 100]))
-        self.assertRaises(ZeroDivisionError,
-                          setattr, opts, 'unit', [0, 0., 0])
-        self.assertEqual(opts.serialize(), {'loc': [0.0, 0.0, 1.0]})
-
-    def test_vector2(self):
-
-        opts = Location2()
-        assert opts.loc is opts.loc
-        opts.loc = [1.5, 0]
-        assert np.allclose(opts.loc, [1.5, 0])
-        opts.loc = 'x'
-        assert np.allclose(opts.loc, [1, 0])
-        opts.loc = 'y'
-        assert np.allclose(opts.loc, [0, 1])
-        assert opts.loc.x == 0.0
-        assert opts.loc.y == 1.0
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'z'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', [5, 100, 0]))
-        self.assertRaises(ZeroDivisionError,
-                          setattr, opts, 'unit', [0, 0])
-        self.assertEqual(opts.serialize(), {'loc': [0.0, 1.0]})
-
     def test_datetime(self):
         import datetime
 
@@ -586,50 +511,6 @@ class TestBasic(unittest.TestCase):
         model._backend['uid'] = 'hi'
         with self.assertRaises(ValueError):
             model.validate()
-
-    def test_observer(self):
-        opts = Location3()
-        assert not hasattr(opts, '_last_change')
-        opts.loc = 'x'
-        assert hasattr(opts, '_last_change')
-
-        assert not hasattr(opts, '_hello')
-        properties.observer(
-            opts,
-            'loc',
-            lambda self, change: setattr(self, '_hello', change)
-        )
-        opts.loc = 'y'
-        assert hasattr(opts, '_hello')
-
-        class AnotherLoc(Location3):
-            _on_loc_change = None  # we can kill the observer later.
-
-        aopts = AnotherLoc()
-        aopts.loc = 'x'
-        assert not hasattr(aopts, '_last_change')
-
-    def test_serialize(self):
-
-        thing = SerializableThing()
-        # should contain ', 'myvector2': []' ?
-        self.assertEqual(
-            thing.serialize(),
-            {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0}
-        )
-
-        thing.anystr = 'a value'
-        thing.anotherstr = ''
-        thing.myint = -15
-        thing.myvector2 = [3.1415926535, 42]
-        self.assertEqual(
-            thing.serialize(), {
-                'anystr': 'a value',
-                'anotherstr': '',
-                'myint': -15,
-                'myvector2': [3.1415926535, 42],
-            }
-        )
 
 
 if __name__ == '__main__':
