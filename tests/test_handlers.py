@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
+import warnings
 
 import properties as props
 
@@ -12,6 +13,7 @@ class ConsiderItHandled(props.HasProperties):
     a = props.Integer('int a', required=False)
     b = props.Integer('int b', required=False)
     c = props.Integer('int c', required=False)
+    d = props.Integer('int d', required=False)
 
     @props.observer('a')
     def _mirror_to_b(self, change):
@@ -21,6 +23,10 @@ class ConsiderItHandled(props.HasProperties):
     def _a_cannot_b_five(self, change):
         if change['value'] == 5:
             raise ValueError('a cannot be five')
+
+    @props.validator('d')
+    def _d_is_five(self, change):
+        change['value'] = 5
 
     @props.validator
     def _set_b_to_twelve(self):
@@ -39,6 +45,9 @@ class TestHandlers(unittest.TestCase):
         hand.validate()
         assert hand.b == 12
 
+        hand.d = 10
+        assert hand.d == 5
+
         def _set_c(instance, change):
             instance.c = change['value']
 
@@ -46,7 +55,7 @@ class TestHandlers(unittest.TestCase):
         hand.b = 100
         assert hand.c == 100
 
-        def _c_cannot_be_five(self, change):
+        def _c_cannot_be_five(instance, change):
             if change['value'] == 5:
                 raise ValueError('c cannot be five')
 
@@ -57,6 +66,22 @@ class TestHandlers(unittest.TestCase):
         self.assertRaises(ValueError, lambda: hand.validate())
 
         hand._set_b_to_twelve()
+
+        assert hand.b == 12
+        assert hand.c == 12
+
+        def _d_c_switcheroo(instance, change):
+            change['name'] = 'c'
+            change['value'] = 0
+
+        props.validator(hand, 'd', _d_c_switcheroo)
+        with warnings.catch_warnings(record=True) as w:
+            hand.d = 10
+            assert len(w) == 1
+            assert issubclass(w[0].category, RuntimeWarning)
+
+        assert hand.c == 12
+        assert hand.d == 0
 
 
 if __name__ == '__main__':

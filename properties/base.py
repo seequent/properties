@@ -177,14 +177,18 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             listener.func(self, change)
 
     def _set(self, name, value):
-        out = self._notify(dict(name=name, value=value, mode='validate'))
-        if out is not None:
-            value = out
-        if value is basic.undefined and name in self._backend:
+        change = dict(name=name, value=value, mode='validate')
+        self._notify(change)
+        if change['name'] != name:
+            warn('Specified Property for assignment changed during '
+                 'validation. Setting original property {}'.format(name),
+                 RuntimeWarning)
+        if change['value'] is basic.undefined and name in self._backend:
             self._backend.pop(name)
         else:
-            self._backend[name] = value
-        self._notify(dict(name=name, value=value, mode='observe'))
+            self._backend[name] = change['value']
+        change.update(mode='observe')
+        self._notify(change)
 
     def validate(self):
         """Call all the registered ClassValidators"""
