@@ -218,11 +218,14 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     @classmethod
     def deserialize(cls, json_dict):
         """Creates new HasProperties instance from JSON dictionary"""
-        return cls(**utils.filter_props(cls, json_dict)[0])
+        newinst = cls()
+        newinst.__setstate__(json_dict)
+        return newinst
 
     def __setstate__(self, newstate):
+        newstate = utils.filter_props(self, newstate)[0]
         for key, val in iteritems(newstate):
-            setattr(self, key, val)
+            setattr(self, key, self._props[key].deserialize(val))
 
     def __reduce__(self):
         return (self.__class__, (), self.serialize())
