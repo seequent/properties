@@ -209,11 +209,23 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         jsondict = ((k, v.serialize(self._get(v.name)))
                     for k, v in iteritems(self._props))
         props = {k: v for k, v in jsondict if v is not None}
+        props.update({'_registry_class': self.__class__.__name__})
         return props
 
     @classmethod
     def deserialize(cls, json_dict):
         """Creates new HasProperties instance from JSON dictionary"""
+        if '_registry_class' in json_dict:
+            class_name = json_dict.pop('_registry_class')
+            if class_name in cls._REGISTRY:
+                cls = cls._REGISTRY[class_name]
+            else:
+                warn(
+                    'Class name {rcl} not found in _REGISTRY. Using class '
+                    '{cl} for deserialize.'.format(
+                        rcl=class_name, cl=cls.__name__
+                    ), RuntimeWarning
+                )
         return cls(**utils.filter_props(cls, json_dict)[0])
 
     def __setstate__(self, newstate):
