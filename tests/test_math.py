@@ -30,7 +30,7 @@ class TestMath(unittest.TestCase):
     def test_vector3(self):
 
         opts = Location3()
-        self.assertEqual(len(opts.serialize()), 0)
+        self.assertEqual(len(opts.serialize()), 1)
         assert opts.loc is opts.loc
         opts.loc = [1.5, 0, 0]
         assert np.all(opts.loc == [1.5, 0, 0])
@@ -53,7 +53,8 @@ class TestMath(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0., 0])
-        self.assertEqual(opts.serialize(), {'loc': [0.0, 0.0, 1.0]})
+        self.assertEqual(opts.serialize(), {'_registry_class': 'Location3',
+                                            'loc': [0.0, 0.0, 1.0]})
 
     def test_vector2(self):
 
@@ -77,7 +78,8 @@ class TestMath(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100, 0]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0])
-        self.assertEqual(opts.serialize(), {'loc': [0.0, 1.0]})
+        self.assertEqual(opts.serialize(), {'_registry_class': 'Location2',
+                                            'loc': [0.0, 1.0]})
 
 
 if __name__ == '__main__':

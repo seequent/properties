@@ -39,7 +39,8 @@ class TestSerialization(unittest.TestCase):
         # should contain ', 'myvector2': []' ?
         self.assertEqual(
             thing.serialize(),
-            {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0}
+            {'_registry_class': 'SerializableThing',
+             'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0}
         )
 
         thing.anystr = 'a value'
@@ -48,6 +49,7 @@ class TestSerialization(unittest.TestCase):
         thing.myvector2 = [3.1415926535, 42]
         self.assertEqual(
             thing.serialize(), {
+                '_registry_class': 'SerializableThing',
                 'anystr': 'a value',
                 'anotherstr': '',
                 'myint': -15,

@@ -197,7 +197,7 @@ class TestBasic(unittest.TestCase):
 
         opts = ReqOptions()
         self.assertRaises(ValueError, opts.validate)
-        self.assertEqual(len(opts.serialize()), 0)
+        self.assertEqual(len(opts.serialize()), 1)
 
         opts = ReqDefOptions(
             color='red',
@@ -242,7 +242,7 @@ class TestBasic(unittest.TestCase):
 
         opts = SomeOptions(opacity=0.3)
         assert opts.opacity == 0.3
-        self.assertEqual(len(opts.serialize()), 2)
+        self.assertEqual(len(opts.serialize()), 3)
 
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'opacity', 5))
@@ -270,12 +270,14 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(prim, 'myrangeint', 'numbah!'))
         self.assertRaises(ValueError,
                           lambda: setattr(prim, 'myrangeint', [4, 5]))
-        self.assertEqual(len(opts.serialize()), 2)
+        self.assertEqual(len(opts.serialize()), 3)
 
     def test_string(self):
         mystr = StrPrimitive()
-        self.assertEqual(len(mystr.serialize()), 4)
+        self.assertEqual(len(mystr.serialize()), 5)
         for k, v in mystr.serialize().items():
+            if k == '_registry_class':
+                continue
             self.assertEqual(v, u'')
 
         mystr.anystr = '   A  '
@@ -311,6 +313,8 @@ class TestBasic(unittest.TestCase):
         )
         mystr = StrChoicePrimitive()
         for k, v in mystr.serialize().items():
+            if k == '_registry_class':
+                continue
             self.assertEqual(v, u'')
 
         mystr.vowel = 'O'
@@ -334,7 +338,8 @@ class TestBasic(unittest.TestCase):
 
     def test_bool(self):
         opt = BoolPrimitive()
-        self.assertEqual(opt.serialize(), {'abool': True})
+        self.assertEqual(opt.serialize(), {'_registry_class': 'BoolPrimitive',
+                                           'abool': True})
         assert opt.abool is True
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
         opt.abool = False
@@ -347,6 +352,7 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual(opt.serialize(),
                          {
+                            '_registry_class': 'BoolPrimitive',
                             'athing': True,
                             'abool': False,
                          })
@@ -363,7 +369,8 @@ class TestBasic(unittest.TestCase):
 
     def test_numbers(self):
         nums = NumPrimitive()
-        serialized = {'myint': 0, 'myfloat': 1.0}
+        serialized = {'_registry_class': 'NumPrimitive', 'myint': 0,
+                      'myfloat': 1.0}
         self.assertEqual(nums.serialize(), serialized)
         nums.mycomplex = 1.
         assert isinstance(nums.mycomplex, complex)
@@ -373,7 +380,7 @@ class TestBasic(unittest.TestCase):
     def test_array(self):
 
         arrays = MyArray()
-        self.assertEqual(len(arrays.serialize()), 0)
+        self.assertEqual(len(arrays.serialize()), 1)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array', [.5, .5]))
         self.assertRaises(ValueError,
@@ -401,11 +408,11 @@ class TestBasic(unittest.TestCase):
                              [[3, 4, 5], [1, 2, 3], [2, 3, 4]]]
         assert isinstance(arrays.int_matrix, np.ndarray)
         assert arrays.int_matrix.dtype.kind == 'i'
-        self.assertEqual(len(arrays.serialize()), 4)
+        self.assertEqual(len(arrays.serialize()), 5)
 
     def test_nan_array(self):
         arrays = MyArray()
-        self.assertEqual(len(arrays.serialize()), 0)
+        self.assertEqual(len(arrays.serialize()), 1)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array',
                                           [np.nan, 0, 2]))
@@ -414,7 +421,7 @@ class TestBasic(unittest.TestCase):
         assert isinstance(x, np.ndarray)
         assert np.isnan(x[0])
         assert np.all(x[1:] == [0, 1])
-        self.assertEqual(len(arrays.serialize()), 1)
+        self.assertEqual(len(arrays.serialize()), 2)
 
     def test_array_init(self):
         def f(shape, dtype):
@@ -446,7 +453,8 @@ class TestBasic(unittest.TestCase):
 
     def test_instance(self):
         opts = SomeOptions(color='red')
-        self.assertEqual(opts.serialize(), {'color': (255, 0, 0)})
+        self.assertEqual(opts.serialize(), {'_registry_class': 'SomeOptions',
+                                            'color': (255, 0, 0)})
         twop = ThingWithOptions(opts=opts)
 
         with self.assertRaises(ValueError):
@@ -455,7 +463,7 @@ class TestBasic(unittest.TestCase):
         twop.opts2.opacity = .5
         twop._props['opts'].assert_valid(twop)
         twop.validate()
-        self.assertEqual(len(twop.serialize()), 3)
+        self.assertEqual(len(twop.serialize()), 4)
         twop2 = ThingWithOptions2()
         # self.assertEqual(len(twop2.serialize()), 3)
         assert twop.opts.color == (255, 0, 0)
@@ -488,7 +496,7 @@ class TestBasic(unittest.TestCase):
         import datetime
 
         mydate = MyDateTime()
-        self.assertEqual(mydate.serialize(), {})
+        self.assertEqual(mydate.serialize(), {'_registry_class': 'MyDateTime'})
         mydate.validate()
 
         now = datetime.datetime.today()
