@@ -7,56 +7,56 @@ import unittest
 import uuid
 
 import numpy as np
-import properties
+import properties as props
 
 
-class NumPrimitive(properties.HasProperties):
-    mycomplex = properties.Complex("its complicated", required=False)
-    myfloat = properties.Float("something that floats", default=1,
+class NumPrimitive(props.HasProperties):
+    mycomplex = props.Complex("its complicated", required=False)
+    myfloat = props.Float("something that floats", default=1,
                                required=False)
-    myint = properties.Integer("an integer", default=0, required=False)
+    myint = props.Integer("an integer", default=0, required=False)
 
 
-class BoolPrimitive(properties.HasProperties):
-    abool = properties.Bool("True or False", default=True)
-    athing = properties.Union("", (
-        properties.String("a string"),
-        properties.Bool("temp")
+class BoolPrimitive(props.HasProperties):
+    abool = props.Bool("True or False", default=True)
+    athing = props.Union("", (
+        props.String("a string"),
+        props.Bool("temp")
     ), required=False)
 
 
-class StrPrimitive(properties.HasProperties):
-    anystr = properties.String("a string!", default='', required=False)
-    stripstr = properties.String("a string!", default='', strip=' ',
+class StrPrimitive(props.HasProperties):
+    anystr = props.String("a string!", default='', required=False)
+    stripstr = props.String("a string!", default='', strip=' ',
                                  required=False)
-    lowerstr = properties.String("a string!", change_case='lower',
+    lowerstr = props.String("a string!", change_case='lower',
                                  default='', required=False)
-    upperstr = properties.String("a string!", change_case='upper',
+    upperstr = props.String("a string!", change_case='upper',
                                  default='', required=False)
 
 
-class StrChoicePrimitive(properties.HasProperties):
-    abc = properties.StringChoice("a, b or c", choices=['A', 'B', 'C'],
+class StrChoicePrimitive(props.HasProperties):
+    abc = props.StringChoice("a, b or c", choices=['A', 'B', 'C'],
                                   required=False)
-    vowel = properties.StringChoice("vowels", choices={
+    vowel = props.StringChoice("vowels", choices={
         'vowel': ('a', 'e', 'i', 'o', 'u'),
         'maybe': 'y'
     }, required=False)
 
 
-class APrimitive(properties.HasProperties):
-    opacity = properties.Float(
+class APrimitive(props.HasProperties):
+    opacity = props.Float(
         "My range",
         min=0.,
         max=1.,
         required=True,
-        default=properties.undefined
+        default=props.undefined
     )
-    color = properties.Float("Not a color!", required=False)
+    color = props.Float("Not a color!", required=False)
 
 
-class AnotherPrimitive(properties.HasProperties):
-    myrangeint = properties.Integer(
+class AnotherPrimitive(props.HasProperties):
+    myrangeint = props.Integer(
         'int range',
         default=0,
         min=0,
@@ -65,35 +65,33 @@ class AnotherPrimitive(properties.HasProperties):
     )
 
 
-class Location2(properties.HasProperties):
-    loc = properties.Vector2("My location", required=False)
-    unit = properties.Vector2("My location", length=1, required=False)
+class Location2(props.HasProperties):
+    loc = props.Vector2("My location", required=False)
+    unit = props.Vector2("My location", length=1, required=False)
 
 
-class Location3(properties.HasProperties):
-    loc = properties.Vector3("My location", required=False)
-    unit = properties.Vector3("My location", length=1, required=False)
+class Location3(props.HasProperties):
+    loc = props.Vector3("My location", required=False)
+    unit = props.Vector3("My location", length=1, required=False)
 
-    @properties.observer('loc')
+    @props.observer('loc')
     def _on_loc_change(self, change):
         self._last_change = change
 
 
-class SomeOptions(APrimitive):
-    color = properties.Color("My color", default='blue', required=False)
 
 
 class ReqOptions(APrimitive):
-    color = properties.Color("My color", required=True,
-                             default=properties.undefined)
+    color = props.Color("My color", required=True,
+                             default=props.undefined)
 
 
 class ReqDefOptions(APrimitive):
-    color = properties.Color("My color", required=True)
+    color = props.Color("My color", required=True)
 
 
 class DefaultColorOptions(APrimitive):
-    color = properties.Color("This color is random", default='random',
+    color = props.Color("This color is random", default='random',
                              required=False)
 
 
@@ -101,62 +99,46 @@ class NotProperty(object):
     pass
 
 
-class ThingWithOptions(properties.HasProperties):
-    opts = properties.Instance("My options", SomeOptions, auto_create=True)
-    opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
-    moreopts = properties.List(
+class ThingWithOptions(props.HasProperties):
+    opts = props.Instance("My options", SomeOptions, auto_create=True)
+    opts2 = props.Instance("My options", SomeOptions, auto_create=True)
+    moreopts = props.List(
         "List of options",
         SomeOptions,
         required=False
     )
 
 
-class ThingWithOptions2(properties.HasProperties):
-    opts = properties.Instance("My options", SomeOptions, auto_create=True)
-    opts2 = properties.Instance("My options", SomeOptions, auto_create=True)
-    notprop = properties.Instance("My options", NotProperty, auto_create=True)
-    moreopts = properties.List(
+class ThingWithOptions2(props.HasProperties):
+    opts = props.Instance("My options", SomeOptions, auto_create=True)
+    opts2 = props.Instance("My options", SomeOptions, auto_create=True)
+    notprop = props.Instance("My options", NotProperty, auto_create=True)
+    moreopts = props.List(
         "List of options",
         SomeOptions
     )
 
 
-class ThingWithDefaults(ThingWithOptions):
-    _defaults = dict(
-        opts=SomeOptions(),  # this is bad practice, but works!
-        opts2=SomeOptions,
-        moreopts=lambda: [SomeOptions()]
-    )
-
-
-class ThingWithInheritedDefaults(ThingWithDefaults):
-    @properties.defaults
-    def _defaults(self):
-        return dict(
-            opts2=lambda: SomeOptions(color='green'),
-        )
-
-
-class MyArray(properties.HasProperties):
-    int_array = properties.Array(
+class MyArray(props.HasProperties):
+    int_array = props.Array(
         'some ints',
         shape=('*',),
         dtype=int,
         required=False
     )
-    float_array = properties.Array(
+    float_array = props.Array(
         'some floats',
         shape=('*',),
         dtype=float,
         required=False
     )
-    flexible_array = properties.Array(
+    flexible_array = props.Array(
         'some numbers',
         shape=('*',),
         dtype=(float, int),
         required=False
     )
-    int_matrix = properties.Array(
+    int_matrix = props.Array(
         '3x3x3 matrix',
         shape=(3, 3, 3),
         dtype=int,
@@ -164,50 +146,160 @@ class MyArray(properties.HasProperties):
     )
 
 
-class MyListOfArrays(properties.HasProperties):
-    arrays = properties.List('List of MyArray Instances', MyArray,
+class MyListOfArrays(props.HasProperties):
+    arrays = props.List('List of MyArray Instances', MyArray,
                              required=False)
 
 
-class MyDateTime(properties.HasProperties):
-    dt = properties.DateTime('My datetime', required=False)
+class MyDateTime(props.HasProperties):
+    dt = props.DateTime('My datetime', required=False)
 
 
-class TakesMultipleArgs(properties.HasProperties):
+class TakesMultipleArgs(props.HasProperties):
     def __init__(self, something, **kwargs):
         super(TakesMultipleArgs, self).__init__(**kwargs)
         self.col = something
 
-    col = properties.Color('a color', required=False)
+    col = props.Color('a color', required=False)
 
 
-class AThing(properties.HasProperties):
-    aprop = properties.Instance('My prop', TakesMultipleArgs, required=False)
+class AThing(props.HasProperties):
+    aprop = props.Instance('My prop', TakesMultipleArgs, required=False)
 
-class UidModel(properties.HasProperties):
+class UidModel(props.HasProperties):
     """UidModel is a HasProperties object with uid, name, and description"""
-    uid = properties.Uuid("Unique identifier")
-    title = properties.String("Title", required=False)
-    description = properties.String("Description", required=False)
+    uid = props.Uuid("Unique identifier")
+    title = props.String("Title", required=False)
+    description = props.String("Description", required=False)
 
 
 class TestBasic(unittest.TestCase):
 
+    def test_base_functionality(self):
+
+        with self.assertRaises(AttributeError):
+            props.GettableProperty('bad kwarg', _default=5)
+
+        with self.assertRaises(AttributeError):
+            props.GettableProperty('bad kwarg', defualt=5)
+
+        with self.assertRaises(AssertionError):
+            props.Property('bad kwarg', required=5)
+
+        class GettablePropOpt(props.HasProperties):
+            mygp = props.GettableProperty('gettable prop')
+
+        with self.assertRaises(AttributeError):
+            setattr(GettablePropOpt(), 'mygp', 5)
+
+        with self.assertRaises(KeyError):
+            GettablePropOpt(not_mygp=0)
+
+        GettablePropOpt().validate()
+
+        class PropOpts(props.HasProperties):
+            myprop = props.Property('empty property')
+
+        with self.assertRaises(ValueError):
+            PropOpts().validate()
+
+        PropOpts(myprop=5).validate()
+
+    def test_bool(self):
+
+        class BoolOpts(props.HasProperties):
+            mybool = props.Bool("My bool")
+
+        opt = BoolOpts(mybool=True)
+        assert opt.mybool is True
+        self.assertRaises(ValueError, lambda: setattr(opt, 'mybool', 'true'))
+        opt.mybool = False
+        assert opt.mybool is False
+        opt.validate()
+
+        json = props.Bool.to_json(opt.mybool)
+        assert not json
+        assert not props.Bool.from_json(json)
+        with self.assertRaises(ValueError):
+            props.Bool.from_json({})
+        with self.assertRaises(ValueError):
+            props.Bool.from_json('nope')
+        assert props.Bool.from_json('true')
+        assert props.Bool.from_json('y')
+        assert props.Bool.from_json('Yes')
+        assert props.Bool.from_json('ON')
+        assert not props.Bool.from_json('false')
+        assert not props.Bool.from_json('N')
+        assert not props.Bool.from_json('no')
+        assert not props.Bool.from_json('OFF')
+
+        self.assertEqual(opt.serialize(), {'mybool': False})
+
+        assert BoolOpts.deserialize({'mybool': 'Y'}).mybool
+
+    def test_numbers(self):
+
+        with self.assertRaises(AssertionError):
+            props.Integer('My int', max=0, min=10)
+
+        class NumOpts(props.HasProperties):
+            myint = props.Integer("My int")
+            myfloat = props.Float("My float")
+            myfloatmin = props.Float("My min float", min=10.)
+            myfloatmax = props.Float("My max float", max=10.)
+            myfloatrange = props.Float("My max float", min=0., max=10.)
+
+
+        nums = NumOpts()
+        with self.assertRaises(ValueError):
+            nums.myint = 1.5
+
+        with self.assertRaises(ValueError):
+            nums.myfloat = [1.0, 2.0]
+
+        with self.assertRaises(ValueError):
+            nums.myfloatmin = 0.
+
+        with self.assertRaises(ValueError):
+            nums.myfloatmax = 20.
+
+        with self.assertRaises(ValueError):
+            nums.myfloatrange = -10.
+
+        nums.myint = 1.
+        assert nums.myint == 1
+
+        nums.myfloat = 1
+        assert nums.myfloat == 1.
+
+        nums.myfloatmin = nums.myfloatmax = nums.myfloatrange = 10.
+
+        assert props.Integer.to_json(5) == 5
+        assert props.Float.to_json(5.) == 5.
+        assert props.Float.to_json(np.nan) == 'nan'
+        assert props.Float.to_json(np.inf) == 'inf'
+
+        assert props.Integer.from_json(5) == 5
+        assert props.Integer.from_json('5') == 5
+        assert props.Float.from_json(5.0) == 5.
+        assert props.Float.from_json('5.0') == 5.
+        assert props.Float.from_json('nan') is np.nan
+        assert props.Float.from_json('inf') is np.inf
+
+
+        self.assertEqual(len(nums.serialize()), 5)
+        serialized = {'myint': 1, 'myfloat': 1., 'myfloatmin': 10.,
+                      'myfloatmax': 10., 'myfloatrange': 10.}
+        self.assertEqual(nums.serialize(), serialized)
+        assert NumOpts.deserialize(serialized).myfloatrange == 10.
+
+
     def test_color(self):
 
-        opts = ReqOptions()
-        self.assertRaises(ValueError, opts.validate)
-        self.assertEqual(len(opts.serialize()), 0)
+        class ColorOpts(props.HasProperties):
+            mycolor = props.Color('My color')
 
-        opts = ReqDefOptions(
-            color='red',
-            opacity=0
-        )
-        opts.validate()
-
-        opts = SomeOptions(color='red')
-
-        # Test options
+        opts = ColorOpts(color='red')
         assert opts.color == (255, 0, 0)
         opts.color = 'darkred'
         assert opts.color == (139, 0, 0)
@@ -235,42 +327,7 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(opts, 'color', [-10, 0, 0]))
         self.assertTrue(len(opts.serialize()) > 0)
 
-        opts = DefaultColorOptions()
-        assert len(opts.color) == 3
 
-    def test_range(self):
-
-        opts = SomeOptions(opacity=0.3)
-        assert opts.opacity == 0.3
-        self.assertEqual(len(opts.serialize()), 2)
-
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'opacity', 5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'opacity', -1))
-        self.assertRaises((ValueError, TypeError),
-                          lambda: setattr(opts, 'opacity', [.25, .75]))
-        self.assertRaises((ValueError, TypeError),
-                          lambda: setattr(opts, 'opacity', 'See-through'))
-
-        opts.opacity = .1
-        assert opts.opacity == .1
-
-        prim = AnotherPrimitive(myrangeint=5)
-        assert prim.myrangeint == 5
-        prim.myrangeint = 10.0
-        assert prim.myrangeint == 10
-        self.assertRaises(ValueError,
-                          lambda: setattr(prim, 'myrangeint', 1.5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(prim, 'myrangeint', -1))
-        self.assertRaises(ValueError,
-                          lambda: setattr(prim, 'myrangeint', 11))
-        self.assertRaises(ValueError,
-                          lambda: setattr(prim, 'myrangeint', 'numbah!'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(prim, 'myrangeint', [4, 5]))
-        self.assertEqual(len(opts.serialize()), 2)
 
     def test_string(self):
         mystr = StrPrimitive()
@@ -294,19 +351,19 @@ class TestBasic(unittest.TestCase):
 
         # bad `choice` __init__
         self.assertRaises(
-            ValueError, properties.StringChoice, "a choice",
+            ValueError, props.StringChoice, "a choice",
             choices=2
         )
         self.assertRaises(
-            ValueError, properties.StringChoice, "a choice",
+            ValueError, props.StringChoice, "a choice",
             choices=np.r_[np.array(['a', 'b'])]
         )
         self.assertRaises(
-            ValueError, properties.StringChoice, "a choice",
+            ValueError, props.StringChoice, "a choice",
             choices=['a', 1]
         )
         self.assertRaises(
-            ValueError, properties.StringChoice, "a choice",
+            ValueError, props.StringChoice, "a choice",
             choices={'a': ['a', 1]}
         )
         mystr = StrChoicePrimitive()
@@ -332,43 +389,7 @@ class TestBasic(unittest.TestCase):
         for k, v in mystr.serialize().items():
             self.assertNotEqual(v, u'')
 
-    def test_bool(self):
-        opt = BoolPrimitive()
-        self.assertEqual(opt.serialize(), {'abool': True})
-        assert opt.abool is True
-        self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
-        opt.abool = False
-        assert opt.abool is False
-        opt.athing = 'hi'
-        assert opt.athing == 'hi'
-        opt.athing = True
-        assert opt.athing is True
-        opt.validate()
 
-        self.assertEqual(opt.serialize(),
-                         {
-                            'athing': True,
-                            'abool': False,
-                         })
-        json = properties.Bool.to_json(opt.abool)
-        self.assertFalse(json)
-        self.assertEqual(properties.Bool.from_json(json), False)
-        with self.assertRaises(ValueError):
-            invalid_json = {}
-            self.assertEqual(properties.Bool.from_json(invalid_json), False)
-        self.assertEqual(properties.Bool.from_json('TRUE'), True)
-        self.assertNotEqual(properties.Bool.from_json('TRUE'), False)
-        self.assertEqual(properties.Bool.from_json('FALSE'), False)
-        self.assertNotEqual(properties.Bool.from_json('FALSE'), True)
-
-    def test_numbers(self):
-        nums = NumPrimitive()
-        serialized = {'myint': 0, 'myfloat': 1.0}
-        self.assertEqual(nums.serialize(), serialized)
-        nums.mycomplex = 1.
-        assert isinstance(nums.mycomplex, complex)
-        serialized["mycomplex"] = 1.
-        self.assertEqual(nums.serialize(), serialized)
 
     def test_array(self):
 
@@ -418,8 +439,8 @@ class TestBasic(unittest.TestCase):
 
     def test_array_init(self):
         def f(shape, dtype):
-            class MyBadClass(properties.HasProperties):
-                bad_array = properties.Array(
+            class MyBadClass(props.HasProperties):
+                bad_array = props.Array(
                     "Uh oh",
                     shape=shape,
                     dtype=dtype
@@ -492,9 +513,9 @@ class TestBasic(unittest.TestCase):
         mydate.validate()
 
         now = datetime.datetime.today()
-        json = properties.DateTime.to_json(now)
+        json = props.DateTime.to_json(now)
         self.assertIsNotNone(json)
-        self.assertIsNotNone(properties.DateTime.from_json(json))
+        self.assertIsNotNone(props.DateTime.from_json(json))
 
         mydate.dt = now
         mydate.validate()
