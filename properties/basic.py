@@ -675,11 +675,12 @@ class Array(Property):
 
     @staticmethod
     def to_json(value):
-        return value.tolist()
+        arr_list = value.tolist()
+        return [str(v) if np.isnan(v) or np.isinf(v) else v for v in arr_list]
 
     @staticmethod
     def from_json(value):
-        return np.array(value)
+        return np.array([float(v) for v in value])
 
 
 class Color(Property):
