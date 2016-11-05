@@ -193,7 +193,8 @@ class Property(GettableProperty):
 
     @required.setter
     def required(self, value):
-        assert isinstance(value, bool), "Required must be a boolean."
+        if not isinstance(value, bool):
+            raise TypeError('Required must be a boolean')
         self._required = value
 
     def assert_valid(self, instance, value=None):
@@ -334,9 +335,8 @@ class Integer(Property):
 
     @min.setter
     def min(self, value):
-        assert self.max is None or value <= self.max, (
-            'min must be <= max'
-        )
+        if self.max is not None and value > self.max:
+            raise TypeError('min must be <= max')
         self._min = value
 
     @property
@@ -346,9 +346,8 @@ class Integer(Property):
 
     @max.setter
     def max(self, value):
-        assert self.min is None or value >= self.min, (
-            'max must be >= min'
-        )
+        if self.min is not None or value < self.min:
+            raise TypeError('max must be >= min')
         self._max = value
 
     def validate(self, instance, value):
@@ -447,9 +446,8 @@ class String(Property):
 
     @strip.setter
     def strip(self, value):
-        assert isinstance(value, string_types), (
-            '\'strip\' property must be the string to strip'
-        )
+        if not isinstance(value, string_types):
+            raise TypeError('\'strip\' property must be the string to strip')
         self._strip = value
 
     @property
@@ -463,9 +461,9 @@ class String(Property):
 
     @change_case.setter
     def change_case(self, value):
-        assert value in (None, 'upper', 'lower'), (
-            "`change_case` property must be 'upper', 'lower' or None"
-        )
+        if value not in (None, 'upper', 'lower'):
+            raise TypeError('\'change_case\' property must be \'upper\', '
+                            '\'lower\' or None')
         self._change_case = value
 
     def validate(self, instance, value):
@@ -499,8 +497,8 @@ class StringChoice(Property):
     def info_text(self):
         """Formatted string to display the available choices"""
         if len(self.choices) == 2:
-            return 'either {} or {}'.format(list(self.choices)[0],
-                                            list(self.choices)[1])
+            return 'either "{}" or "{}"'.format(list(self.choices)[0],
+                                                list(self.choices)[1])
         return 'any of "{}"'.format('", "'.join(self.choices))
 
     @property
@@ -516,7 +514,7 @@ class StringChoice(Property):
     @choices.setter
     def choices(self, value):
         if not isinstance(value, (list, tuple, dict)):
-            raise ValueError('value must be a list, tuple, or dict')
+            raise TypeError('value must be a list, tuple, or dict')
         if isinstance(value, (list, tuple)):
             value = {v: v for v in value}
         for key, val in value.items():
@@ -524,10 +522,10 @@ class StringChoice(Property):
                 value[key] = [val]
         for key, val in value.items():
             if not isinstance(key, string_types):
-                raise ValueError('value must be strings')
+                raise TypeError('value must be strings')
             for sub_val in val:
                 if not isinstance(sub_val, string_types):
-                    raise ValueError('value must be strings')
+                    raise TypeError('value must be strings')
         self._choices = value
 
     def validate(self, instance, value):
