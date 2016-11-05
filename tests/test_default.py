@@ -63,6 +63,11 @@ class TestDefault(unittest.TestCase):
         del(hi.c)
         assert hi.c == 100
 
+        with self.assertRaises(KeyError):
+            class HasIntCError(HasIntC):
+                _defaults = {'z': 100}
+            HasIntCError()
+
         class HasIntD(props.HasProperties):
             d = props.Integer('int d', default=5, required=False)
 
