@@ -83,3 +83,20 @@ class TestList(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+# def test_list(self):
+    #     array_list = MyListOfArrays()
+    #     array0 = MyArray()
+    #     array1 = MyArray()
+    #     array2 = MyArray()
+    #     assert len(array_list.arrays) == 0
+    #     array_list.arrays = (array0,)
+    #     assert len(array_list.arrays) == 1
+    #     array_list.arrays = [array0, array1, array2]
+    #     assert len(array_list.arrays) == 3
+
+    #     array_list._props['arrays'].assert_valid(array0)
+    #     array0.int_array = [1, 2, 3]
+    #     array_list._props['arrays'].assert_valid(array0)
+    #     array_list._props['arrays'].assert_valid(None)
