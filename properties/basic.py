@@ -763,22 +763,22 @@ class DateTime(Property):
         if isinstance(value, datetime.datetime):
             return value
         if not isinstance(value, string_types):
-            self.error(value, instance)
+            self.error(instance, value)
         try:
             return self.from_json(value)
         except ValueError:
-            self.error(value, instance)
+            self.error(instance, value)
 
     @staticmethod
     def to_json(value):
-        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return value.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
     def from_json(value):
         if len(value) == 10:
             return datetime.datetime.strptime(value.replace('-', '/'),
-                                              "%Y/%m/%d")
-        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+                                              '%Y/%m/%d')
+        return datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
 
 
 class Uuid(GettableProperty):
