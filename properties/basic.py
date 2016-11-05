@@ -739,6 +739,14 @@ class Color(Property):
                 )
         return tuple(value)
 
+    @staticmethod
+    def to_json(value):
+        return list(value)
+
+    @staticmethod
+    def from_json(value):
+        return tuple(value)
+
 
 class DateTime(Property):
     """DateTime property using 'datetime.datetime'
