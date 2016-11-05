@@ -675,12 +675,15 @@ class Array(Property):
 
     @staticmethod
     def to_json(value):
-        arr_list = value.tolist()
-        return [str(v) if np.isnan(v) or np.isinf(v) else v for v in arr_list]
+        def recurse_list(val):
+            if len(val) > 0 and isinstance(val[0], list):
+                return [recurse_list(v) for v in val]
+            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]
+        return recurse_list(value.tolist())
 
     @staticmethod
     def from_json(value):
-        return np.array([float(v) for v in value])
+        return np.array(value).astype(float)
 
 
 class Color(Property):
