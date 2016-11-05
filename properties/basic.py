@@ -421,9 +421,7 @@ class Complex(Property):
 
     @staticmethod
     def to_json(value):
-        if np.isnan(value):
-            return None
-        return value
+        return str(value)
 
     @staticmethod
     def from_json(value):
