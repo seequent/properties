@@ -9,7 +9,8 @@ import numpy as np
 import properties as props
 
 
-class TestInstance(unittest.TestCase)
+class TestInstance(unittest.TestCase):
+    pass
     # def test_instance(self):
     #     opts = SomeOptions(color='red')
     #     self.assertEqual(opts.serialize(), {'color': (255, 0, 0)})
