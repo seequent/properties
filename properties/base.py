@@ -155,9 +155,14 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                                'or attribute'.format(key))
             setattr(self, key, kwargs[key])
 
-    def _get(self, name):
+    def _get(self, name, default=None):
         if name in self._backend:
             return self._backend[name]
+
+        if default is utils.undefined:
+            return None
+        if default is not None:
+            return default
 
         # Fixes initial default value so ie 'random' states become fixed
         if self._defaults is not None and name in self._defaults:              #pylint: disable=unsupported-membership-test
