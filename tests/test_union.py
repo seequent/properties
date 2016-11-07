@@ -8,59 +8,71 @@ import unittest
 import properties as props
 
 
-class HasIntA(props.HasProperties):
-    a = props.Integer('int a')
-
-
-class HasIntB(props.HasProperties):
-    b = props.Integer('int b')
-
-
-class HasTypeUnion(props.HasProperties):
-    ab = props.Union('union of a and b', (HasIntA, HasIntB))
-
-
-class HasInstanceUnion(props.HasProperties):
-    ab = props.Union('union of a and b', (props.Instance('', HasIntA),
-                                          props.Instance('', HasIntB)))
-
-
-class HasMixedUnion(props.HasProperties):
-    ab = props.Union(
-        'union of a, b, and a boolean',
-        (HasIntA, props.Instance('', HasIntB), props.Bool('')))
-
-
-class HasIntC(props.HasProperties):
-    c = props.Integer('int c', required=True)
-
-
-class HasUnionWithList(props.HasProperties):
-    one_or_more = props.Union(
-        'One or more HasIntC',
-        props=(props.List('', prop=HasIntC), HasIntC)
-    )
-
-
 class TestUnion(unittest.TestCase):
 
     def test_union(self):
-        union_instances = (HasTypeUnion(), HasInstanceUnion(), HasMixedUnion())
 
-        for ui in union_instances:
-            ui.ab = HasIntA()
-            ui.ab = {'b': 5}
+        with self.assertRaises(TypeError):
+            props.Union('bad props', props=props.Integer)
+        with self.assertRaises(TypeError):
+            props.Union('bad props', props=[str])
 
-        union_instances[2].ab = False
+        class HasPropsDummy(props.HasProperties):
+            pass
 
-        unionlist = HasUnionWithList()
-        unionlist.one_or_more = HasIntC()
+        mylist = props.Union('union with dummy has props',
+                             props=[HasPropsDummy, props.Integer('')])
+        assert isinstance(mylist.props[0], props.Instance)
+        assert mylist.props[0].instance_class is HasPropsDummy
+
+        class HasDummyUnion(props.HasProperties):
+            myunion = props.Union('union with dummy has props',
+                                  props=[HasPropsDummy, props.Integer('')])
+
+        assert HasDummyUnion()._props['myunion'].name == 'myunion'
+        assert HasDummyUnion()._props['myunion'].props[0].name == 'myunion'
+        assert HasDummyUnion()._props['myunion'].props[1].name == 'myunion'
+
+        class HasBoolColor(props.HasProperties):
+            mybc = props.Union('union of bool or color',
+                               props=[props.Bool(''), props.Color('')])
+
+        hbc = HasBoolColor()
+        hbc.mybc = True
+        hbc.mybc = 'red'
+        assert hbc.mybc == (255, 0, 0)
         with self.assertRaises(ValueError):
-            unionlist.validate()
+            hbc.mybc = 'not a bool or color'
 
-        unionlist.one_or_more = [HasIntC(), HasIntC()]
+        hbc.validate()
+
+        class HasIntAndList(props.HasProperties):
+            myints = props.Union(
+                'union of int or int list', props=[
+                    props.Integer(''),
+                    props.List('', props.Integer(''), min_length=2)
+                ]
+            )
+
+        hil = HasIntAndList()
+        hil.myints = 5
+        hil.validate()
+        hil.myints = [1]
         with self.assertRaises(ValueError):
-            unionlist.validate()
+            hil.validate()
+
+        assert props.Union.to_json(HasPropsDummy()) == {}
+        assert props.Union.to_json('red') == 'red'
+
+        assert HasIntAndList(myints=5).serialize() == {'myints': 5}
+        assert HasIntAndList(
+            myints=[5, 6, 7]
+        ).serialize() == {'myints': [5, 6, 7]}
+
+        assert HasIntAndList.deserialize({'myints': 5}).myints == 5
+        assert HasIntAndList.deserialize(
+            {'myints': [5, 6, 7]}
+        ).myints == [5, 6, 7]
 
 
 if __name__ == '__main__':
