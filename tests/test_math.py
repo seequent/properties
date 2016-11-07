@@ -10,21 +10,6 @@ import properties as props
 import vectormath as vmath
 
 
-
-# class Location2(properties.HasProperties):
-#     loc = properties.Vector2("My location", required=False)
-#     unit = properties.Vector2("My location", length=1, required=False)
-
-
-# class Location3(properties.HasProperties):
-#     loc = properties.Vector3("My location", required=False)
-#     unit = properties.Vector3("My location", length=1, required=False)
-
-#     @properties.observer('loc')
-#     def _on_loc_change(self, change):
-#         self._last_change = change
-
-
 class TestMath(unittest.TestCase):
 
     def test_vector2(self):
