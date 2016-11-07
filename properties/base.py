@@ -80,6 +80,10 @@ class PropertyMetaclass(type):
 
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
+            if key[0] == '_':
+                raise AttributeError(
+                    'Property names cannot be private: {}'.format(key)
+                )
             prop.name = key
             classdict[key] = prop.get_property()
 
