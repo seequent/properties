@@ -5,51 +5,87 @@ from __future__ import unicode_literals
 
 import unittest
 
-import numpy as np
 import properties as props
 
 
 class TestInstance(unittest.TestCase):
-    pass
-    # def test_instance(self):
-    #     opts = SomeOptions(color='red')
-    #     self.assertEqual(opts.serialize(), {'color': (255, 0, 0)})
-    #     twop = ThingWithOptions(opts=opts)
 
-    #     with self.assertRaises(ValueError):
-    #         twop._props['opts'].assert_valid(twop)
-    #     twop.opts.opacity = .5
-    #     twop.opts2.opacity = .5
-    #     twop._props['opts'].assert_valid(twop)
-    #     twop.validate()
-    #     self.assertEqual(len(twop.serialize()), 3)
-    #     twop2 = ThingWithOptions2()
-    #     # self.assertEqual(len(twop2.serialize()), 3)
-    #     assert twop.col.mycolor == (255, 0, 0)
-    #     # auto create the options.
-    #     assert twop2.opts is not twop.opts
-    #     assert twop2.col.mycolor == (0, 0, 255)
+    def test_instance(self):
 
-    #     # test that the startup on the instance creates the list
-    #     assert len(twop.moreopts) == 0
-    #     assert twop.moreopts is twop.moreopts
-    #     assert twop.moreopts is not twop2.moreopts
+        with self.assertRaises(TypeError):
+            props.Instance('bad class', instance_class='hello!')
+        with self.assertRaises(TypeError):
+            props.Instance('bad autocreate', auto_create='yes')
 
-    #     notprop = NotProperty()
-    #     opts.opacity = .5
-    #     twop2.opts = opts
-    #     twop2.opts2 = opts
-    #     twop2.notprop = notprop
-    #     twop2.validate()
+        class SomeClass(object):
+            pass
 
-    #     # test different validation routes
-    #     twop = AThing()
-    #     twop.aprop = '#F00000'
-    #     with self.assertRaises(ValueError):
-    #         twop.aprop = ''
-    #     twop.aprop = {'something': '#F00000'}
-    #     with self.assertRaises(ValueError):
-    #         twop.aprop = {'something': ''}
+        class HasInstance(props.HasProperties):
+            myinst = props.Instance('some class', SomeClass)
+
+        hi = HasInstance()
+        assert hi.myinst is None
+        with self.assertRaises(ValueError):
+            hi.validate()
+        hi.myinst = SomeClass()
+        assert hi.validate()
+        assert isinstance(hi.myinst, SomeClass)
+        hi.myinst = dict()
+        assert isinstance(hi.myinst, SomeClass)
+        with self.assertRaises(ValueError):
+            hi.myinst = '10'
+
+        class HasIntA(props.HasProperties):
+            a = props.Integer('int a')
+
+            def __init__(self, *args, **kwargs):
+                super(HasIntA, self).__init__(**kwargs)
+                if len(args) == 1:
+                    self.a = args[0]
+
+        class HasInstance(props.HasProperties):
+            myinst = props.Instance('has int a', HasIntA, auto_create=True)
+
+        hi = HasInstance()
+        with self.assertRaises(ValueError):
+            hi.validate()
+        assert isinstance(hi.myinst, HasIntA)
+        hi.myinst = {'a': 10}
+        assert isinstance(hi.myinst, HasIntA)
+        assert hi.myinst.a == 10
+        assert hi.validate()
+        hi.myinst = 20
+        assert isinstance(hi.myinst, HasIntA)
+        assert hi.myinst.a == 20
+        assert hi.validate()
+
+        assert hi.serialize() == {
+            '__class__': 'HasInstance',
+            'myinst': {
+                '__class__': 'HasIntA',
+                'a': 20
+            }
+        }
+        assert hi.serialize(include_class=False) == {
+            'myinst': {
+                'a': 20
+            }
+        }
+
+        assert props.Instance.to_json(hi) == {
+            '__class__': 'HasInstance',
+            'myinst': {
+                '__class__': 'HasIntA',
+                'a': 20
+            }
+        }
+
+        assert props.Instance.to_json('string instance') == 'string instance'
+
+        with self.assertRaises(TypeError):
+            props.Instance.to_json(SomeClass())
+        with self.assertRaises(TypeError):
+            props.Instance.from_json({'myinst': {'a': 20}})
 
 
 if __name__ == '__main__':
