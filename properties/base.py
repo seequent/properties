@@ -167,7 +167,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             default = self._props[name].default
         if callable(default):
             self._backend[name] = self._props[name].validate(self, default())
-        elif default is not basic.undefined:
+        elif default is not utils.undefined:
             self._backend[name] = self._props[name].validate(self, default)
         return self._backend.get(name, None)
 
@@ -183,7 +183,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             warn('Specified Property for assignment changed during '
                  'validation. Setting original property {}'.format(name),
                  RuntimeWarning)
-        if change['value'] is basic.undefined and name in self._backend:
+        if change['value'] is utils.undefined and name in self._backend:
             self._backend.pop(name)
         else:
             self._backend[name] = change['value']
