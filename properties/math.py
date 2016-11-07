@@ -30,10 +30,10 @@ class BaseVector(Array):
 
     @length.setter
     def length(self, value):
-        assert isinstance(value, (float, integer_types)), (
-            'length must be a float'
-        )
-        assert value > 0.0, 'length must be positive'
+        if not isinstance(value, (float, integer_types)):
+            raise TypeError('length must be a float')
+        if value <= 0.0:
+            raise TypeError('length must be positive')
         self._length = float(value)
 
     def validate(self, instance, value):

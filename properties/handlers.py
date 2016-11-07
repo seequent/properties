@@ -43,7 +43,8 @@ class Observer(object):
         if not isinstance(value, (tuple, list)):
             value = [value]
         for val in value:
-            assert isinstance(val, string_types)
+            if not isinstance(val, string_types):
+                raise TypeError('Observed names must be strings')
         self._names = tuple(value)
 
     @property
@@ -57,8 +58,8 @@ class Observer(object):
 
     @mode.setter
     def mode(self, value):
-        assert value in ['validate', 'observe'], \
-            'mode must be validate or observe'
+        if value not in ['validate', 'observe']:
+            raise TypeError('Supported modes are \'validate\' or \'observe\'')
         self._mode = value
 
 

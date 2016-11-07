@@ -247,7 +247,8 @@ class Instance(basic.Property):
     info_text = 'an instance'
 
     def __init__(self, helpdoc, instance_class, **kwargs):
-        assert isinstance(instance_class, type), 'instance_class must be class'
+        if not isinstance(instance_class, type):
+            raise TypeError('instance_class must be class')
         self.instance_class = instance_class
         super(Instance, self).__init__(helpdoc, **kwargs)
 
@@ -265,7 +266,8 @@ class Instance(basic.Property):
 
     @auto_create.setter
     def auto_create(self, value):
-        assert isinstance(value, bool), 'auto_create must be a boolean'
+        if not isinstance(value, bool):
+            raise TypeError('auto_create must be a boolean')
         self._auto_create = value
 
     def info(self):
@@ -363,9 +365,8 @@ class List(basic.Property):
     def __init__(self, helpdoc, prop, **kwargs):
         if isinstance(prop, type) and issubclass(prop, HasProperties):
             prop = Instance(helpdoc, prop)
-        assert isinstance(prop, basic.Property), (
-            'prop must be a Property or HasProperties class'
-        )
+        if not isinstance(prop, basic.Property):
+            raise TypeError('prop must be a Property or HasProperties class')
         self.prop = prop
         super(List, self).__init__(helpdoc, **kwargs)
         self._unused_default_warning()
@@ -390,12 +391,10 @@ class List(basic.Property):
 
     @min_length.setter
     def min_length(self, value):
-        assert isinstance(value, integer_types) and value >= 0, (
-            'min_length must be integer >= 0'
-        )
-        assert self.max_length is None or value <= self.max_length, (
-            'min_length must be <= max_length'
-        )
+        if not isinstance(value, integer_types) or value < 0:
+            raise TypeError('min_length must be integer >= 0')
+        if self.max_length is not None or value > self.max_length:
+            raise TypeError('min_length must be <= max_length')
         self._min_length = value
 
     @property
@@ -405,12 +404,10 @@ class List(basic.Property):
 
     @max_length.setter
     def max_length(self, value):
-        assert isinstance(value, integer_types) and value >= 0, (
-            'max_length must be integer >= 0'
-        )
-        assert self.min_length is None or value >= self.min_length, (
-            'max_length must be >= min_length'
-        )
+        if not isinstance(value, integer_types) or value < 0:
+            raise TypeError('max_length must be integer >= 0')
+        if self.min_length is not None or value < self.min_length:
+            raise TypeError('max_length must be >= min_length')
         self._max_length = value
 
     def info(self):
@@ -509,14 +506,15 @@ class Union(basic.Property):
     info_text = 'a union of multiple property types'
 
     def __init__(self, helpdoc, props, **kwargs):
-        assert isinstance(props, (tuple, list)), 'props must be a list'
+        if not isinstance(props, (tuple, list)):
+            raise TypeError('props must be a list')
         new_props = tuple()
         for prop in props:
             if isinstance(prop, type) and issubclass(prop, HasProperties):
                 prop = Instance(help, prop)
-            assert isinstance(prop, basic.Property), (
-                'all props must be Property instance or HasProperties class'
-            )
+            if not isinstance(prop, basic.Property):
+                raise TypeError('all props must be Property instance or '
+                                'HasProperties class')
             new_props += (prop,)
         self.props = new_props
         super(Union, self).__init__(helpdoc, **kwargs)
@@ -567,7 +565,7 @@ class Union(basic.Property):
                 return
             except (ValueError, KeyError, TypeError, AssertionError):
                 continue
-        raise AssertionError('Invalid default for Union property')
+        raise TypeError('Invalid default for Union property')
 
     def _unused_default_warning(self):
         prop_def = getattr(self, '_default', utils.undefined)
