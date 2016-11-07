@@ -675,11 +675,15 @@ class Array(Property):
 
     @staticmethod
     def to_json(value):
-        def recurse_list(val):
+        """Convert array to JSON list
+
+        nan values are converted to string 'nan', inf values to 'inf'.
+        """
+        def _recurse_list(val):
             if len(val) > 0 and isinstance(val[0], list):
-                return [recurse_list(v) for v in val]
-            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]
-        return recurse_list(value.tolist())
+                return [_recurse_list(v) for v in val]
+            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]  #pylint: disable=no-member
+        return _recurse_list(value.tolist())
 
     @staticmethod
     def from_json(value):
