@@ -276,7 +276,7 @@ class TestBasic(unittest.TestCase):
         mystr = StrPrimitive()
         self.assertEqual(len(mystr.serialize()), 5)
         for k, v in mystr.serialize().items():
-            if k == '_registry_class':
+            if k == '__class__':
                 continue
             self.assertEqual(v, u'')
 
@@ -313,7 +313,7 @@ class TestBasic(unittest.TestCase):
         )
         mystr = StrChoicePrimitive()
         for k, v in mystr.serialize().items():
-            if k == '_registry_class':
+            if k == '__class__':
                 continue
             self.assertEqual(v, u'')
 
@@ -338,7 +338,7 @@ class TestBasic(unittest.TestCase):
 
     def test_bool(self):
         opt = BoolPrimitive()
-        self.assertEqual(opt.serialize(), {'_registry_class': 'BoolPrimitive',
+        self.assertEqual(opt.serialize(), {'__class__': 'BoolPrimitive',
                                            'abool': True})
         assert opt.abool is True
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
@@ -352,7 +352,7 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual(opt.serialize(),
                          {
-                            '_registry_class': 'BoolPrimitive',
+                            '__class__': 'BoolPrimitive',
                             'athing': True,
                             'abool': False,
                          })
@@ -369,7 +369,7 @@ class TestBasic(unittest.TestCase):
 
     def test_numbers(self):
         nums = NumPrimitive()
-        serialized = {'_registry_class': 'NumPrimitive', 'myint': 0,
+        serialized = {'__class__': 'NumPrimitive', 'myint': 0,
                       'myfloat': 1.0}
         self.assertEqual(nums.serialize(), serialized)
         nums.mycomplex = 1.
@@ -453,7 +453,7 @@ class TestBasic(unittest.TestCase):
 
     def test_instance(self):
         opts = SomeOptions(color='red')
-        self.assertEqual(opts.serialize(), {'_registry_class': 'SomeOptions',
+        self.assertEqual(opts.serialize(), {'__class__': 'SomeOptions',
                                             'color': (255, 0, 0)})
         twop = ThingWithOptions(opts=opts)
 
@@ -496,7 +496,7 @@ class TestBasic(unittest.TestCase):
         import datetime
 
         mydate = MyDateTime()
-        self.assertEqual(mydate.serialize(), {'_registry_class': 'MyDateTime'})
+        self.assertEqual(mydate.serialize(), {'__class__': 'MyDateTime'})
         mydate.validate()
 
         now = datetime.datetime.today()

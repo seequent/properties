@@ -53,7 +53,7 @@ class TestMath(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0., 0])
-        self.assertEqual(opts.serialize(), {'_registry_class': 'Location3',
+        self.assertEqual(opts.serialize(), {'__class__': 'Location3',
                                             'loc': [0.0, 0.0, 1.0]})
 
     def test_vector2(self):
@@ -78,7 +78,7 @@ class TestMath(unittest.TestCase):
                           lambda: setattr(opts, 'loc', [5, 100, 0]))
         self.assertRaises(ZeroDivisionError,
                           setattr, opts, 'unit', [0, 0])
-        self.assertEqual(opts.serialize(), {'_registry_class': 'Location2',
+        self.assertEqual(opts.serialize(), {'__class__': 'Location2',
                                             'loc': [0.0, 1.0]})
 
 
