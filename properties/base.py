@@ -393,7 +393,7 @@ class List(basic.Property):
     def min_length(self, value):
         if not isinstance(value, integer_types) or value < 0:
             raise TypeError('min_length must be integer >= 0')
-        if self.max_length is not None or value > self.max_length:
+        if self.max_length is not None and value > self.max_length:
             raise TypeError('min_length must be <= max_length')
         self._min_length = value
 
@@ -406,13 +406,25 @@ class List(basic.Property):
     def max_length(self, value):
         if not isinstance(value, integer_types) or value < 0:
             raise TypeError('max_length must be integer >= 0')
-        if self.min_length is not None or value < self.min_length:
+        if self.min_length is not None and value < self.min_length:
             raise TypeError('max_length must be >= min_length')
         self._max_length = value
 
     def info(self):
-        """Description of the property, supplemental to the help doc"""
-        return 'a list - each item is {info}'.format(info=self.prop.info())
+        """Supplemental description of the list, with length and type"""
+        itext = 'a list (each item is {info})'.format(info=self.prop.info())
+        if self.max_length is None and self.min_length is None:
+            return itext
+        if self.max_length is None:
+            return '{txt} with length >= {mn}'.format(
+                txt=itext,
+                mn=self.min_length
+            )
+        return '{txt} with length between {mn} and {mx}'.format(
+            txt=itext,
+            mn='0' if self.min_length is None else self.min_length,
+            mx=self.max_length
+        )
 
     def _unused_default_warning(self):
         if (self.prop.default is not utils.undefined and
@@ -428,10 +440,6 @@ class List(basic.Property):
         """
         if not isinstance(value, (tuple, list)):
             self.error(instance, value)
-        if self.min_length is not None and len(value) < self.min_length:
-            self.error(instance, value)
-        if self.max_length is not None and len(value) > self.max_length:
-            self.error(instance, value)
         out = []
         for val in value:
             try:
@@ -443,6 +451,10 @@ class List(basic.Property):
 
     def assert_valid(self, instance, value=None):
         """Check if list and contained properties are valid"""
+        if self.min_length is not None and len(value) < self.min_length:
+            self.error(instance, value)
+        if self.max_length is not None and len(value) > self.max_length:
+            self.error(instance, value)
         valid = super(List, self).assert_valid(instance, value)
         if valid is False:
             return valid
