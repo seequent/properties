@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
+import pickle
 from warnings import warn
 
 from six import integer_types
@@ -210,25 +211,45 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def serialize(self):
         """Serializes a HasProperties instance to JSON"""
-        jsondict = ((k, v.serialize(self._get(v.name)))
-                    for k, v in iteritems(self._props))
-        props = {k: v for k, v in jsondict if v is not None}
-        return props
+        json_dict = {'class': self.__class__.__name__}
+        data = ((k, v.serialize(self._get(v.name)))
+                for k, v in iteritems(self._props))
+        json_dict.update({'data': {k: v for k, v in data if v is not None}})
+        return json_dict
 
     @classmethod
     def deserialize(cls, json_dict):
         """Creates new HasProperties instance from JSON dictionary"""
+        if 'class' in json_dict and 'data' in json_dict:
+            if json_dict['class'] in cls._REGISTRY:
+                cls = cls._REGISTRY[json_dict['class']]
+            else:
+                warn(
+                    'Class name {rcl} not found in _REGISTRY. Using class '
+                    '{cl} for deserialize.'.format(
+                        rcl=json_dict['class'], cl=cls.__name__
+                    ), RuntimeWarning
+                )
+            json_dict = json_dict['data']
         newinst = cls()
-        newinst.__setstate__(json_dict)
+        newstate, unused = utils.filter_props(cls, json_dict)
+        if len(unused) > 0:
+            warn('Unused properties during deserialization: {}'.format(
+                ', '.join(unused)
+            ), RuntimeWarning)
+        for key, val in iteritems(newstate):
+            setattr(newinst, key, newinst._props[key].deserialize(val))
         return newinst
 
     def __setstate__(self, newstate):
         newstate = utils.filter_props(self, newstate)[0]
         for key, val in iteritems(newstate):
-            setattr(self, key, self._props[key].deserialize(val))
+            setattr(self, key, pickle.loads(val))
 
     def __reduce__(self):
-        return (self.__class__, (), self.serialize())
+        data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
+        pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
+        return (self.__class__, (), pickle_dict)
 
 
 class Instance(basic.Property):
