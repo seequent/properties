@@ -115,7 +115,7 @@ class GettableProperty(object):
 
         return property(fget=fget, doc=scope.help)
 
-    def serialize(self, value):
+    def serialize(self, value, include_class=True):                            #pylint: disable=unused-argument
         """Serialize the property value to JSON
 
         If no serializer has been registered, this uses to_json
@@ -126,7 +126,7 @@ class GettableProperty(object):
             return None
         return self.to_json(value)
 
-    def deserialize(self, value, trusted=False):
+    def deserialize(self, value, trusted=False):                               #pylint: disable=unused-argument
         """De-serialize the property value from JSON
 
         If no deserializer has been registered, this uses from_json
