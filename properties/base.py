@@ -316,7 +316,7 @@ class Instance(basic.Property):
             elif isinstance(value, dict):
                 return self.instance_class(**value)
             return self.instance_class(value)
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, TypeError):
             self.error(instance, value)
 
     def assert_valid(self, instance, value=None):
