@@ -36,6 +36,13 @@ class BaseVector(Array):
             raise TypeError('length must be positive')
         self._length = float(value)
 
+    def _length_array(self, value):                                           #pylint: disable=unused-argument
+        """Return scalar length for Vector classes.
+
+        This is overridden to return array length for VectorArray classes.
+        """
+        return self.length
+
     def validate(self, instance, value):
         """Check shape and dtype of vector and scales it to given length"""
 
@@ -43,7 +50,7 @@ class BaseVector(Array):
 
         if self.length is not None:
             try:
-                value.length = self.length
+                value.length = self._length_array(value)
             except ZeroDivisionError:
                 self.error(
                     instance, value,
@@ -139,6 +146,9 @@ class Vector3Array(BaseVector):
         """Vector3Array is shape n x 3"""
         return ('*', 3)
 
+    def _length_array(self, value):
+        return np.ones(value.shape[0])*self.length
+
     def validate(self, instance, value):
         """Check shape and dtype of vector
 
@@ -176,6 +186,9 @@ class Vector2Array(BaseVector):
         """Vector3Array is shape n x 2"""
         return ('*', 2)
 
+    def _length_array(self, value):
+        return np.ones(value.shape[0])*self.length
+
     def validate(self, instance, value):
         """Check shape and dtype of vector
 
@@ -185,14 +198,14 @@ class Vector2Array(BaseVector):
         """
         if not isinstance(value, (tuple, list, np.ndarray)):
             self.error(instance, value)
-        for i, val in enumerate(value):
-            if isinstance(val, string_types):
+        if isinstance(value, (tuple, list)):
+            for i, val in enumerate(value):
                 if (
-                        val.upper() not in VECTOR_DIRECTIONS or
-                        val.upper() in ('Z', '-Z', 'UP', 'DOWN')
+                        isinstance(val, string_types) and
+                        val.upper() in VECTOR_DIRECTIONS and
+                        val.upper() not in ('Z', '-Z', 'UP', 'DOWN')
                 ):
-                    self.error(instance, val)
-                value[i] = VECTOR_DIRECTIONS[val.upper()][:2]
+                    value[i] = VECTOR_DIRECTIONS[val.upper()][:2]
 
         return super(Vector2Array, self).validate(instance, value)
 
