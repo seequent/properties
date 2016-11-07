@@ -20,9 +20,14 @@ class ConsiderItHandled(props.HasProperties):
         self.b = change['value']
 
     @props.validator('a')
-    def _a_cannot_b_five(self, change):
+    def _a_cannot_be_five(self, change):
         if change['value'] == 5:
             raise ValueError('a cannot be five')
+
+    @props.validator('a')
+    def _a_also_cannot_be_twentyseventhousand(self, change):
+        if change['value'] == 27000:
+            raise ValueError('a cannot be twenty-seven thousand')
 
     @props.validator('d')
     def _d_is_five(self, change):
@@ -40,6 +45,7 @@ class TestHandlers(unittest.TestCase):
         hand.a = 10
         assert hand.b == 10
         self.assertRaises(ValueError, lambda: setattr(hand, 'a', 5))
+        self.assertRaises(ValueError, lambda: setattr(hand, 'a', 27000))
         assert hand.a == 10
         assert hand.b == 10
         hand.validate()
