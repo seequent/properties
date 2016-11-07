@@ -59,7 +59,6 @@ class TestMath(unittest.TestCase):
         assert np.allclose(hv2.vec2, [0., 5.])
 
         assert isinstance(props.Vector2.from_json([5., 6.]), vmath.Vector2)
-
     def test_vector3(self):
 
         class HasVec3(props.HasProperties):
