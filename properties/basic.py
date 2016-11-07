@@ -126,7 +126,7 @@ class GettableProperty(object):
             return None
         return self.to_json(value)
 
-    def deserialize(self, value):
+    def deserialize(self, value, trusted=False):
         """De-serialize the property value from JSON
 
         If no deserializer has been registered, this uses from_json
@@ -663,7 +663,7 @@ class Array(Property):
             )
         )
 
-    def deserialize(self, value):
+    def deserialize(self, value, trusted=False):
         """De-serialize the property value from JSON
 
         If no deserializer has been registered, this converts the value

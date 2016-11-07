@@ -207,26 +207,26 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def serialize(self):
         """Serializes a HasProperties instance to JSON"""
-        json_dict = {'class': self.__class__.__name__}
+        json_dict = {'__class__': self.__class__.__name__}
         data = ((k, v.serialize(self._get(v.name)))
                 for k, v in iteritems(self._props))
-        json_dict.update({'data': {k: v for k, v in data if v is not None}})
+        json_dict.update({k: v for k, v in data if v is not None})
         return json_dict
 
     @classmethod
-    def deserialize(cls, json_dict):
+    def deserialize(cls, json_dict, trusted=False):
         """Creates new HasProperties instance from JSON dictionary"""
-        if 'class' in json_dict and 'data' in json_dict:
-            if json_dict['class'] in cls._REGISTRY:
-                cls = cls._REGISTRY[json_dict['class']]
+        if trusted and '__class__' in json_dict:
+            if json_dict['__class__'] in cls._REGISTRY:
+                cls = cls._REGISTRY[json_dict['__class__']]
             else:
                 warn(
                     'Class name {rcl} not found in _REGISTRY. Using class '
                     '{cl} for deserialize.'.format(
-                        rcl=json_dict['class'], cl=cls.__name__
+                        rcl=json_dict['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
-            json_dict = json_dict['data']
+        json_dict.pop('__class__', None)
         newinst = cls()
         newstate, unused = utils.filter_props(cls, json_dict)
         if len(unused) > 0:
@@ -234,7 +234,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 ', '.join(unused)
             ), RuntimeWarning)
         for key, val in iteritems(newstate):
-            setattr(newinst, key, newinst._props[key].deserialize(val))
+            setattr(newinst, key,
+                    newinst._props[key].deserialize(val, trusted))
         return newinst
 
     def __setstate__(self, newstate):
@@ -317,7 +318,7 @@ class Instance(basic.Property):
             value.validate()
         return True
 
-    def deserialize(self, value):
+    def deserialize(self, value, trusted=False):
         """Deserialize instance from JSON value
 
         If a deserializer is registered, that is used. Otherwise, if the
@@ -329,7 +330,7 @@ class Instance(basic.Property):
         if value is None:
             return None
         if issubclass(self.instance_class, HasProperties):
-            return self.instance_class.deserialize(value)
+            return self.instance_class.deserialize(value, trusted)
         return self.from_json(value)
 
     @staticmethod
@@ -481,13 +482,13 @@ class List(basic.Property):
             return None
         return [self.prop.serialize(val) for val in value]
 
-    def deserialize(self, value):
+    def deserialize(self, value, trusted=False):
         """Return a deserialized copy of the list"""
         if self.deserializer is not None:
             return self.deserializer(value)
         if value is None:
             return None
-        return [self.prop.deserialize(val) for val in value]
+        return [self.prop.deserialize(val, trusted) for val in value]
 
     @staticmethod
     def to_json(value):
@@ -641,7 +642,7 @@ class Union(basic.Property):
             return prop.serialize(value)
         return self.to_json(value)
 
-    def deserialize(self, value):
+    def deserialize(self, value, trusted=False):
         """Return a deserialized value
 
         If no deserializer is provided, it uses the deserialize method of the
@@ -653,7 +654,7 @@ class Union(basic.Property):
             return None
         for prop in self.props:
             try:
-                return prop.deserialize(value)
+                return prop.deserialize(value, trusted)
             except (ValueError, KeyError, TypeError):
                 continue
         return self.from_json(value)
