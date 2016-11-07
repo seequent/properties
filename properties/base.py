@@ -451,10 +451,6 @@ class List(basic.Property):
 
     def assert_valid(self, instance, value=None):
         """Check if list and contained properties are valid"""
-        if self.min_length is not None and len(value) < self.min_length:
-            self.error(instance, value)
-        if self.max_length is not None and len(value) > self.max_length:
-            self.error(instance, value)
         valid = super(List, self).assert_valid(instance, value)
         if valid is False:
             return valid
@@ -462,6 +458,10 @@ class List(basic.Property):
             value = getattr(instance, self.name, None)
         if value is None:
             return True
+        if self.min_length is not None and len(value) < self.min_length:
+            self.error(instance, value)
+        if self.max_length is not None and len(value) > self.max_length:
+            self.error(instance, value)
         for val in value:
             self.prop.assert_valid(instance, val)
         return True
