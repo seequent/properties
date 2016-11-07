@@ -230,7 +230,7 @@ class TestBasic(unittest.TestCase):
             props.Array('bad shape', shape=(5, 'any'))
 
         class ArrayOpts(props.HasProperties):
-            myarray=props.Array('my array')
+            myarray = props.Array('my array')
             myarray222 = props.Array('my 3x3x3 array', shape=(2, 2, 2))
             myarrayfloat = props.Array('my float array', dtype=float)
             myarrayint = props.Array('my int array', dtype=int)
