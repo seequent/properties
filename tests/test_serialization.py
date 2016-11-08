@@ -5,57 +5,86 @@ from __future__ import unicode_literals
 
 import pickle
 import unittest
+import warnings
 
 import properties as props
 
 
-class Location2(props.HasProperties):
-    loc = props.Vector2("My location", required=False)
+class HP1(props.HasProperties):
+    a = props.Integer('int a')
 
+class HP2(props.HasProperties):
+    inst1 = props.Instance('b', HP1)
 
-class SerializableThing(props.HasProperties):
-    anystr = props.String("a string!", default='', required=False)
-    anotherstr = props.String("another string!", default='HELLO WORLD!')
-    myint = props.Integer("an integer!", default=0, required=False)
-    myvector2 = props.Vector2("a 2x2 vector!", required=False)
+class HP3(props.HasProperties):
+    inst2 = props.Instance('c', HP2)
 
 
 class TestSerialization(unittest.TestCase):
 
-    def test_serialize(self):
-        pass
-
     def test_pickle(self):
+        hp1 = HP1(a=10)
+        hp2 = HP2(inst1=hp1)
+        hp3 = HP3(inst2=hp2)
 
-        x = Location2()
-        x.loc = [7, 2]
-        xp = pickle.loads(pickle.dumps(x))
-        assert xp.loc.x == 7
-        assert xp.loc.y == 2
+        hp3_copy = pickle.loads(pickle.dumps(hp3))
+        assert isinstance(hp3_copy, HP3)
+        assert isinstance(hp3_copy.inst2, HP2)
+        assert isinstance(hp3_copy.inst2.inst1, HP1)
+        assert hp3_copy.inst2.inst1.a == 10
 
     def test_serialize(self):
+        hp1 = HP1(a=10)
+        hp2 = HP2(inst1=hp1)
+        hp3 = HP3(inst2=hp2)
 
-        thing = SerializableThing()
-        # should contain ', 'myvector2': []' ?
-        self.assertEqual(
-            thing.serialize(),
-            {'__class__': 'SerializableThing',
-             'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0}
-        )
-
-        thing.anystr = 'a value'
-        thing.anotherstr = ''
-        thing.myint = -15
-        thing.myvector2 = [3.1415926535, 42]
-        self.assertEqual(
-            thing.serialize(), {
-                '__class__': 'SerializableThing',
-                'anystr': 'a value',
-                'anotherstr': '',
-                'myint': -15,
-                'myvector2': [3.1415926535, 42],
+        hp3_dict = {
+            '__class__': 'HP3',
+            'inst2': {
+                '__class__': 'HP2',
+                'inst1': {
+                    '__class__': 'HP1',
+                    'a': 10
+                }
             }
-        )
+        }
+        hp3_dict_no_class = {
+            'inst2': {
+                'inst1': {
+                    'a': 10
+                }
+            }
+        }
+
+        assert hp3.serialize() == hp3_dict
+        assert hp3.serialize(include_class=False) == hp3_dict_no_class
+
+        with warnings.catch_warnings(record=True) as w:
+            assert not isinstance(
+                props.HasProperties.deserialize(hp3_dict), HP3
+            )
+            assert len(w) > 0
+            assert issubclass(w[0].category, RuntimeWarning)
+
+        with warnings.catch_warnings(record=True) as w:
+            assert not isinstance(
+                props.HasProperties.deserialize(hp3_dict_no_class), HP3
+            )
+            assert len(w) > 0
+            assert issubclass(w[0].category, RuntimeWarning)
+
+        with warnings.catch_warnings(record=True) as w:
+            assert not isinstance(
+                props.HasProperties.deserialize(
+                    hp3_dict_no_class, trusted=True
+                ), HP3
+            )
+            assert len(w) > 0
+            assert issubclass(w[0].category, RuntimeWarning)
+
+        assert isinstance(HP3.deserialize(hp3_dict), HP3)
+        assert isinstance(HP3.deserialize(hp3_dict_no_class), HP3)
+        assert isinstance(props.HasProperties.deserialize(hp3_dict), HP3)
 
 
 if __name__ == '__main__':
