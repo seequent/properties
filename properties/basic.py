@@ -346,7 +346,7 @@ class Integer(Property):
 
     @max.setter
     def max(self, value):
-        if self.min is not None or value < self.min:
+        if self.min is not None and value < self.min:
             raise TypeError('max must be >= min')
         self._max = value
 
