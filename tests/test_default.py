@@ -24,6 +24,7 @@ class TestDefault(unittest.TestCase):
             assert hc.col == hc.col
 
     def test_default_order(self):
+
         class HasIntA(props.HasProperties):
             a = props.Integer('int a')
 
@@ -34,6 +35,12 @@ class TestDefault(unittest.TestCase):
         assert hi.a is None
         with self.assertRaises(ValueError):
             hi.validate()
+
+        with self.assertRaises(AttributeError):
+            class BadDefault(HasIntA):
+                @props.defaults
+                def not_defaults(self):
+                    return {'a': 1}
 
         class HasIntB(props.HasProperties):
             b = props.Integer('int b', required=False)
@@ -221,6 +228,15 @@ class TestDefault(unittest.TestCase):
         del(hi0.inst)
         assert isinstance(hi0.inst, HasInt)
         assert hi0.inst.a is None
+
+        class HasIntSubclass(HasInt):
+            pass
+
+        class HasInstanceSubclass(HasInstance):
+            _defaults = {'inst': HasIntSubclass}
+
+        hi2 = HasInstanceSubclass()
+        assert isinstance(hi2.inst, HasIntSubclass)
 
         class HasList(props.HasProperties):
             z = props.List('z list', HasInstance)

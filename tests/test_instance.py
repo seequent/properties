@@ -87,6 +87,8 @@ class TestInstance(unittest.TestCase):
         with self.assertRaises(TypeError):
             props.Instance.from_json({'myinst': {'a': 20}})
 
+        assert HasInstance._props['myinst'].deserialize(None) is None
+
 
 if __name__ == '__main__':
     unittest.main()

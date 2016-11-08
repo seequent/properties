@@ -21,6 +21,9 @@ class TestBasic(unittest.TestCase):
             props.GettableProperty('bad kwarg', defualt=5)
         with self.assertRaises(TypeError):
             props.Property('bad kwarg', required=5)
+        with self.assertRaises(AttributeError):
+            class PrivateProperty(props.HasProperties):
+                _secret = props.GettableProperty('secret prop')
 
         class GettablePropOpt(props.HasProperties):
             mygp = props.GettableProperty('gettable prop')
@@ -30,7 +33,16 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(KeyError):
             GettablePropOpt(not_mygp=0)
 
-        GettablePropOpt().validate()
+        assert GettablePropOpt().validate()
+
+        def twelve():
+            return 12
+
+        class GettablePropOpt(props.HasProperties):
+            mygp = props.GettableProperty('gettable prop', default=twelve)
+
+        assert GettablePropOpt().validate()
+        assert GettablePropOpt().mygp == 12
 
         class PropOpts(props.HasProperties):
             myprop = props.Property('empty property')
@@ -38,7 +50,7 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(ValueError):
             PropOpts().validate()
 
-        PropOpts(myprop=5).validate()
+        assert PropOpts(myprop=5).validate()
 
     def test_bool(self):
 
@@ -70,6 +82,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(opt.serialize(include_class=False), {'mybool': False})
 
         assert BoolOpts.deserialize({'mybool': 'Y'}).mybool
+        assert BoolOpts._props['mybool'].deserialize(None) is None
 
     def test_numbers(self):
 
@@ -129,6 +142,9 @@ class TestBasic(unittest.TestCase):
 
         comp = ComplexOpts()
 
+        with self.assertRaises(ValueError):
+            comp.mycomplex = 'hi'
+
         comp.mycomplex = 1
         assert comp.mycomplex == (1+0j)
         comp.mycomplex = 2.5j
@@ -141,7 +157,8 @@ class TestBasic(unittest.TestCase):
 
         assert props.Complex.from_json('(5+2j)') == (5+2j)
 
-        self.assertEqual(comp.serialize(include_class=False), {'mycomplex': '(5+2j)'})
+        self.assertEqual(comp.serialize(include_class=False),
+                         {'mycomplex': '(5+2j)'})
         assert ComplexOpts.deserialize({'mycomplex': '(0+1j)'}).mycomplex == 1j
 
     def test_string(self):
@@ -273,6 +290,8 @@ class TestBasic(unittest.TestCase):
             {'myarrayint': [0, 1, 2]}
         ).myarrayint == np.array([0, 1, 2]))
 
+        assert ArrayOpts._props['myarrayint'].deserialize(None) is None
+
     def test_color(self):
 
         class ColorOpts(props.HasProperties):
@@ -352,6 +371,12 @@ class TestBasic(unittest.TestCase):
         model._backend['uid'] = 'hi'
         with self.assertRaises(ValueError):
             model.validate()
+
+        json_uuid = uuid.uuid4()
+        json_uuid_str = str(json_uuid)
+
+        assert props.Uuid.to_json(json_uuid) == json_uuid_str
+        assert str(props.Uuid.from_json(json_uuid_str)) == json_uuid_str
 
 
 if __name__ == '__main__':

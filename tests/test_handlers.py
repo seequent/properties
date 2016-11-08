@@ -41,6 +41,18 @@ class ConsiderItHandled(props.HasProperties):
 class TestHandlers(unittest.TestCase):
 
     def test_handlers(self):
+
+        with self.assertRaises(TypeError):
+            class BadHandler(props.HasProperties):
+                a = props.Integer('int a')
+
+                @props.observer(a)
+                def _do_nothing(self, change):
+                    pass
+
+        with self.assertRaises(TypeError):
+            props.handlers.Observer('a', 'nothing')
+
         hand = ConsiderItHandled()
         hand.a = 10
         assert hand.b == 10

@@ -117,6 +117,8 @@ class TestList(unittest.TestCase):
         assert isinstance(deser_list[1], HasIntA) and deser_list[1].a == 10
         assert isinstance(deser_list[2], HasIntA) and deser_list[2].a == 100
 
+        assert HasIntAList._props['mylist'].deserialize(None) is None
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -128,6 +128,12 @@ class TestSerialization(unittest.TestCase):
 
     def test_serializer(self):
 
+        with self.assertRaises(TypeError):
+            props.GettableProperty('bad serial', serializer=5)
+
+        with self.assertRaises(TypeError):
+            props.GettableProperty('bad deserial', deserializer=5)
+
         def reverse(value):
             return ''.join(v for v in value[::-1])
 

@@ -78,6 +78,8 @@ class TestUnion(unittest.TestCase):
             {'myints': [5, 6, 7]}
         ).myints == [5, 6, 7]
 
+        assert HasIntAndList._props['myints'].deserialize(None) is None
+
 
 if __name__ == '__main__':
     unittest.main()

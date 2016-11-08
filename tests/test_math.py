@@ -44,6 +44,11 @@ class TestMath(unittest.TestCase):
         assert np.allclose(hv2.vec2, [0., 5.])
 
         assert isinstance(props.Vector2.from_json([5., 6.]), vmath.Vector2)
+
+        with self.assertRaises(ZeroDivisionError):
+            hv2.vec2 = [0., 0.]
+
+
     def test_vector3(self):
 
         class HasVec3(props.HasProperties):
@@ -112,6 +117,8 @@ class TestMath(unittest.TestCase):
         assert hv3.vec3.shape == (1, 3)
         with self.assertRaises(ValueError):
             hv3.vec3 = 'diagonal'
+        with self.assertRaises(ValueError):
+            hv3.vec3 = ['diagonal']
         with self.assertRaises(ValueError):
             hv3.vec3 = [[1., 2.]]
 
