@@ -248,7 +248,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return newinst
 
     def __setstate__(self, newstate):
-        newstate = utils.filter_props(self, newstate)[0]
         for key, val in iteritems(newstate):
             setattr(self, key, pickle.loads(val))
 
