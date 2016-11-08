@@ -93,6 +93,46 @@ class TestDefault(unittest.TestCase):
         del(hi.f)
         assert hi.f == 5
 
+        class HasIntFandG(HasIntF):
+            _defaults = {'f': 20, 'g': 25}
+            g = props.Integer('int g', default=10)
+
+        hi = HasIntFandG()
+        assert hi.f == 20
+        assert hi.g == 25
+
+        hi = HasIntFandG(g=12)
+        assert hi.f == 20
+        assert hi.g == 12
+
+        class HasIntFGH(HasIntFandG):
+            h = NewDefInt('int h')
+
+            @props.defaults
+            def _defaults(self):
+                return dict(
+                    f=30,
+                )
+
+        hi = HasIntFGH()
+        assert hi.f == 30
+        assert hi.g == 25
+        assert hi.h == 1000
+
+        # TODO: Fix @defaults wrapper so this works!
+
+        # class HasIntFGHDefs(HasIntFGH):
+        #     @props.defaults
+        #     def _defaults(self):
+        #         return dict(
+        #             h=-10
+        #         )
+        # hi = HasIntFGHDefs()
+        # assert hi.f == 30
+        # assert hi.g == 25
+        # assert hi.h == -10
+
+
     def test_union_default(self):
         class HasUnionA(props.HasProperties):
             a = props.Union('union', (props.Integer(''), props.String('')))

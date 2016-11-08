@@ -1,4 +1,4 @@
-"""math.py contains vectormath property classes"""
+"""math.py: vectormath property classes"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -35,13 +35,6 @@ class BaseVector(Array):
         )
         assert value > 0.0, 'length must be positive'
         self._length = float(value)
-
-    @staticmethod
-    def as_json(value):
-        """Vector is represented as a list of numbers in JSON"""
-        if value is None:
-            return None
-        return [float(v) for v in value.flatten()]
 
     def validate(self, instance, value):
         """Check shape and dtype of vector and scales it to given length"""
@@ -89,6 +82,10 @@ class Vector3(BaseVector):
 
         return super(Vector3, self).validate(instance, value)
 
+    @staticmethod
+    def from_json(value):
+        return vmath.Vector3(value)
+
 
 class Vector2(BaseVector):
     """2D vector property"""
@@ -122,6 +119,10 @@ class Vector2(BaseVector):
 
         return super(Vector2, self).validate(instance, value)
 
+    @staticmethod
+    def from_json(value):
+        return vmath.Vector2(value)
+
 
 class Vector3Array(BaseVector):
     """3D vector array property"""
@@ -154,6 +155,10 @@ class Vector3Array(BaseVector):
                 value[i] = VECTOR_DIRECTIONS[val.upper()]
 
         return super(Vector3Array, self).validate(instance, value)
+
+    @staticmethod
+    def from_json(value):
+        return vmath.Vector3Array(value)
 
 
 class Vector2Array(BaseVector):
@@ -190,6 +195,10 @@ class Vector2Array(BaseVector):
                 value[i] = VECTOR_DIRECTIONS[val.upper()][:2]
 
         return super(Vector2Array, self).validate(instance, value)
+
+    @staticmethod
+    def from_json(value):
+        return vmath.Vector2Array(value)
 
 
 VECTOR_DIRECTIONS = {

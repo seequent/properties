@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import pickle
 import unittest
 import uuid
 
@@ -138,13 +137,6 @@ class ThingWithInheritedDefaults(ThingWithDefaults):
         )
 
 
-class SerializableThing(properties.HasProperties):
-    anystr = properties.String("a string!", default='', required=False)
-    anotherstr = properties.String("another string!", default='HELLO WORLD!')
-    myint = properties.Integer("an integer!", default=0, required=False)
-    myvector2 = properties.Vector2("a 2x2 vector!", required=False)
-
-
 class MyArray(properties.HasProperties):
     int_array = properties.Array(
         'some ints',
@@ -205,7 +197,7 @@ class TestBasic(unittest.TestCase):
 
         opts = ReqOptions()
         self.assertRaises(ValueError, opts.validate)
-        self.assertEqual(len(opts.serialize()), 0)
+        self.assertEqual(len(opts.serialize()), 1)
 
         opts = ReqDefOptions(
             color='red',
@@ -250,7 +242,7 @@ class TestBasic(unittest.TestCase):
 
         opts = SomeOptions(opacity=0.3)
         assert opts.opacity == 0.3
-        self.assertEqual(len(opts.serialize()), 2)
+        self.assertEqual(len(opts.serialize()), 3)
 
         self.assertRaises(ValueError,
                           lambda: setattr(opts, 'opacity', 5))
@@ -278,12 +270,14 @@ class TestBasic(unittest.TestCase):
                           lambda: setattr(prim, 'myrangeint', 'numbah!'))
         self.assertRaises(ValueError,
                           lambda: setattr(prim, 'myrangeint', [4, 5]))
-        self.assertEqual(len(opts.serialize()), 2)
+        self.assertEqual(len(opts.serialize()), 3)
 
     def test_string(self):
         mystr = StrPrimitive()
-        self.assertEqual(len(mystr.serialize()), 4)
+        self.assertEqual(len(mystr.serialize()), 5)
         for k, v in mystr.serialize().items():
+            if k == '__class__':
+                continue
             self.assertEqual(v, u'')
 
         mystr.anystr = '   A  '
@@ -319,6 +313,8 @@ class TestBasic(unittest.TestCase):
         )
         mystr = StrChoicePrimitive()
         for k, v in mystr.serialize().items():
+            if k == '__class__':
+                continue
             self.assertEqual(v, u'')
 
         mystr.vowel = 'O'
@@ -342,7 +338,8 @@ class TestBasic(unittest.TestCase):
 
     def test_bool(self):
         opt = BoolPrimitive()
-        self.assertEqual(opt.serialize(), {'abool': True})
+        self.assertEqual(opt.serialize(), {'__class__': 'BoolPrimitive',
+                                           'abool': True})
         assert opt.abool is True
         self.assertRaises(ValueError, lambda: setattr(opt, 'abool', 'true'))
         opt.abool = False
@@ -355,10 +352,11 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual(opt.serialize(),
                          {
+                            '__class__': 'BoolPrimitive',
                             'athing': True,
                             'abool': False,
                          })
-        json = properties.Bool.as_json(opt.abool)
+        json = properties.Bool.to_json(opt.abool)
         self.assertFalse(json)
         self.assertEqual(properties.Bool.from_json(json), False)
         with self.assertRaises(ValueError):
@@ -371,7 +369,8 @@ class TestBasic(unittest.TestCase):
 
     def test_numbers(self):
         nums = NumPrimitive()
-        serialized = {'myint': 0, 'myfloat': 1.0}
+        serialized = {'__class__': 'NumPrimitive', 'myint': 0,
+                      'myfloat': 1.0}
         self.assertEqual(nums.serialize(), serialized)
         nums.mycomplex = 1.
         assert isinstance(nums.mycomplex, complex)
@@ -381,7 +380,7 @@ class TestBasic(unittest.TestCase):
     def test_array(self):
 
         arrays = MyArray()
-        self.assertEqual(len(arrays.serialize()), 0)
+        self.assertEqual(len(arrays.serialize()), 1)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array', [.5, .5]))
         self.assertRaises(ValueError,
@@ -409,11 +408,11 @@ class TestBasic(unittest.TestCase):
                              [[3, 4, 5], [1, 2, 3], [2, 3, 4]]]
         assert isinstance(arrays.int_matrix, np.ndarray)
         assert arrays.int_matrix.dtype.kind == 'i'
-        self.assertEqual(len(arrays.serialize()), 4)
+        self.assertEqual(len(arrays.serialize()), 5)
 
     def test_nan_array(self):
         arrays = MyArray()
-        self.assertEqual(len(arrays.serialize()), 0)
+        self.assertEqual(len(arrays.serialize()), 1)
         self.assertRaises(ValueError,
                           lambda: setattr(arrays, 'int_array',
                                           [np.nan, 0, 2]))
@@ -422,7 +421,7 @@ class TestBasic(unittest.TestCase):
         assert isinstance(x, np.ndarray)
         assert np.isnan(x[0])
         assert np.all(x[1:] == [0, 1])
-        self.assertEqual(len(arrays.serialize()), 1)
+        self.assertEqual(len(arrays.serialize()), 2)
 
     def test_array_init(self):
         def f(shape, dtype):
@@ -454,7 +453,8 @@ class TestBasic(unittest.TestCase):
 
     def test_instance(self):
         opts = SomeOptions(color='red')
-        self.assertEqual(opts.serialize(), {'color': (255, 0, 0)})
+        self.assertEqual(opts.serialize(), {'__class__': 'SomeOptions',
+                                            'color': (255, 0, 0)})
         twop = ThingWithOptions(opts=opts)
 
         with self.assertRaises(ValueError):
@@ -463,7 +463,7 @@ class TestBasic(unittest.TestCase):
         twop.opts2.opacity = .5
         twop._props['opts'].assert_valid(twop)
         twop.validate()
-        self.assertEqual(len(twop.serialize()), 3)
+        self.assertEqual(len(twop.serialize()), 4)
         twop2 = ThingWithOptions2()
         # self.assertEqual(len(twop2.serialize()), 3)
         assert twop.opts.color == (255, 0, 0)
@@ -492,82 +492,15 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(ValueError):
             twop.aprop = {'something': ''}
 
-    def test_defaults(self):
-        self.assertRaises(AttributeError, properties.defaults, lambda: {})
-
-        twd = ThingWithDefaults()
-        twd2 = ThingWithDefaults()
-        assert len(twd.moreopts) == 1
-        assert twd.moreopts[0] is not twd2.moreopts[0]
-        assert twd.opts is twd2.opts
-        assert twd.opts2 is not twd2.opts2
-
-        twid = ThingWithInheritedDefaults()
-        assert twid.opts is twd.opts
-        assert len(twid.moreopts) == 1
-        assert twid.opts2.color == (0, 128, 0)
-
-    def test_vector3(self):
-
-        opts = Location3()
-        self.assertEqual(len(opts.serialize()), 0)
-        assert opts.loc is opts.loc
-        opts.loc = [1.5, 0, 0]
-        assert np.all(opts.loc == [1.5, 0, 0])
-        opts.loc = 'x'
-        assert np.allclose(opts.loc, [1, 0, 0])
-        opts.loc = 'y'
-        assert np.allclose(opts.loc, [0, 1, 0])
-        opts.loc = 'z'
-        assert np.allclose(opts.loc, [0, 0, 1])
-        assert opts.loc.x == 0.0
-        assert opts.loc.y == 0.0
-        assert opts.loc.z == 1.0
-        assert opts.loc.length == 1.0
-
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', [5, 100]))
-        self.assertRaises(ZeroDivisionError,
-                          setattr, opts, 'unit', [0, 0., 0])
-        self.assertEqual(opts.serialize(), {'loc': [0.0, 0.0, 1.0]})
-
-    def test_vector2(self):
-
-        opts = Location2()
-        assert opts.loc is opts.loc
-        opts.loc = [1.5, 0]
-        assert np.allclose(opts.loc, [1.5, 0])
-        opts.loc = 'x'
-        assert np.allclose(opts.loc, [1, 0])
-        opts.loc = 'y'
-        assert np.allclose(opts.loc, [0, 1])
-        assert opts.loc.x == 0.0
-        assert opts.loc.y == 1.0
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'z'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 'unit-x-vector'))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', 5))
-        self.assertRaises(ValueError,
-                          lambda: setattr(opts, 'loc', [5, 100, 0]))
-        self.assertRaises(ZeroDivisionError,
-                          setattr, opts, 'unit', [0, 0])
-        self.assertEqual(opts.serialize(), {'loc': [0.0, 1.0]})
-
     def test_datetime(self):
         import datetime
 
         mydate = MyDateTime()
-        self.assertEqual(mydate.serialize(), {})
+        self.assertEqual(mydate.serialize(), {'__class__': 'MyDateTime'})
         mydate.validate()
 
         now = datetime.datetime.today()
-        json = properties.DateTime.as_json(now)
+        json = properties.DateTime.to_json(now)
         self.assertIsNotNone(json)
         self.assertIsNotNone(properties.DateTime.from_json(json))
 
@@ -586,59 +519,6 @@ class TestBasic(unittest.TestCase):
         model._backend['uid'] = 'hi'
         with self.assertRaises(ValueError):
             model.validate()
-
-    def test_observer(self):
-        opts = Location3()
-        assert not hasattr(opts, '_last_change')
-        opts.loc = 'x'
-        assert hasattr(opts, '_last_change')
-
-        assert not hasattr(opts, '_hello')
-        properties.observer(
-            opts,
-            'loc',
-            lambda self, change: setattr(self, '_hello', change)
-        )
-        opts.loc = 'y'
-        assert hasattr(opts, '_hello')
-
-        class AnotherLoc(Location3):
-            _on_loc_change = None  # we can kill the observer later.
-
-        aopts = AnotherLoc()
-        aopts.loc = 'x'
-        assert not hasattr(aopts, '_last_change')
-
-    def test_pickle(self):
-        x = Location2()
-        del x.loc
-        x.loc = [7, 2]
-
-        xp = pickle.loads(pickle.dumps(x))
-        assert xp.loc.x == 7
-        assert xp.loc.y == 2
-
-    def test_serialize(self):
-
-        thing = SerializableThing()
-        # should contain ', 'myvector2': []' ?
-        self.assertEqual(
-            thing.serialize(),
-            {'anystr': '', 'anotherstr': 'HELLO WORLD!', 'myint': 0}
-        )
-
-        thing.anystr = 'a value'
-        thing.anotherstr = ''
-        thing.myint = -15
-        thing.myvector2 = [3.1415926535, 42]
-        self.assertEqual(
-            thing.serialize(), {
-                'anystr': 'a value',
-                'anotherstr': '',
-                'myint': -15,
-                'myvector2': [3.1415926535, 42],
-            }
-        )
 
 
 if __name__ == '__main__':

@@ -1,9 +1,11 @@
-"""base.py contains HasProperties class and Instance, Union, and List props"""
+"""base.py: HasProperties class and Instance, Union, and List props"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
+import pickle
 from warnings import warn
 
 from six import integer_types
@@ -78,6 +80,10 @@ class PropertyMetaclass(type):
 
         # Overwrite properties with @property
         for key, prop in iteritems(prop_dict):
+            if key[0] == '_':
+                raise AttributeError(
+                    'Property names cannot be private: {}'.format(key)
+                )
             prop.name = key
             classdict[key] = prop.get_property()
 
@@ -203,27 +209,48 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._validating = False
         return True
 
-    def serialize(self, using='json'):
+    def serialize(self, include_class=True):
         """Serializes a HasProperties instance to JSON"""
-        assert using == 'json', "Only json is supported."
-        jsondict = ((k, v.as_json(self._get(v.name)))
-                    for k, v in iteritems(self._props))
-        props = {k: v for k, v in jsondict if v is not None}
-        return props
+        data = ((k, v.serialize(self._get(v.name), include_class))
+                for k, v in iteritems(self._props))
+        json_dict = {k: v for k, v in data if v is not None}
+        if include_class:
+            json_dict.update({'__class__': self.__class__.__name__})
+        return json_dict
+
+    @classmethod
+    def deserialize(cls, json_dict, trusted=False):
+        """Creates new HasProperties instance from JSON dictionary"""
+        if trusted and '__class__' in json_dict:
+            if json_dict['__class__'] in cls._REGISTRY:
+                cls = cls._REGISTRY[json_dict['__class__']]
+            else:
+                warn(
+                    'Class name {rcl} not found in _REGISTRY. Using class '
+                    '{cl} for deserialize.'.format(
+                        rcl=json_dict['__class__'], cl=cls.__name__
+                    ), RuntimeWarning
+                )
+        json_dict.pop('__class__', None)
+        newinst = cls()
+        newstate, unused = utils.filter_props(cls, json_dict)
+        if len(unused) > 0:
+            warn('Unused properties during deserialization: {}'.format(
+                ', '.join(unused)
+            ), RuntimeWarning)
+        for key, val in iteritems(newstate):
+            setattr(newinst, key,
+                    newinst._props[key].deserialize(val, trusted))
+        return newinst
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):
-            setattr(self, key, val)
+            setattr(self, key, pickle.loads(val))
 
     def __reduce__(self):
-        props = dict()
-        for prop in self._props:
-            if not hasattr(self._props[prop], 'as_pickle'):
-                continue
-            value = self._props[prop].as_pickle(self)
-            if value is not None:
-                props[prop] = value
-        return (self.__class__, (), props)
+        data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
+        pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
+        return (self.__class__, (), pickle_dict)
 
 
 class Instance(basic.Property):
@@ -296,15 +323,58 @@ class Instance(basic.Property):
             value.validate()
         return True
 
-    @staticmethod
-    def as_json(value):
-        """Serializes HasProperties instances to JSON"""
-        if isinstance(value, HasProperties):
-            return value.serialize(using='json')
-        elif value is None:
+    def serialize(self, value, include_class=True):
+        """Serialize instance to JSON
+
+        If the value is a HasProperties instance, it is serialized with
+        the include_class argument passed along. Otherwise, to_json is
+        called.
+        """
+        if self.serializer is not None:
+            return self.serializer(value)
+        if value is None:
             return None
-        else:
-            raise TypeError('Cannot serialize type {}'.format(value.__class__))
+        if isinstance(value, HasProperties):
+            return value.serialize(include_class)
+        return self.to_json(value)
+
+    def deserialize(self, value, trusted=False):
+        """Deserialize instance from JSON value
+
+        If a deserializer is registered, that is used. Otherwise, if the
+        instance_class is a HasProperties subclass, an instance can be
+        deserialized from a dictionary.
+        """
+        if self.deserializer is not None:
+            return self.deserializer(value)
+        if value is None:
+            return None
+        if issubclass(self.instance_class, HasProperties):
+            return self.instance_class.deserialize(value, trusted)
+        return self.from_json(value)
+
+    @staticmethod
+    def to_json(value):
+        """Convert instance to JSON"""
+        if isinstance(value, HasProperties):
+            return value.serialize()
+        try:
+            return json.loads(json.dumps(value))
+        except TypeError:
+            raise TypeError(
+                'Cannot convert type {} to JSON without calling `serialize` '
+                'on an instance of Instance Property and registering a custom '
+                'serializer'.format(value.__class__.__name__)
+            )
+
+    @staticmethod
+    def from_json(value):
+        """Instance properties cannot statically convert from JSON"""
+        raise TypeError('Instance properties cannot statically convert '
+                        'values from JSON. `deserialize` must be used on an '
+                        'instance of Instance Property instead, and if the '
+                        'instance_class is not a HasProperties subclass a '
+                        'custom deserializer must be registered')
 
     def sphinx_class(self):
         """Redefine sphinx class so documentation links to instance_class"""
@@ -424,6 +494,41 @@ class List(basic.Property):
             self.prop.assert_valid(instance, val)
         return True
 
+    def serialize(self, value, include_class=True):
+        """Return a serialized copy of the list"""
+        if self.serializer is not None:
+            return self.serializer(value)
+        if value is None:
+            return None
+        return [self.prop.serialize(val, include_class) for val in value]
+
+    def deserialize(self, value, trusted=False):
+        """Return a deserialized copy of the list"""
+        if self.deserializer is not None:
+            return self.deserializer(value)
+        if value is None:
+            return None
+        return [self.prop.deserialize(val, trusted) for val in value]
+
+    @staticmethod
+    def to_json(value):
+        """Return a copy of the list
+
+        If the list contains HasProperties instances, they are serialized.
+        """
+        serial_list = [val.serialize() if isinstance(val, HasProperties)
+                       else val for val in value]
+        return serial_list
+
+    @staticmethod
+    def from_json(value):
+        """Return a copy of the json list
+
+        Individual list elements cannot be converted statically since the
+        list's prop type is unknown.
+        """
+        return list(value)
+
     def sphinx_class(self):
         """Redefine sphinx class to point to prop class"""
         return self.prop.sphinx_class().replace(':class:`', ':class:`list of ')
@@ -462,7 +567,7 @@ class Union(basic.Property):
     def name(self):
         """The name of the property on a HasProperties class
 
-        This is set in the metaclass. For Unions, props inherit the name
+        This is set in the metaclass. For Unions, props inherit the name.
         """
         return getattr(self, '_name', '')
 
@@ -538,6 +643,48 @@ class Union(basic.Property):
                 cls=instance.__class__.__name__
             )
         )
+
+    def serialize(self, value, include_class=True):
+        """Return a serialized value
+
+        If no serializer is provided, it uses the serialize method of the
+        prop corresponding to the value
+        """
+        if self.serializer is not None:
+            return self.serializer(value)
+        if value is None:
+            return None
+        for prop in self.props:
+            try:
+                prop.validate(None, value)
+            except (ValueError, KeyError, TypeError):
+                continue
+            return prop.serialize(value, include_class)
+        return self.to_json(value)
+
+    def deserialize(self, value, trusted=False):
+        """Return a deserialized value
+
+        If no deserializer is provided, it uses the deserialize method of the
+        prop corresponding to the value
+        """
+        if self.deserializer is not None:
+            return self.deserializer(value)
+        if value is None:
+            return None
+        for prop in self.props:
+            try:
+                return prop.deserialize(value, trusted)
+            except (ValueError, KeyError, TypeError):
+                continue
+        return self.from_json(value)
+
+    @staticmethod
+    def to_json(value):
+        """Return value, serialized if value is a HasProperties instance"""
+        if isinstance(value, HasProperties):
+            return value.serialize()
+        return value
 
     def sphinx_class(self):
         """Redefine sphinx class to provide doc links to types of props"""

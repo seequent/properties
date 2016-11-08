@@ -1,4 +1,4 @@
-"""basic.py defines base Property and basic Property types"""
+"""basic.py: defines base Property and basic Property types"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -59,6 +59,28 @@ class GettableProperty(object):
         self._default = value
 
     @property
+    def serializer(self):
+        """Callable to serialize the property"""
+        return getattr(self, '_serializer', None)
+
+    @serializer.setter
+    def serializer(self, value):
+        if not callable(value):
+            raise TypeError('serializer must be a callable')
+        self._serializer = value
+
+    @property
+    def deserializer(self):
+        """Callable to serialize the property"""
+        return getattr(self, '_deserializer', None)
+
+    @deserializer.setter
+    def deserializer(self, value):
+        if not callable(value):
+            raise TypeError('deserializer must be a callable')
+        self._deserializer = value
+
+    @property
     def help(self):
         """Get the help documentation of a Property instance"""
         if getattr(self, '_help', None) is None:
@@ -92,6 +114,44 @@ class GettableProperty(object):
             return self._get(scope.name)
 
         return property(fget=fget, doc=scope.help)
+
+    def serialize(self, value, include_class=True):                            #pylint: disable=unused-argument
+        """Serialize the property value to JSON
+
+        If no serializer has been registered, this uses to_json
+        """
+        if self.serializer is not None:
+            return self.serializer(value)
+        if value is None:
+            return None
+        return self.to_json(value)
+
+    def deserialize(self, value, trusted=False):                               #pylint: disable=unused-argument
+        """De-serialize the property value from JSON
+
+        If no deserializer has been registered, this uses from_json
+        """
+        if self.deserializer is not None:
+            return self.deserializer(value)
+        if value is None:
+            return None
+        return self.from_json(value)
+
+    @staticmethod
+    def to_json(value):
+        """Convert a value to JSON
+
+        to_json assumes that value has passed validation.
+        """
+        return value
+
+    @staticmethod
+    def from_json(value):
+        """Load a value from JSON
+
+        to_json assumes that value read from JSON is valid
+        """
+        return value
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -176,20 +236,6 @@ class Property(GettableProperty):
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
 
-    @staticmethod
-    def as_json(value):
-        """Serialize value of property to JSON"""
-        return value
-
-    def as_pickle(self, instance):
-        """Serialize the property value on an instance to JSON"""
-        return self.as_json(instance._get(self.name))
-
-    @staticmethod
-    def from_json(value):
-        """Load property value from JSON"""
-        return value
-
     def error(self, instance, value, error=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
         error = error if error is not None else ValueError
@@ -265,7 +311,7 @@ class Bool(Property):
                 return False
         if isinstance(value, int):
             return value
-        raise ValueError('Could not load boolean form JSON: {}'.format(value))
+        raise ValueError('Could not load boolean from JSON: {}'.format(value))
 
 
 def _in_bounds(prop, instance, value):
@@ -325,14 +371,8 @@ class Integer(Property):
         )
 
     @staticmethod
-    def as_json(value):
-        if value is None or np.isnan(value):
-            return None
-        return int(np.round(value))
-
-    @staticmethod
     def from_json(value):
-        return int(str(value))
+        return int(value)
 
 
 class Float(Integer):
@@ -351,14 +391,14 @@ class Float(Integer):
         return value
 
     @staticmethod
-    def as_json(value):
-        if value is None or np.isnan(value):
-            return None
+    def to_json(value):
+        if np.isnan(value) or np.isinf(value):                                 #pylint: disable=no-member
+            return str(value)
         return value
 
     @staticmethod
     def from_json(value):
-        return float(str(value))
+        return float(value)
 
 
 class Complex(Property):
@@ -378,14 +418,14 @@ class Complex(Property):
         return value
 
     @staticmethod
-    def as_json(value):
-        if value is None or np.isnan(value):
+    def to_json(value):
+        if np.isnan(value):
             return None
         return value
 
     @staticmethod
     def from_json(value):
-        return complex(str(value))
+        return complex(value)
 
 
 class String(Property):
@@ -623,6 +663,26 @@ class Array(Property):
             )
         )
 
+    def deserialize(self, value, trusted=False):
+        """De-serialize the property value from JSON
+
+        If no deserializer has been registered, this converts the value
+        to the wrapper class with given dtype.
+        """
+        if self.deserializer is not None:
+            return self.deserializer(value)
+        if value is None:
+            return None
+        return self.wrapper(value).astype(self.dtype[0])
+
+    @staticmethod
+    def to_json(value):
+        return value.tolist()
+
+    @staticmethod
+    def from_json(value):
+        return np.array(value)
+
 
 class Color(Property):
     """Color property for RGB colors.
@@ -700,20 +760,14 @@ class DateTime(Property):
             self.error(value, instance)
 
     @staticmethod
-    def as_json(value):
-        if value is None:
-            return
+    def to_json(value):
         return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @staticmethod
     def from_json(value):
-        if value is None or value == 'None':
-            return None
         if len(value) == 10:
-            return datetime.datetime.strptime(
-                value.replace('-', '/'),
-                "%Y/%m/%d"
-            )
+            return datetime.datetime.strptime(value.replace('-', '/'),
+                                              "%Y/%m/%d")
         return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -741,9 +795,12 @@ class Uuid(GettableProperty):
         return True
 
     @staticmethod
-    def as_json(value):
-        """Serialize UUID to JSON"""
+    def to_json(value):
         return str(value)
+
+    @staticmethod
+    def from_json(value):
+        return uuid.UUID(str(value))
 
 
 COLORS_20 = [
