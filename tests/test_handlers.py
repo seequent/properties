@@ -93,10 +93,7 @@ class TestHandlers(unittest.TestCase):
             change['value'] = 0
 
         properties.validator(hand, 'd', _d_c_switcheroo)
-        with warnings.catch_warnings(record=True) as w:
-            hand.d = 10
-            assert len(w) == 1
-            assert issubclass(w[0].category, RuntimeWarning)
+        hand.d = 10
 
         assert hand.c == 12
         assert hand.d == 0
