@@ -15,7 +15,7 @@ class TestInstance(unittest.TestCase):
         with self.assertRaises(TypeError):
             props.Instance('bad class', instance_class='hello!')
         with self.assertRaises(TypeError):
-            props.Instance('bad autocreate', auto_create='yes')
+            props.Instance('bad autocreate', float, auto_create='yes')
 
         class SomeClass(object):
             pass
@@ -88,6 +88,14 @@ class TestInstance(unittest.TestCase):
             props.Instance.from_json({'myinst': {'a': 20}})
 
         assert HasInstance._props['myinst'].deserialize(None) is None
+
+        class HasFloat(props.HasProperties):
+            myfloatinst = props.Instance('has float', float)
+
+        hf = HasFloat()
+        hf.myfloatinst = 0.5
+
+        assert hf.serialize(include_class=False) == {'myfloatinst': 0.5}
 
 
 if __name__ == '__main__':
