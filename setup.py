@@ -27,10 +27,9 @@ setup(
     version="0.2.3",
     packages=find_packages(exclude=('tests',)),
     install_requires=[
-        'future',
         'numpy>=1.7',
         'six',
-        'vectormath>=0.1.0',
+        'vectormath>=0.1.1',
     ],
     author="3point Science",
     author_email="info@3ptscience.com",
