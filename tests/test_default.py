@@ -70,7 +70,7 @@ class TestDefault(unittest.TestCase):
         del(hi.c)
         assert hi.c == 100
 
-        with self.assertRaises(KeyError):
+        with self.assertRaises(AttributeError):
             class HasIntCError(HasIntC):
                 _defaults = {'z': 100}
             HasIntCError()

@@ -30,7 +30,7 @@ class TestBasic(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             setattr(GettablePropOpt(), 'mygp', 5)
-        with self.assertRaises(KeyError):
+        with self.assertRaises(AttributeError):
             GettablePropOpt(not_mygp=0)
 
         assert GettablePropOpt().validate()
