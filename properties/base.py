@@ -235,9 +235,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         rcl=json_dict['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
-        json_dict.pop('__class__', None)
         newinst = cls()
         newstate, unused = utils.filter_props(cls, json_dict)
+        unused.pop('__class__', None)
         if len(unused) > 0:
             warn('Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
