@@ -9,19 +9,19 @@ import warnings
 
 import numpy as np
 
-import properties as props
+import properties
 
 
-class HP1(props.HasProperties):
-    a = props.Integer('int a')
+class HP1(properties.HasProperties):
+    a = properties.Integer('int a')
 
 
-class HP2(props.HasProperties):
-    inst1 = props.Instance('b', HP1)
+class HP2(properties.HasProperties):
+    inst1 = properties.Instance('b', HP1)
 
 
-class HP3(props.HasProperties):
-    inst2 = props.Instance('c', HP2)
+class HP3(properties.HasProperties):
+    inst2 = properties.Instance('c', HP2)
 
 
 class TestSerialization(unittest.TestCase):
@@ -66,59 +66,59 @@ class TestSerialization(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
             assert not isinstance(
-                props.HasProperties.deserialize(hp3_dict), HP3
+                properties.HasProperties.deserialize(hp3_dict), HP3
             )
             assert len(w) == 1
             assert issubclass(w[0].category, RuntimeWarning)
             assert not isinstance(
-                props.HasProperties.deserialize(hp3_dict_no_class), HP3
+                properties.HasProperties.deserialize(hp3_dict_no_class), HP3
             )
             assert len(w) == 2
             assert issubclass(w[1].category, RuntimeWarning)
             assert not isinstance(
-                props.HasProperties.deserialize(
+                properties.HasProperties.deserialize(
                     hp3_dict_no_class, trusted=True
                 ), HP3
             )
             assert len(w) == 3
             assert issubclass(w[2].category, RuntimeWarning)
-            assert isinstance(props.HasProperties.deserialize(
+            assert isinstance(properties.HasProperties.deserialize(
                 {'__class__': 'HP9'}, trusted=True
-            ), props.HasProperties)
+            ), properties.HasProperties)
             assert len(w) == 4
             assert issubclass(w[3].category, RuntimeWarning)
 
         assert isinstance(HP3.deserialize(hp3_dict), HP3)
         assert isinstance(HP3.deserialize(hp3_dict_no_class), HP3)
         assert isinstance(
-            props.HasProperties.deserialize(hp3_dict, trusted=True), HP3
+            properties.HasProperties.deserialize(hp3_dict, trusted=True), HP3
         )
 
     def test_none_serial(self):
 
-        class ManyProperties(props.HasProperties):
-            mystr = props.String(
+        class ManyProperties(properties.HasProperties):
+            mystr = properties.String(
                 'my string',
                 required=False,
             )
-            myarr = props.Array(
+            myarr = properties.Array(
                 'my array',
                 required=False,
             )
-            myinst = props.Instance(
+            myinst = properties.Instance(
                 'my HP1',
                 instance_class=HP1,
                 required=False,
             )
-            mylist = props.List(
+            mylist = properties.List(
                 'my list of HP1',
                 prop=HP1,
                 required=False,
-                default=props.utils.undefined
+                default=properties.utils.undefined
             )
-            myunion = props.Union(
+            myunion = properties.Union(
                 'string or HP1',
-                props=(HP1, props.String('')),
+                props=(HP1, properties.String('')),
                 required=False,
             )
 
@@ -129,10 +129,10 @@ class TestSerialization(unittest.TestCase):
     def test_serializer(self):
 
         with self.assertRaises(TypeError):
-            props.GettableProperty('bad serial', serializer=5)
+            properties.GettableProperty('bad serial', serializer=5)
 
         with self.assertRaises(TypeError):
-            props.GettableProperty('bad deserial', deserializer=5)
+            properties.GettableProperty('bad deserial', deserializer=5)
 
         def reverse(value):
             return ''.join(v for v in value[::-1])
@@ -160,32 +160,32 @@ class TestSerialization(unittest.TestCase):
 
 
 
-        class ManyProperties(props.HasProperties):
-            mystr = props.String(
+        class ManyProperties(properties.HasProperties):
+            mystr = properties.String(
                 'my string',
                 serializer=reverse,
                 deserializer=reverse,
             )
-            myarr = props.Array(
+            myarr = properties.Array(
                 'my array',
                 serializer=to_string,
                 deserializer=from_string,
             )
-            myinst = props.Instance(
+            myinst = properties.Instance(
                 'my HP1',
                 instance_class=HP1,
                 serializer=serialize_a_only,
                 deserializer=deserialize_from_a,
             )
-            mylist = props.List(
+            mylist = properties.List(
                 'my list of HP1',
                 prop=HP1,
                 serializer=sum_of_a,
                 deserializer=from_sum,
             )
-            myunion = props.Union(
+            myunion = properties.Union(
                 'string or HP1',
-                props=(HP1, props.String('')),
+                props=(HP1, properties.String('')),
                 serializer=just_the_classname,
                 deserializer=reverse,
             )

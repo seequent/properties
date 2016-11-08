@@ -6,34 +6,34 @@ from __future__ import unicode_literals
 import unittest
 import warnings
 
-import properties as props
+import properties
 
 
-class ConsiderItHandled(props.HasProperties):
-    a = props.Integer('int a', required=False)
-    b = props.Integer('int b', required=False)
-    c = props.Integer('int c', required=False)
-    d = props.Integer('int d', required=False)
+class ConsiderItHandled(properties.HasProperties):
+    a = properties.Integer('int a', required=False)
+    b = properties.Integer('int b', required=False)
+    c = properties.Integer('int c', required=False)
+    d = properties.Integer('int d', required=False)
 
-    @props.observer('a')
+    @properties.observer('a')
     def _mirror_to_b(self, change):
         self.b = change['value']
 
-    @props.validator('a')
+    @properties.validator('a')
     def _a_cannot_be_five(self, change):
         if change['value'] == 5:
             raise ValueError('a cannot be five')
 
-    @props.validator('a')
+    @properties.validator('a')
     def _a_also_cannot_be_twentyseventhousand(self, change):
         if change['value'] == 27000:
             raise ValueError('a cannot be twenty-seven thousand')
 
-    @props.validator('d')
+    @properties.validator('d')
     def _d_is_five(self, change):
         change['value'] = 5
 
-    @props.validator
+    @properties.validator
     def _set_b_to_twelve(self):
         self.b = 12
 
@@ -43,15 +43,15 @@ class TestHandlers(unittest.TestCase):
     def test_handlers(self):
 
         with self.assertRaises(TypeError):
-            class BadHandler(props.HasProperties):
-                a = props.Integer('int a')
+            class BadHandler(properties.HasProperties):
+                a = properties.Integer('int a')
 
-                @props.observer(a)
+                @properties.observer(a)
                 def _do_nothing(self, change):
                     pass
 
         with self.assertRaises(TypeError):
-            props.handlers.Observer('a', 'nothing')
+            properties.handlers.Observer('a', 'nothing')
 
         hand = ConsiderItHandled()
         hand.a = 10
@@ -69,7 +69,7 @@ class TestHandlers(unittest.TestCase):
         def _set_c(instance, change):
             instance.c = change['value']
 
-        props.observer(hand, 'b', _set_c)
+        properties.observer(hand, 'b', _set_c)
         hand.b = 100
         assert hand.c == 100
 
@@ -77,7 +77,7 @@ class TestHandlers(unittest.TestCase):
             if change['value'] == 5:
                 raise ValueError('c cannot be five')
 
-        props.validator(hand, 'c', _c_cannot_be_five)
+        properties.validator(hand, 'c', _c_cannot_be_five)
         self.assertRaises(ValueError, lambda: setattr(hand, 'c', 5))
 
         hand._backend['a'] = 'not an int'
@@ -92,7 +92,7 @@ class TestHandlers(unittest.TestCase):
             change['name'] = 'c'
             change['value'] = 0
 
-        props.validator(hand, 'd', _d_c_switcheroo)
+        properties.validator(hand, 'd', _d_c_switcheroo)
         with warnings.catch_warnings(record=True) as w:
             hand.d = 10
             assert len(w) == 1

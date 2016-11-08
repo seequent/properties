@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-import properties as props
+import properties
 
 
 class TestList(unittest.TestCase):
@@ -13,37 +13,45 @@ class TestList(unittest.TestCase):
     def test_list(self):
 
         with self.assertRaises(TypeError):
-            props.List('bad string list', prop=str)
+            properties.List('bad string list', prop=str)
         with self.assertRaises(TypeError):
-            props.List('bad max', props.Integer(''), max_length=-10)
+            properties.List('bad max', properties.Integer(''),
+                            max_length=-10)
         with self.assertRaises(TypeError):
-            props.List('bad max', props.Integer(''), max_length='ten')
+            properties.List('bad max', properties.Integer(''),
+                            max_length='ten')
         with self.assertRaises(TypeError):
-            mylist = props.List('bad max', props.Integer(''), min_length=20)
+            mylist = properties.List('bad max', properties.Integer(''),
+                                     min_length=20)
             mylist.max_length = 10
         with self.assertRaises(TypeError):
-            props.List('bad min', props.Integer(''), min_length=-10)
+            properties.List('bad min', properties.Integer(''),
+                            min_length=-10)
         with self.assertRaises(TypeError):
-            props.List('bad min', props.Integer(''), min_length='ten')
+            properties.List('bad min', properties.Integer(''),
+                            min_length='ten')
         with self.assertRaises(TypeError):
-            mylist = props.List('bad min', props.Integer(''), max_length=10)
+            mylist = properties.List('bad min', properties.Integer(''),
+                                     max_length=10)
             mylist.min_length = 20
 
-        class HasPropsDummy(props.HasProperties):
+        class HasPropsDummy(properties.HasProperties):
             pass
 
-        mylist = props.List('dummy has props list', prop=HasPropsDummy)
-        assert isinstance(mylist.prop, props.Instance)
+        mylist = properties.List('dummy has properties list',
+                                 prop=HasPropsDummy)
+        assert isinstance(mylist.prop, properties.Instance)
         assert mylist.prop.instance_class is HasPropsDummy
 
-        class HasDummyList(props.HasProperties):
-            mylist = props.List('dummy has props list', prop=HasPropsDummy)
+        class HasDummyList(properties.HasProperties):
+            mylist = properties.List('dummy has properties list',
+                                     prop=HasPropsDummy)
 
         assert HasDummyList()._props['mylist'].name == 'mylist'
         assert HasDummyList()._props['mylist'].prop.name == 'mylist'
 
-        class HasIntList(props.HasProperties):
-            aaa = props.List('list of ints', props.Integer(''))
+        class HasIntList(properties.HasProperties):
+            aaa = properties.List('list of ints', properties.Integer(''))
 
         li = HasIntList()
         li.aaa = [1, 2, 3]
@@ -59,8 +67,9 @@ class TestList(unittest.TestCase):
         assert li1.aaa == li2.aaa
         assert li1.aaa is not li2.aaa
 
-        class HasConstrianedList(props.HasProperties):
-            aaa = props.List('list of ints', props.Integer(''), min_length=2)
+        class HasConstrianedList(properties.HasProperties):
+            aaa = properties.List('list of ints', properties.Integer(''),
+                                  min_length=2)
 
         li = HasConstrianedList()
         li.aaa = [1, 2, 3]
@@ -69,8 +78,9 @@ class TestList(unittest.TestCase):
         with self.assertRaises(ValueError):
             li.validate()
 
-        class HasConstrianedList(props.HasProperties):
-            aaa = props.List('list of ints', props.Integer(''), max_length=2)
+        class HasConstrianedList(properties.HasProperties):
+            aaa = properties.List('list of ints', properties.Integer(''),
+                                  max_length=2)
 
         li = HasConstrianedList()
         li.aaa = [1, 2]
@@ -79,8 +89,8 @@ class TestList(unittest.TestCase):
         with self.assertRaises(ValueError):
             li.validate()
 
-        class HasColorList(props.HasProperties):
-            ccc = props.List('list of colors', props.Color(''))
+        class HasColorList(properties.HasProperties):
+            ccc = properties.List('list of colors', properties.Color(''))
 
         li = HasColorList()
         li.ccc = ['red', '#00FF00']
@@ -88,15 +98,15 @@ class TestList(unittest.TestCase):
         assert li.ccc[1] == (0, 255, 0)
 
         numlist = [1, 2, 3, 4]
-        assert props.List.to_json(numlist) == numlist
-        assert props.List.to_json(numlist) is not numlist
-        assert props.List.from_json(numlist) == numlist
-        assert props.List.from_json(numlist) is not numlist
+        assert properties.List.to_json(numlist) == numlist
+        assert properties.List.to_json(numlist) is not numlist
+        assert properties.List.from_json(numlist) == numlist
+        assert properties.List.from_json(numlist) is not numlist
 
-        class HasIntA(props.HasProperties):
-            a = props.Integer('int a', required=True)
+        class HasIntA(properties.HasProperties):
+            a = properties.Integer('int a', required=True)
 
-        assert props.List.to_json(
+        assert properties.List.to_json(
             [HasIntA(a=5), HasIntA(a=10)]
         ) == [{'__class__': 'HasIntA', 'a': 5},
               {'__class__': 'HasIntA', 'a': 10}]
@@ -105,8 +115,8 @@ class TestList(unittest.TestCase):
             'ccc': [[255, 0, 0], [0, 255, 0]]
         }
 
-        class HasIntAList(props.HasProperties):
-            mylist = props.List('list of HasIntA', HasIntA)
+        class HasIntAList(properties.HasProperties):
+            mylist = properties.List('list of HasIntA', HasIntA)
 
         deser_list = HasIntAList.deserialize(
             {'mylist': [{'a': 0}, {'a': 10}, {'a': 100}]}

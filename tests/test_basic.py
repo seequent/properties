@@ -8,7 +8,7 @@ import unittest
 import uuid
 
 import numpy as np
-import properties as props
+import properties
 
 
 class TestBasic(unittest.TestCase):
@@ -16,17 +16,17 @@ class TestBasic(unittest.TestCase):
     def test_base_functionality(self):
 
         with self.assertRaises(AttributeError):
-            props.GettableProperty('bad kwarg', _default=5)
+            properties.GettableProperty('bad kwarg', _default=5)
         with self.assertRaises(AttributeError):
-            props.GettableProperty('bad kwarg', defualt=5)
+            properties.GettableProperty('bad kwarg', defualt=5)
         with self.assertRaises(TypeError):
-            props.Property('bad kwarg', required=5)
+            properties.Property('bad kwarg', required=5)
         with self.assertRaises(AttributeError):
-            class PrivateProperty(props.HasProperties):
-                _secret = props.GettableProperty('secret prop')
+            class PrivateProperty(properties.HasProperties):
+                _secret = properties.GettableProperty('secret prop')
 
-        class GettablePropOpt(props.HasProperties):
-            mygp = props.GettableProperty('gettable prop')
+        class GettablePropOpt(properties.HasProperties):
+            mygp = properties.GettableProperty('gettable prop')
 
         with self.assertRaises(AttributeError):
             setattr(GettablePropOpt(), 'mygp', 5)
@@ -38,14 +38,14 @@ class TestBasic(unittest.TestCase):
         def twelve():
             return 12
 
-        class GettablePropOpt(props.HasProperties):
-            mygp = props.GettableProperty('gettable prop', default=twelve)
+        class GettablePropOpt(properties.HasProperties):
+            mygp = properties.GettableProperty('gettable prop', default=twelve)
 
         assert GettablePropOpt().validate()
         assert GettablePropOpt().mygp == 12
 
-        class PropOpts(props.HasProperties):
-            myprop = props.Property('empty property')
+        class PropOpts(properties.HasProperties):
+            myprop = properties.Property('empty property')
 
         with self.assertRaises(ValueError):
             PropOpts().validate()
@@ -54,8 +54,8 @@ class TestBasic(unittest.TestCase):
 
     def test_bool(self):
 
-        class BoolOpts(props.HasProperties):
-            mybool = props.Bool('My bool')
+        class BoolOpts(properties.HasProperties):
+            mybool = properties.Bool('My bool')
 
         opt = BoolOpts(mybool=True)
         assert opt.mybool is True
@@ -63,21 +63,21 @@ class TestBasic(unittest.TestCase):
         opt.mybool = False
         assert opt.mybool is False
 
-        json = props.Bool.to_json(opt.mybool)
+        json = properties.Bool.to_json(opt.mybool)
         assert not json
-        assert not props.Bool.from_json(json)
+        assert not properties.Bool.from_json(json)
         with self.assertRaises(ValueError):
-            props.Bool.from_json({})
+            properties.Bool.from_json({})
         with self.assertRaises(ValueError):
-            props.Bool.from_json('nope')
-        assert props.Bool.from_json('true')
-        assert props.Bool.from_json('y')
-        assert props.Bool.from_json('Yes')
-        assert props.Bool.from_json('ON')
-        assert not props.Bool.from_json('false')
-        assert not props.Bool.from_json('N')
-        assert not props.Bool.from_json('no')
-        assert not props.Bool.from_json('OFF')
+            properties.Bool.from_json('nope')
+        assert properties.Bool.from_json('true')
+        assert properties.Bool.from_json('y')
+        assert properties.Bool.from_json('Yes')
+        assert properties.Bool.from_json('ON')
+        assert not properties.Bool.from_json('false')
+        assert not properties.Bool.from_json('N')
+        assert not properties.Bool.from_json('no')
+        assert not properties.Bool.from_json('OFF')
 
         self.assertEqual(opt.serialize(include_class=False), {'mybool': False})
 
@@ -87,18 +87,18 @@ class TestBasic(unittest.TestCase):
     def test_numbers(self):
 
         with self.assertRaises(TypeError):
-            pi = props.Integer('My int', max=0)
+            pi = properties.Integer('My int', max=0)
             pi.min = 10
         with self.assertRaises(TypeError):
-            pi = props.Integer('My int', min=10)
+            pi = properties.Integer('My int', min=10)
             pi.max = 0
 
-        class NumOpts(props.HasProperties):
-            myint = props.Integer("My int")
-            myfloat = props.Float("My float")
-            myfloatmin = props.Float("My min float", min=10.)
-            myfloatmax = props.Float("My max float", max=10.)
-            myfloatrange = props.Float("My max float", min=0., max=10.)
+        class NumOpts(properties.HasProperties):
+            myint = properties.Integer("My int")
+            myfloat = properties.Float("My float")
+            myfloatmin = properties.Float("My min float", min=10.)
+            myfloatmax = properties.Float("My max float", max=10.)
+            myfloatrange = properties.Float("My max float", min=0., max=10.)
 
         nums = NumOpts()
         with self.assertRaises(ValueError):
@@ -118,17 +118,17 @@ class TestBasic(unittest.TestCase):
         assert nums.myfloat == 1.
         nums.myfloatmin = nums.myfloatmax = nums.myfloatrange = 10.
 
-        assert props.Integer.to_json(5) == 5
-        assert props.Float.to_json(5.) == 5.
-        assert props.Float.to_json(np.nan) == 'nan'
-        assert props.Float.to_json(np.inf) == 'inf'
+        assert properties.Integer.to_json(5) == 5
+        assert properties.Float.to_json(5.) == 5.
+        assert properties.Float.to_json(np.nan) == 'nan'
+        assert properties.Float.to_json(np.inf) == 'inf'
 
-        assert props.Integer.from_json(5) == 5
-        assert props.Integer.from_json('5') == 5
-        assert props.Float.from_json(5.0) == 5.
-        assert props.Float.from_json('5.0') == 5.
-        assert np.isnan(props.Float.from_json('nan'))
-        assert np.isinf(props.Float.from_json('inf'))
+        assert properties.Integer.from_json(5) == 5
+        assert properties.Integer.from_json('5') == 5
+        assert properties.Float.from_json(5.0) == 5.
+        assert properties.Float.from_json('5.0') == 5.
+        assert np.isnan(properties.Float.from_json('nan'))
+        assert np.isinf(properties.Float.from_json('inf'))
 
         serialized = {'myint': 1, 'myfloat': 1., 'myfloatmin': 10.,
                       'myfloatmax': 10., 'myfloatrange': 10.}
@@ -137,8 +137,8 @@ class TestBasic(unittest.TestCase):
 
     def test_complex(self):
 
-        class ComplexOpts(props.HasProperties):
-            mycomplex = props.Complex('My complex')
+        class ComplexOpts(properties.HasProperties):
+            mycomplex = properties.Complex('My complex')
 
         comp = ComplexOpts()
 
@@ -151,11 +151,11 @@ class TestBasic(unittest.TestCase):
         assert comp.mycomplex == (0+2.5j)
         comp.mycomplex = (5+2j)
 
-        assert props.Complex.to_json(5+2j) == '(5+2j)'
-        assert props.Complex.to_json(5) == '5'
-        assert props.Complex.to_json(2j) == '2j'
+        assert properties.Complex.to_json(5+2j) == '(5+2j)'
+        assert properties.Complex.to_json(5) == '5'
+        assert properties.Complex.to_json(2j) == '2j'
 
-        assert props.Complex.from_json('(5+2j)') == (5+2j)
+        assert properties.Complex.from_json('(5+2j)') == (5+2j)
 
         self.assertEqual(comp.serialize(include_class=False),
                          {'mycomplex': '(5+2j)'})
@@ -164,17 +164,17 @@ class TestBasic(unittest.TestCase):
     def test_string(self):
 
         with self.assertRaises(TypeError):
-            props.String('bad strip', strip=5)
+            properties.String('bad strip', strip=5)
         with self.assertRaises(TypeError):
-            props.String('bad case', change_case='mixed')
+            properties.String('bad case', change_case='mixed')
 
-        class StringOpts(props.HasProperties):
-            mystring = props.String('My string')
-            mystringstrip = props.String('My stripped string', strip=' ')
-            mystringupper = props.String('My upper string',
-                                         change_case='upper')
-            mystringlower = props.String('My lower string',
-                                         change_case='lower')
+        class StringOpts(properties.HasProperties):
+            mystring = properties.String('My string')
+            mystringstrip = properties.String('My stripped string', strip=' ')
+            mystringupper = properties.String('My upper string',
+                                              change_case='upper')
+            mystringlower = properties.String('My lower string',
+                                              change_case='lower')
 
         strings = StringOpts()
 
@@ -189,8 +189,8 @@ class TestBasic(unittest.TestCase):
         strings.mystringupper = 'A String'
         assert strings.mystringupper == 'A STRING'
 
-        assert props.String.to_json('a string') == 'a string'
-        assert props.String.from_json('a string') == 'a string'
+        assert properties.String.to_json('a string') == 'a string'
+        assert properties.String.from_json('a string') == 'a string'
 
         self.assertEqual(len(strings.serialize(include_class=False)), 4)
         self.assertEqual(strings.serialize(include_class=False), {
@@ -206,17 +206,17 @@ class TestBasic(unittest.TestCase):
     def test_string_choice(self):
 
         with self.assertRaises(TypeError):
-            props.StringChoice('bad choices', 'only one')
+            properties.StringChoice('bad choices', 'only one')
         with self.assertRaises(TypeError):
-            props.StringChoice('bad choices', {5: '5'})
+            properties.StringChoice('bad choices', {5: '5'})
         with self.assertRaises(TypeError):
-            props.StringChoice('bad choices', {'5': 5})
+            properties.StringChoice('bad choices', {'5': 5})
 
-        class StrChoicesOpts(props.HasProperties):
-            mychoicelist = props.StringChoice(
+        class StrChoicesOpts(properties.HasProperties):
+            mychoicelist = properties.StringChoice(
                 'list of choices', ['a', 'e', 'i', 'o', 'u']
             )
-            mychoicedict = props.StringChoice(
+            mychoicedict = properties.StringChoice(
                 'dict of choices', {'vowel': ['a', 'e', 'i', 'o', 'u'],
                                     'maybe': 'y'}
             )
@@ -244,17 +244,17 @@ class TestBasic(unittest.TestCase):
     def test_array(self):
 
         with self.assertRaises(TypeError):
-            props.Array('bad dtype', dtype=str)
+            properties.Array('bad dtype', dtype=str)
         with self.assertRaises(TypeError):
-            props.Array('bad shape', shape=5)
+            properties.Array('bad shape', shape=5)
         with self.assertRaises(TypeError):
-            props.Array('bad shape', shape=(5, 'any'))
+            properties.Array('bad shape', shape=(5, 'any'))
 
-        class ArrayOpts(props.HasProperties):
-            myarray = props.Array('my array')
-            myarray222 = props.Array('my 3x3x3 array', shape=(2, 2, 2))
-            myarrayfloat = props.Array('my float array', dtype=float)
-            myarrayint = props.Array('my int array', dtype=int)
+        class ArrayOpts(properties.HasProperties):
+            myarray = properties.Array('my array')
+            myarray222 = properties.Array('my 3x3x3 array', shape=(2, 2, 2))
+            myarrayfloat = properties.Array('my float array', dtype=float)
+            myarrayint = properties.Array('my int array', dtype=int)
 
         arrays = ArrayOpts()
         arrays.myarray = [0., 1., 2.]
@@ -270,16 +270,16 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(ValueError):
             arrays.myarray222 = [[[0.]]]
 
-        assert props.Array.to_json(
+        assert properties.Array.to_json(
             np.array([[0., 1., np.nan, np.inf]])
         ) == [[0., 1., 'nan', 'inf']]
 
-        assert isinstance(props.Array.from_json([1., 2., 3.]), np.ndarray)
+        assert isinstance(properties.Array.from_json([1., 2., 3.]), np.ndarray)
         assert np.all(
-            props.Array.from_json([1., 2., 3.]) == np.array([1., 2., 3.])
+            properties.Array.from_json([1., 2., 3.]) == np.array([1., 2., 3.])
         )
-        assert np.isnan(props.Array.from_json(['nan', 'inf'])[0])
-        assert np.isinf(props.Array.from_json(['nan', 'inf'])[1])
+        assert np.isnan(properties.Array.from_json(['nan', 'inf'])[0])
+        assert np.isinf(properties.Array.from_json(['nan', 'inf'])[1])
 
         arrays.myarray222 = [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
         self.assertEqual(arrays.serialize(include_class=False), {
@@ -294,8 +294,8 @@ class TestBasic(unittest.TestCase):
 
     def test_color(self):
 
-        class ColorOpts(props.HasProperties):
-            mycolor = props.Color('My color')
+        class ColorOpts(properties.HasProperties):
+            mycolor = properties.Color('My color')
 
         col = ColorOpts(mycolor='red')
         assert col.mycolor == (255, 0, 0)
@@ -333,8 +333,8 @@ class TestBasic(unittest.TestCase):
 
     def test_datetime(self):
 
-        class DateTimeOpts(props.HasProperties):
-            mydate = props.DateTime('my date')
+        class DateTimeOpts(properties.HasProperties):
+            mydate = properties.DateTime('my date')
 
         dttm = DateTimeOpts()
 
@@ -350,7 +350,7 @@ class TestBasic(unittest.TestCase):
         dttm.mydate = '2010-01-02T00:00:00Z'
         assert dttm.mydate == datetime.datetime(2010, 1, 2)
 
-        assert props.DateTime.to_json(dttm.mydate) == '2010-01-02T00:00:00Z'
+        assert properties.DateTime.to_json(dttm.mydate) == '2010-01-02T00:00:00Z'
 
         self.assertEqual(dttm.serialize(include_class=False),
                          {'mydate': '2010-01-02T00:00:00Z'})
@@ -360,8 +360,8 @@ class TestBasic(unittest.TestCase):
 
     def test_uid(self):
 
-        class UidModel(props.HasProperties):
-            uid = props.Uuid('my uuid')
+        class UidModel(properties.HasProperties):
+            uid = properties.Uuid('my uuid')
 
         model = UidModel()
         assert isinstance(model.uid, uuid.UUID)
@@ -375,8 +375,8 @@ class TestBasic(unittest.TestCase):
         json_uuid = uuid.uuid4()
         json_uuid_str = str(json_uuid)
 
-        assert props.Uuid.to_json(json_uuid) == json_uuid_str
-        assert str(props.Uuid.from_json(json_uuid_str)) == json_uuid_str
+        assert properties.Uuid.to_json(json_uuid) == json_uuid_str
+        assert str(properties.Uuid.from_json(json_uuid_str)) == json_uuid_str
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-import properties as props
+import properties
 
 
 class TestUnion(unittest.TestCase):
@@ -13,29 +13,35 @@ class TestUnion(unittest.TestCase):
     def test_union(self):
 
         with self.assertRaises(TypeError):
-            props.Union('bad props', props=props.Integer)
+            properties.Union('bad properties', props=properties.Integer)
         with self.assertRaises(TypeError):
-            props.Union('bad props', props=[str])
+            properties.Union('bad properties', props=[str])
 
-        class HasPropsDummy(props.HasProperties):
+        class HasPropsDummy(properties.HasProperties):
             pass
 
-        mylist = props.Union('union with dummy has props',
-                             props=[HasPropsDummy, props.Integer('')])
-        assert isinstance(mylist.props[0], props.Instance)
+        mylist = properties.Union(
+            'union with dummy has properties',
+            props=[HasPropsDummy, properties.Integer('')]
+        )
+        assert isinstance(mylist.props[0], properties.Instance)
         assert mylist.props[0].instance_class is HasPropsDummy
 
-        class HasDummyUnion(props.HasProperties):
-            myunion = props.Union('union with dummy has props',
-                                  props=[HasPropsDummy, props.Integer('')])
+        class HasDummyUnion(properties.HasProperties):
+            myunion = properties.Union(
+                'union with dummy has properties',
+                props=[HasPropsDummy, properties.Integer('')]
+            )
 
         assert HasDummyUnion()._props['myunion'].name == 'myunion'
         assert HasDummyUnion()._props['myunion'].props[0].name == 'myunion'
         assert HasDummyUnion()._props['myunion'].props[1].name == 'myunion'
 
-        class HasBoolColor(props.HasProperties):
-            mybc = props.Union('union of bool or color',
-                               props=[props.Bool(''), props.Color('')])
+        class HasBoolColor(properties.HasProperties):
+            mybc = properties.Union(
+                'union of bool or color',
+                props=[properties.Bool(''), properties.Color('')]
+            )
 
         hbc = HasBoolColor()
         hbc.mybc = True
@@ -46,11 +52,11 @@ class TestUnion(unittest.TestCase):
 
         hbc.validate()
 
-        class HasIntAndList(props.HasProperties):
-            myints = props.Union(
+        class HasIntAndList(properties.HasProperties):
+            myints = properties.Union(
                 'union of int or int list', props=[
-                    props.Integer(''),
-                    props.List('', props.Integer(''), min_length=2)
+                    properties.Integer(''),
+                    properties.List('', properties.Integer(''), min_length=2)
                 ]
             )
 
@@ -61,10 +67,10 @@ class TestUnion(unittest.TestCase):
         with self.assertRaises(ValueError):
             hil.validate()
 
-        assert props.Union.to_json(HasPropsDummy()) == {
+        assert properties.Union.to_json(HasPropsDummy()) == {
             '__class__': 'HasPropsDummy'
         }
-        assert props.Union.to_json('red') == 'red'
+        assert properties.Union.to_json('red') == 'red'
 
         assert HasIntAndList(myints=5).serialize(include_class=False) == {
             'myints': 5

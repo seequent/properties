@@ -6,15 +6,15 @@ from __future__ import unicode_literals
 import unittest
 import warnings
 
-import properties as props
+import properties
 
 
 class TestDefault(unittest.TestCase):
 
     def test_random_default(self):
 
-        class HasColor(props.HasProperties):
-            col = props.Color('a color', default='random')
+        class HasColor(properties.HasProperties):
+            col = properties.Color('a color', default='random')
 
         hc = HasColor()
         assert hc._props['col'].default == 'random'
@@ -25,8 +25,8 @@ class TestDefault(unittest.TestCase):
 
     def test_default_order(self):
 
-        class HasIntA(props.HasProperties):
-            a = props.Integer('int a')
+        class HasIntA(properties.HasProperties):
+            a = properties.Integer('int a')
 
         hi = HasIntA()
         assert hi.a is None
@@ -38,12 +38,12 @@ class TestDefault(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             class BadDefault(HasIntA):
-                @props.defaults
+                @properties.defaults
                 def not_defaults(self):
                     return {'a': 1}
 
-        class HasIntB(props.HasProperties):
-            b = props.Integer('int b', required=False)
+        class HasIntB(properties.HasProperties):
+            b = properties.Integer('int b', required=False)
 
         hi = HasIntB()
         assert hi.b is None
@@ -52,8 +52,8 @@ class TestDefault(unittest.TestCase):
         assert hi.b is None
         assert hi.validate()
 
-        class HasIntC(props.HasProperties):
-            c = props.Integer('int c', default=5)
+        class HasIntC(properties.HasProperties):
+            c = properties.Integer('int c', default=5)
 
         hi = HasIntC()
         assert hi.c == 5
@@ -75,8 +75,8 @@ class TestDefault(unittest.TestCase):
                 _defaults = {'z': 100}
             HasIntCError()
 
-        class HasIntD(props.HasProperties):
-            d = props.Integer('int d', default=5, required=False)
+        class HasIntD(properties.HasProperties):
+            d = properties.Integer('int d', default=5, required=False)
 
         hi = HasIntD()
         assert hi.d == 5
@@ -84,10 +84,10 @@ class TestDefault(unittest.TestCase):
         del(hi.d)
         assert hi.d == 5
 
-        class NewDefInt(props.Integer):
+        class NewDefInt(properties.Integer):
             _class_default = 1000
 
-        class HasIntE(props.HasProperties):
+        class HasIntE(properties.HasProperties):
             e = NewDefInt('int e')
 
         hi = HasIntE()
@@ -96,7 +96,7 @@ class TestDefault(unittest.TestCase):
         del(hi.e)
         assert hi.e == 1000
 
-        class HasIntF(props.HasProperties):
+        class HasIntF(properties.HasProperties):
             f = NewDefInt('int e', default=5)
 
         hi = HasIntF()
@@ -107,7 +107,7 @@ class TestDefault(unittest.TestCase):
 
         class HasIntFandG(HasIntF):
             _defaults = {'f': 20, 'g': 25}
-            g = props.Integer('int g', default=10)
+            g = properties.Integer('int g', default=10)
 
         hi = HasIntFandG()
         assert hi.f == 20
@@ -120,7 +120,7 @@ class TestDefault(unittest.TestCase):
         class HasIntFGH(HasIntFandG):
             h = NewDefInt('int h')
 
-            @props.defaults
+            @properties.defaults
             def _defaults(self):
                 return dict(
                     f=30,
@@ -134,7 +134,7 @@ class TestDefault(unittest.TestCase):
         # TODO: Fix @defaults wrapper so this works!
 
         # class HasIntFGHDefs(HasIntFGH):
-        #     @props.defaults
+        #     @properties.defaults
         #     def _defaults(self):
         #         return dict(
         #             h=-10
@@ -146,8 +146,9 @@ class TestDefault(unittest.TestCase):
 
 
     def test_union_default(self):
-        class HasUnionA(props.HasProperties):
-            a = props.Union('union', (props.Integer(''), props.String('')))
+        class HasUnionA(properties.HasProperties):
+            a = properties.Union('union', (properties.Integer(''),
+                                           properties.String('')))
 
         hu = HasUnionA()
         assert hu.a is None
@@ -156,9 +157,9 @@ class TestDefault(unittest.TestCase):
         del(hu.a)
         assert hu.a is None
 
-        class HasUnionB(props.HasProperties):
-            b = props.Union('union', (props.Integer('', default=5),
-                                      props.String('')))
+        class HasUnionB(properties.HasProperties):
+            b = properties.Union('union', (properties.Integer('', default=5),
+                                           properties.String('')))
 
         hu = HasUnionB()
         assert hu.b == 5
@@ -166,10 +167,12 @@ class TestDefault(unittest.TestCase):
         del(hu.b)
         assert hu.b == 5
 
-        class HasUnionC(props.HasProperties):
-            c = props.Union('union', (props.Integer(''),
-                                      props.String('', default='hi'),
-                                      props.Integer('')))
+        class HasUnionC(properties.HasProperties):
+            c = properties.Union('union', (
+                properties.Integer(''),
+                properties.String('', default='hi'),
+                properties.Integer(''))
+            )
 
         hu = HasUnionC()
         assert hu.c == 'hi'
@@ -177,11 +180,11 @@ class TestDefault(unittest.TestCase):
         del(hu.c)
         assert hu.c == 'hi'
 
-        class HasUnionD(props.HasProperties):
-            d = props.Union('union', (
-                props.Integer(''),
-                props.String(''),
-                props.Integer('')
+        class HasUnionD(properties.HasProperties):
+            d = properties.Union('union', (
+                properties.Integer(''),
+                properties.String(''),
+                properties.Integer('')
             ), default=100)
 
         hu = HasUnionD()
@@ -191,29 +194,33 @@ class TestDefault(unittest.TestCase):
         assert hu.d == 100
 
         with self.assertRaises(TypeError):
-            props.Union('union', (props.Integer(''), props.Bool('')),
-                        default=0.5)
+            properties.Union(
+                'union',
+                (properties.Integer(''), properties.Bool('')),
+                default=0.5
+            )
 
         with warnings.catch_warnings(record=True) as w:
-            props.Union('union', (props.Integer('', default=5),
-                                  props.Bool('', default=True)))
+            properties.Union('union', (properties.Integer('', default=5),
+                                       properties.Bool('', default=True)))
 
             assert len(w) == 1
             assert issubclass(w[0].category, RuntimeWarning)
 
         with warnings.catch_warnings(record=True) as w:
-            props.Union('union', (props.Integer('', default=5),
-                                  props.Bool('', default=True)),
-                        default=False)
+            properties.Union('union', (properties.Integer('', default=5),
+                                       properties.Bool('', default=True)),
+                             default=False)
             assert len(w) > 0
             assert issubclass(w[0].category, RuntimeWarning)
 
     def test_instance_default(self):
-        class HasInt(props.HasProperties):
-            a = props.Integer('int a')
+        class HasInt(properties.HasProperties):
+            a = properties.Integer('int a')
 
-        class HasInstance(props.HasProperties):
-            inst = props.Instance('has int instance', HasInt, auto_create=True)
+        class HasInstance(properties.HasProperties):
+            inst = properties.Instance('has int instance', HasInt,
+                                       auto_create=True)
 
         hi0 = HasInstance()
         hi1 = HasInstance()
@@ -225,7 +232,7 @@ class TestDefault(unittest.TestCase):
         hi0.inst.a = 5
         assert hi1.inst.a is None
 
-        del(hi0.inst)
+        del hi0.inst
         assert isinstance(hi0.inst, HasInt)
         assert hi0.inst.a is None
 
@@ -238,8 +245,8 @@ class TestDefault(unittest.TestCase):
         hi2 = HasInstanceSubclass()
         assert isinstance(hi2.inst, HasIntSubclass)
 
-        class HasList(props.HasProperties):
-            z = props.List('z list', HasInstance)
+        class HasList(properties.HasProperties):
+            z = properties.List('z list', HasInstance)
 
         hl0 = HasList()
         hl1 = HasList()
@@ -249,8 +256,8 @@ class TestDefault(unittest.TestCase):
         assert hl0.z is not hl1.z
 
     def test_list_default(self):
-        class HasIntList(props.HasProperties):
-            intlist = props.List('list of ints', props.Integer(''))
+        class HasIntList(properties.HasProperties):
+            intlist = properties.List('list of ints', properties.Integer(''))
 
         hil = HasIntList()
 
@@ -260,7 +267,7 @@ class TestDefault(unittest.TestCase):
         assert hil.intlist is not HasIntList().intlist
 
         with warnings.catch_warnings(record=True) as w:
-            props.List('list', props.Integer('', default=5))
+            properties.List('list', properties.Integer('', default=5))
             assert len(w) == 1
             assert issubclass(w[0].category, RuntimeWarning)
 
