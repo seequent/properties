@@ -184,15 +184,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     def _set(self, name, value):
         change = dict(name=name, value=value, mode='validate')
         self._notify(change)
-        if change['name'] != name:
-            warn('Specified Property for assignment changed during '
-                 'validation. Setting original property {}'.format(name),
-                 RuntimeWarning)
         if change['value'] is utils.undefined and name in self._backend:
             self._backend.pop(name)
         else:
             self._backend[name] = change['value']
-        change.update(mode='observe')
+        change.update(name=name, mode='observe')
         self._notify(change)
 
     def validate(self):
