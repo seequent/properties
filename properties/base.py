@@ -117,7 +117,7 @@ class PropertyMetaclass(type):
 
         # Create the new class
         newcls = super(PropertyMetaclass, mcs).__new__(
-            mcs, str(name), bases, classdict
+            mcs, name, bases, classdict
         )
 
         # Save the class in the registry
