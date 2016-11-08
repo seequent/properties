@@ -1,4 +1,4 @@
-"""base.py contains HasProperties class and Instance, Union, and List props"""
+"""base.py: HasProperties class and Instance, Union, and List props"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

@@ -1,4 +1,4 @@
-"""handlers.py contains Observer classes, wrappers, and register functions"""
+"""handlers.py: Observer classes, wrappers, and register functions"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

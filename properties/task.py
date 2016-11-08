@@ -1,7 +1,11 @@
-"""Computational tasks with properties"""
+"""task.py: Computational tasks with properties"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
-from properties.base import HasProperties
-from properties.basic import String, Bool
+from .base import HasProperties
+from .basic import String, Bool
 
 
 class BaseResult(HasProperties):
