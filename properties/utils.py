@@ -1,4 +1,4 @@
-"""utils.py contains utilities including defaults wrapper and undefined obj"""
+"""utils.py: utilities including defaults wrapper and undefined obj"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
