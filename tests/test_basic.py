@@ -43,7 +43,7 @@ class TestBasic(unittest.TestCase):
     def test_bool(self):
 
         class BoolOpts(props.HasProperties):
-            mybool = props.Bool("My bool")
+            mybool = props.Bool('My bool')
 
         opt = BoolOpts(mybool=True)
         assert opt.mybool is True

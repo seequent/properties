@@ -36,7 +36,7 @@ class BaseVector(Array):
             raise TypeError('length must be positive')
         self._length = float(value)
 
-    def _length_array(self, value):                                           #pylint: disable=unused-argument
+    def _length_array(self, value):                                            #pylint: disable=unused-argument
         """Return scalar length for Vector classes.
 
         This is overridden to return array length for VectorArray classes.
