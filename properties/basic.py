@@ -203,8 +203,8 @@ class Property(GettableProperty):
             value = getattr(instance, self.name, None)
         if value is None and self.required:
             raise ValueError(
-                'The \'{name}\' property of a {cls} instance is required '
-                'and has not been set.'.format(
+                "The '{name}' property of a {cls} instance is required "
+                "and has not been set.".format(
                     name=self.name,
                     cls=instance.__class__.__name__
                 )
@@ -242,8 +242,8 @@ class Property(GettableProperty):
         """Generates a ValueError on setting property to an invalid value"""
         error = error if error is not None else ValueError
         raise error(
-            'The \'{name}\' property of a {cls} instance must be {info}. '
-            'A value of {val!r} {vtype!r} was specified. {extra}'.format(
+            "The '{name}' property of a {cls} instance must be {info}. "
+            "A value of {val!r} {vtype!r} was specified. {extra}".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
                 info=self.info(),
@@ -447,7 +447,7 @@ class String(Property):
     @strip.setter
     def strip(self, value):
         if not isinstance(value, string_types):
-            raise TypeError('\'strip\' property must be the string to strip')
+            raise TypeError("'strip' property must be the string to strip")
         self._strip = value
 
     @property
@@ -462,8 +462,8 @@ class String(Property):
     @change_case.setter
     def change_case(self, value):
         if value not in (None, 'upper', 'lower'):
-            raise TypeError('\'change_case\' property must be \'upper\', '
-                            '\'lower\' or None')
+            raise TypeError("'change_case' property must be 'upper', "
+                            "'lower' or None")
         self._change_case = value
 
     def validate(self, instance, value):
@@ -651,8 +651,8 @@ class Array(Property):
                 typ=value.dtype
             )
         raise error(
-            'The \'{name}\' property of a {cls} instance must be {info}. '
-            '{desc} was specified. {extra}'.format(
+            "The '{name}' property of a {cls} instance must be {info}. "
+            "{desc} was specified. {extra}".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
                 info=self.info(),
@@ -800,7 +800,7 @@ class Uuid(GettableProperty):
             value = getattr(instance, self.name, None)
         if not isinstance(value, uuid.UUID) or not value.version == 4:
             raise ValueError(
-                "The `{name}` property of a {cls} instance must be a unique "
+                "The '{name}'' property of a {cls} instance must be a unique "
                 "ID generated with uuid.uuid4().".format(
                     name=self.name,
                     cls=instance.__class__.__name__

@@ -59,7 +59,7 @@ class Observer(object):
     @mode.setter
     def mode(self, value):
         if value not in ['validate', 'observe']:
-            raise TypeError('Supported modes are \'validate\' or \'observe\'')
+            raise TypeError("Supported modes are 'validate' or 'observe'")
         self._mode = value
 
 

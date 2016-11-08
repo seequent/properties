@@ -368,19 +368,19 @@ class Instance(basic.Property):
             return json.loads(json.dumps(value))
         except TypeError:
             raise TypeError(
-                'Cannot convert type {} to JSON without calling `serialize` '
-                'on an instance of Instance Property and registering a custom '
-                'serializer'.format(value.__class__.__name__)
+                "Cannot convert type {} to JSON without calling 'serialize' "
+                "on an instance of Instance Property and registering a custom "
+                "serializer".format(value.__class__.__name__)
             )
 
     @staticmethod
     def from_json(value):
         """Instance properties cannot statically convert from JSON"""
-        raise TypeError('Instance properties cannot statically convert '
-                        'values from JSON. `deserialize` must be used on an '
-                        'instance of Instance Property instead, and if the '
-                        'instance_class is not a HasProperties subclass a '
-                        'custom deserializer must be registered')
+        raise TypeError("Instance properties cannot statically convert "
+                        "values from JSON. 'eserialize' must be used on an "
+                        "instance of Instance Property instead, and if the "
+                        "instance_class is not a HasProperties subclass a "
+                        "custom deserializer must be registered")
 
     def sphinx_class(self):
         """Redefine sphinx class so documentation links to instance_class"""
