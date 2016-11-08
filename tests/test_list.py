@@ -98,9 +98,12 @@ class TestList(unittest.TestCase):
 
         assert props.List.to_json(
             [HasIntA(a=5), HasIntA(a=10)]
-        ) == [{'a': 5}, {'a': 10}]
+        ) == [{'__class__': 'HasIntA', 'a': 5},
+              {'__class__': 'HasIntA', 'a': 10}]
 
-        assert li.serialize() == {'ccc': [[255, 0, 0], [0, 255, 0]]}
+        assert li.serialize(include_class=False) == {
+            'ccc': [[255, 0, 0], [0, 255, 0]]
+        }
 
         class HasIntAList(props.HasProperties):
             mylist = props.List('list of HasIntA', HasIntA)

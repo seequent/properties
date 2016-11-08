@@ -61,13 +61,17 @@ class TestUnion(unittest.TestCase):
         with self.assertRaises(ValueError):
             hil.validate()
 
-        assert props.Union.to_json(HasPropsDummy()) == {}
+        assert props.Union.to_json(HasPropsDummy()) == {
+            '__class__': 'HasPropsDummy'
+        }
         assert props.Union.to_json('red') == 'red'
 
-        assert HasIntAndList(myints=5).serialize() == {'myints': 5}
+        assert HasIntAndList(myints=5).serialize(include_class=False) == {
+            'myints': 5
+        }
         assert HasIntAndList(
             myints=[5, 6, 7]
-        ).serialize() == {'myints': [5, 6, 7]}
+        ).serialize(include_class=False) == {'myints': [5, 6, 7]}
 
         assert HasIntAndList.deserialize({'myints': 5}).myints == 5
         assert HasIntAndList.deserialize(

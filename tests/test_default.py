@@ -183,7 +183,7 @@ class TestDefault(unittest.TestCase):
         del(hu.d)
         assert hu.d == 100
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             props.Union('union', (props.Integer(''), props.Bool('')),
                         default=0.5)
 

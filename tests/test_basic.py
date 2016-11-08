@@ -67,7 +67,7 @@ class TestBasic(unittest.TestCase):
         assert not props.Bool.from_json('no')
         assert not props.Bool.from_json('OFF')
 
-        self.assertEqual(opt.serialize(), {'mybool': False})
+        self.assertEqual(opt.serialize(include_class=False), {'mybool': False})
 
         assert BoolOpts.deserialize({'mybool': 'Y'}).mybool
 
@@ -119,7 +119,7 @@ class TestBasic(unittest.TestCase):
 
         serialized = {'myint': 1, 'myfloat': 1., 'myfloatmin': 10.,
                       'myfloatmax': 10., 'myfloatrange': 10.}
-        self.assertEqual(nums.serialize(), serialized)
+        self.assertEqual(nums.serialize(include_class=False), serialized)
         assert NumOpts.deserialize(serialized).myfloatrange == 10.
 
     def test_complex(self):
@@ -141,7 +141,7 @@ class TestBasic(unittest.TestCase):
 
         assert props.Complex.from_json('(5+2j)') == (5+2j)
 
-        self.assertEqual(comp.serialize(), {'mycomplex': '(5+2j)'})
+        self.assertEqual(comp.serialize(include_class=False), {'mycomplex': '(5+2j)'})
         assert ComplexOpts.deserialize({'mycomplex': '(0+1j)'}).mycomplex == 1j
 
     def test_string(self):
@@ -175,11 +175,13 @@ class TestBasic(unittest.TestCase):
         assert props.String.to_json('a string') == 'a string'
         assert props.String.from_json('a string') == 'a string'
 
-        self.assertEqual(len(strings.serialize()), 4)
-        self.assertEqual(strings.serialize(), {'mystring': 'a string',
-                                               'mystringstrip': 'a string',
-                                               'mystringupper': 'A STRING',
-                                               'mystringlower': 'a string',})
+        self.assertEqual(len(strings.serialize(include_class=False)), 4)
+        self.assertEqual(strings.serialize(include_class=False), {
+            'mystring': 'a string',
+            'mystringstrip': 'a string',
+            'mystringupper': 'A STRING',
+            'mystringlower': 'a string',
+        })
         assert StringOpts.deserialize(
             {'mystringupper': 'a string'}
         ).mystringupper == 'A STRING'
@@ -214,8 +216,10 @@ class TestBasic(unittest.TestCase):
         assert choices.mychoicedict == 'vowel'
         choices.mychoicedict = 'maybe'
 
-        self.assertEquals(choices.serialize(), {'mychoicelist': 'o',
-                                                'mychoicedict': 'maybe'})
+        self.assertEquals(choices.serialize(include_class=False), {
+            'mychoicelist': 'o',
+            'mychoicedict': 'maybe'
+        })
         assert StrChoicesOpts.deserialize(
             {'mychoicedict': 'a'}
         ).mychoicedict == 'vowel'
@@ -261,7 +265,7 @@ class TestBasic(unittest.TestCase):
         assert np.isinf(props.Array.from_json(['nan', 'inf'])[1])
 
         arrays.myarray222 = [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
-        self.assertEqual(arrays.serialize(), {
+        self.assertEqual(arrays.serialize(include_class=False), {
             'myarray': [0., 1., 2.],
             'myarray222': [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
         })
@@ -302,7 +306,8 @@ class TestBasic(unittest.TestCase):
             col.mycolor = [-10, 0, 0]
 
         col.mycolor = 'red'
-        self.assertEqual(col.serialize(), {'mycolor': [255, 0, 0]})
+        self.assertEqual(col.serialize(include_class=False),
+                         {'mycolor': [255, 0, 0]})
         assert ColorOpts.deserialize(
             {'mycolor': [0, 10, 20]}
         ).mycolor == (0, 10, 20)
@@ -328,7 +333,8 @@ class TestBasic(unittest.TestCase):
 
         assert props.DateTime.to_json(dttm.mydate) == '2010-01-02T00:00:00Z'
 
-        self.assertEqual(dttm.serialize(), {'mydate': '2010-01-02T00:00:00Z'})
+        self.assertEqual(dttm.serialize(include_class=False),
+                         {'mydate': '2010-01-02T00:00:00Z'})
         assert DateTimeOpts.deserialize(
             {'mydate': '2010-01-02'}
         ).mydate == datetime.datetime(2010, 1, 2)
