@@ -147,7 +147,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, value in iteritems(defaults):
             if key not in self._props.keys():
                 raise AttributeError(
-                    "Default input '{:s}'' is not a known property".format(key)
+                    "Default input '{:s}' is not a known property".format(key)
                 )
             if callable(value):
                 setattr(self, key, value())
@@ -157,7 +157,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         # set the keywords
         for key in kwargs:
             if not hasattr(self, key) and key not in self._props.keys():
-                raise AttributeError("Keyword input '{:s}'' is not a known "
+                raise AttributeError("Keyword input '{:s}' is not a known "
                                      "property or attribute".format(key))
             setattr(self, key, kwargs[key])
 

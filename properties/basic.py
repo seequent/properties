@@ -800,7 +800,7 @@ class Uuid(GettableProperty):
             value = getattr(instance, self.name, None)
         if not isinstance(value, uuid.UUID) or not value.version == 4:
             raise ValueError(
-                "The '{name}'' property of a {cls} instance must be a unique "
+                "The '{name}' property of a {cls} instance must be a unique "
                 "ID generated with uuid.uuid4().".format(
                     name=self.name,
                     cls=instance.__class__.__name__
