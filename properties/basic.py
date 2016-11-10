@@ -10,11 +10,23 @@ import uuid
 import numpy as np
 from six import integer_types
 from six import string_types
+from six import with_metaclass
 
 from .utils import undefined
 
 
-class GettableProperty(object):
+class ArgumentWrangler(type):
+    """Stores arguments to property initialization for later use"""
+
+    def __call__(cls, *args, **kwargs):
+        """Wrap __init__ call in GettableProperty subclasses"""
+        instance = super(ArgumentWrangler, cls).__call__(*args, **kwargs)
+        instance.args = args
+        instance.kwargs = kwargs
+        return instance
+
+
+class GettableProperty(with_metaclass(ArgumentWrangler, object)):
     """Base property class that establishes gettable property behavior
 
     Available keywords:
