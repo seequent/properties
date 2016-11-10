@@ -17,7 +17,7 @@ from .utils import undefined
 
 PropertyTerms = collections.namedtuple(
     'PropertyTerms',
-    ('name', 'cls', 'args', 'kwargs'),
+    ('name', 'cls', 'args', 'kwargs', 'meta'),
 )
 
 
@@ -46,6 +46,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):
 
     def __init__(self, helpdoc, **kwargs):
         self._base_help = helpdoc
+        self._meta = {}
         for key in kwargs:
             if key[0] == '_':
                 raise AttributeError(
@@ -70,6 +71,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):
             self.__class__,
             self._args,
             self._kwargs,
+            self.meta
         )
         return terms
 
@@ -126,6 +128,22 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):
         if getattr(self, '_help', None) is None:
             self._help = self._base_help
         return self._help
+
+    @property
+    def meta(self):
+        return self._meta
+
+    def tag(self, *tag, **kwtags):
+        """Tag a Property instance with arbitrary metadata"""
+        if len(tag) == 0:
+            pass
+        elif len(tag) == 1 and isinstance(tag[0], dict):
+            self._meta.update(tag[0])
+        else:
+            raise TypeError('Tags must be provided as key-word arguments or '
+                            'a dictionary')
+        self._meta.update(kwtags)
+        return self
 
     def info(self):
         """Description of the property, supplemental to the help doc"""
