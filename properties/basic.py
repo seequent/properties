@@ -69,8 +69,8 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):
         terms = PropertyTerms(
             self.name,
             self.__class__,
-            self._args,
-            self._kwargs,
+            self._args,                                                        #pylint: disable=no-member
+            self._kwargs,                                                      #pylint: disable=no-member
         )
         return terms
 
