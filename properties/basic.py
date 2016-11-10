@@ -27,8 +27,7 @@ class ArgumentWrangler(type):
     def __call__(cls, *args, **kwargs):
         """Wrap __init__ call in GettableProperty subclasses"""
         instance = super(ArgumentWrangler, cls).__call__(*args, **kwargs)
-        instance._args = args
-        instance._kwargs = kwargs
+        instance.terms = {'args': args, 'kwargs': kwargs}
         return instance
 
 
@@ -69,10 +68,22 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):
         terms = PropertyTerms(
             self.name,
             self.__class__,
-            self._args,                                                        #pylint: disable=no-member
-            self._kwargs,                                                      #pylint: disable=no-member
+            self._args,
+            self._kwargs,
         )
         return terms
+
+    @terms.setter
+    def terms(self, value):
+        if not isinstance(value, dict) or len(value) != 2:
+            raise TypeError("terms must be set with a dictionary of 'args' "
+                            "and 'kwargs'")
+        if 'args' not in value or not isinstance(value['args'], tuple):
+            raise TypeError("terms must have a tuple 'args'")
+        if 'kwargs' not in value or not isinstance(value['kwargs'], dict):
+            raise TypeError("terms must have a dictionary 'kwargs'")
+        self._args = value['args']
+        self._kwargs = value['kwargs']
 
     @property
     def default(self):
