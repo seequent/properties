@@ -5,80 +5,129 @@ from __future__ import unicode_literals
 
 import unittest
 
-import properties as props
-
-
-class HasIntA(props.HasProperties):
-    a = props.Integer('int a', required=True)
-
-
-class HasIntList(props.HasProperties):
-    aaa = props.List('list of ints', props.Integer(''))
-
-
-class HasInstanceList(props.HasProperties):
-    aaa = props.List('list of hasinta', props.Instance('', HasIntA))
-
-
-class HasTypeList(props.HasProperties):
-    aaa = props.List('list of hasinta', HasIntA)
-
-
-class HasLengthLists(props.HasProperties):
-    short_list = props.List('short list of hasinta', HasIntA, max_length=3)
-    long_list = props.List('long list of hasinta', HasIntA, min_length=3)
-    constrained_list = props.List('constrained list of hasinta', HasIntA,
-                                  min_length=3, max_length=3)
-
-
-class HasListOfUnion(props.HasProperties):
-    bool_or_color = props.List(
-        'List of bool or color',
-        prop=props.Union('', props=(props.Bool(''), props.Color('')))
-    )
+import properties
 
 
 class TestList(unittest.TestCase):
 
     def test_list(self):
+
+        with self.assertRaises(TypeError):
+            properties.List('bad string list', prop=str)
+        with self.assertRaises(TypeError):
+            properties.List('bad max', properties.Integer(''),
+                            max_length=-10)
+        with self.assertRaises(TypeError):
+            properties.List('bad max', properties.Integer(''),
+                            max_length='ten')
+        with self.assertRaises(TypeError):
+            mylist = properties.List('bad max', properties.Integer(''),
+                                     min_length=20)
+            mylist.max_length = 10
+        with self.assertRaises(TypeError):
+            properties.List('bad min', properties.Integer(''),
+                            min_length=-10)
+        with self.assertRaises(TypeError):
+            properties.List('bad min', properties.Integer(''),
+                            min_length='ten')
+        with self.assertRaises(TypeError):
+            mylist = properties.List('bad min', properties.Integer(''),
+                                     max_length=10)
+            mylist.min_length = 20
+
+        class HasPropsDummy(properties.HasProperties):
+            pass
+
+        mylist = properties.List('dummy has properties list',
+                                 prop=HasPropsDummy)
+        assert isinstance(mylist.prop, properties.Instance)
+        assert mylist.prop.instance_class is HasPropsDummy
+
+        class HasDummyList(properties.HasProperties):
+            mylist = properties.List('dummy has properties list',
+                                     prop=HasPropsDummy)
+
+        assert HasDummyList()._props['mylist'].name == 'mylist'
+        assert HasDummyList()._props['mylist'].prop.name == 'mylist'
+
+        class HasIntList(properties.HasProperties):
+            aaa = properties.List('list of ints', properties.Integer(''))
+
         li = HasIntList()
         li.aaa = [1, 2, 3]
         li.aaa = (1, 2, 3)
+        li.aaa = [1., 2., 3.]
+        with self.assertRaises(ValueError):
+            li.aaa = 4
+        with self.assertRaises(ValueError):
+            li.aaa = ['a', 'b', 'c']
 
+        li1 = HasIntList()
+        li2 = HasIntList()
+        assert li1.aaa == li2.aaa
+        assert li1.aaa is not li2.aaa
+
+        class HasConstrianedList(properties.HasProperties):
+            aaa = properties.List('list of ints', properties.Integer(''),
+                                  min_length=2)
+
+        li = HasConstrianedList()
+        li.aaa = [1, 2, 3]
         li.validate()
-
-        list_instances = (HasInstanceList(), HasTypeList())
-        for li in list_instances[1:]:
-            li.aaa = (HasIntA(), HasIntA())
-            with self.assertRaises(ValueError):
-                li.validate()
-            li.aaa = [{'a':1}, {'a':2}, {'a':3}]
+        li.aaa = [1]
+        with self.assertRaises(ValueError):
             li.validate()
 
-        li = HasLengthLists()
-        li.short_list = [HasIntA(), HasIntA(), HasIntA()]
-        with self.assertRaises(ValueError):
-            li.short_list += [HasIntA()]
-        li.long_list = [HasIntA(), HasIntA(), HasIntA(), HasIntA()]
-        li.long_list = li.long_list[:-1]
-        with self.assertRaises(ValueError):
-            li.long_list  = li.long_list[:-1]
-        li.constrained_list = [HasIntA(), HasIntA(), HasIntA()]
-        with self.assertRaises(ValueError):
-            li.constrained_list  = li.constrained_list[:-1]
-        with self.assertRaises(ValueError):
-            li.constrained_list  += [HasIntA()]
+        class HasConstrianedList(properties.HasProperties):
+            aaa = properties.List('list of ints', properties.Integer(''),
+                                  max_length=2)
 
-        bcl = HasListOfUnion()
-        bcl.bool_or_color = [True, True, False]
-        bcl.bool_or_color = ['red', [100, 100, 100], '#24415F']
-        bcl.bool_or_color = [True, 'blue']
-        bcl.validate()
-        bcl.bool_or_color[1] = 'green'
-        bcl.validate()
-
+        li = HasConstrianedList()
+        li.aaa = [1, 2]
+        li.validate()
+        li.aaa = [1, 2, 3, 4, 5]
         with self.assertRaises(ValueError):
-            bcl.bool_or_color = 1.5
+            li.validate()
+
+        class HasColorList(properties.HasProperties):
+            ccc = properties.List('list of colors', properties.Color(''))
+
+        li = HasColorList()
+        li.ccc = ['red', '#00FF00']
+        assert li.ccc[0] == (255, 0, 0)
+        assert li.ccc[1] == (0, 255, 0)
+
+        numlist = [1, 2, 3, 4]
+        assert properties.List.to_json(numlist) == numlist
+        assert properties.List.to_json(numlist) is not numlist
+        assert properties.List.from_json(numlist) == numlist
+        assert properties.List.from_json(numlist) is not numlist
+
+        class HasIntA(properties.HasProperties):
+            a = properties.Integer('int a', required=True)
+
+        assert properties.List.to_json(
+            [HasIntA(a=5), HasIntA(a=10)]
+        ) == [{'__class__': 'HasIntA', 'a': 5},
+              {'__class__': 'HasIntA', 'a': 10}]
+
+        assert li.serialize(include_class=False) == {
+            'ccc': [[255, 0, 0], [0, 255, 0]]
+        }
+
+        class HasIntAList(properties.HasProperties):
+            mylist = properties.List('list of HasIntA', HasIntA)
+
+        deser_list = HasIntAList.deserialize(
+            {'mylist': [{'a': 0}, {'a': 10}, {'a': 100}]}
+        ).mylist
+        assert isinstance(deser_list, list)
+        assert len(deser_list) == 3
+        assert isinstance(deser_list[0], HasIntA) and deser_list[0].a == 0
+        assert isinstance(deser_list[1], HasIntA) and deser_list[1].a == 10
+        assert isinstance(deser_list[2], HasIntA) and deser_list[2].a == 100
+
+        assert HasIntAList._props['mylist'].deserialize(None) is None
 
 
 if __name__ == '__main__':

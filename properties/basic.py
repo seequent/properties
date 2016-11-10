@@ -156,10 +156,11 @@ class GettableProperty(object):
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
         return (
-            ':attribute {name}: {help}{info}'.format(
+            ':attribute {name}: ({cls}) - {help}{info}'.format(
                 name=self.name,
                 help=self.help,
-                info='' if self.info() == 'corrected' else ', ' + self.info()
+                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                cls=self.sphinx_class(),
             )
         )
 
@@ -192,7 +193,8 @@ class Property(GettableProperty):
 
     @required.setter
     def required(self, value):
-        assert isinstance(value, bool), "Required must be a boolean."
+        if not isinstance(value, bool):
+            raise TypeError('Required must be a boolean')
         self._required = value
 
     def assert_valid(self, instance, value=None):
@@ -201,8 +203,8 @@ class Property(GettableProperty):
             value = getattr(instance, self.name, None)
         if value is None and self.required:
             raise ValueError(
-                'The \'{name}\' property of a {cls} instance is required '
-                'and has not been set.'.format(
+                "The '{name}' property of a {cls} instance is required "
+                "and has not been set.".format(
                     name=self.name,
                     cls=instance.__class__.__name__
                 )
@@ -218,9 +220,10 @@ class Property(GettableProperty):
     def get_property(self):
         """Establishes access of Property values"""
 
-        # scope is the containing HasProperties instance
+        # scope is the Property instance
         scope = self
 
+        # in the following functions self is the HasProperties instance
         def fget(self):
             """Call the HasProperties _get method"""
             return self._get(scope.name)
@@ -240,8 +243,8 @@ class Property(GettableProperty):
         """Generates a ValueError on setting property to an invalid value"""
         error = error if error is not None else ValueError
         raise error(
-            'The \'{name}\' property of a {cls} instance must be {info}. '
-            'A value of {val!r} {vtype!r} was specified. {extra}'.format(
+            "The '{name}' property of a {cls} instance must be {info}. "
+            "A value of {val!r} {vtype!r} was specified. {extra}".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
                 info=self.info(),
@@ -277,15 +280,8 @@ class Property(GettableProperty):
                 help=self.help,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
                 default=default_str,
-                cls=self.sphinx_class()
+                cls=self.sphinx_class(),
             )
-        )
-
-    def sphinx_class(self):
-        """Property class name formatted for Sphinx doc linking"""
-        return ':class:`{cls} <{pref}.{cls}>`'.format(
-            cls=self.__class__.__name__,
-            pref=self.__module__
         )
 
 
@@ -340,6 +336,8 @@ class Integer(Property):
 
     @min.setter
     def min(self, value):
+        if self.max is not None and value > self.max:
+            raise TypeError('min must be <= max')
         self._min = value
 
     @property
@@ -349,6 +347,8 @@ class Integer(Property):
 
     @max.setter
     def max(self, value):
+        if self.min is not None and value < self.min:
+            raise TypeError('max must be >= min')
         self._max = value
 
     def validate(self, instance, value):
@@ -387,6 +387,8 @@ class Float(Integer):
         """
         if isinstance(value, (float, integer_types)):
             value = float(value)
+        if not isinstance(value, float):
+            self.error(instance, value)
         _in_bounds(self, instance, value)
         return value
 
@@ -419,9 +421,7 @@ class Complex(Property):
 
     @staticmethod
     def to_json(value):
-        if np.isnan(value):
-            return None
-        return value
+        return str(value)
 
     @staticmethod
     def from_json(value):
@@ -447,9 +447,8 @@ class String(Property):
 
     @strip.setter
     def strip(self, value):
-        assert isinstance(value, string_types), (
-            '\'strip\' property must be the string to strip'
-        )
+        if not isinstance(value, string_types):
+            raise TypeError("'strip' property must be the string to strip")
         self._strip = value
 
     @property
@@ -463,9 +462,9 @@ class String(Property):
 
     @change_case.setter
     def change_case(self, value):
-        assert value in (None, 'upper', 'lower'), (
-            "`change_case` property must be 'upper', 'lower' or None"
-        )
+        if value not in (None, 'upper', 'lower'):
+            raise TypeError("'change_case' property must be 'upper', "
+                            "'lower' or None")
         self._change_case = value
 
     def validate(self, instance, value):
@@ -499,8 +498,8 @@ class StringChoice(Property):
     def info_text(self):
         """Formatted string to display the available choices"""
         if len(self.choices) == 2:
-            return 'either {} or {}'.format(list(self.choices)[0],
-                                            list(self.choices)[1])
+            return 'either "{}" or "{}"'.format(list(self.choices)[0],
+                                                list(self.choices)[1])
         return 'any of "{}"'.format('", "'.join(self.choices))
 
     @property
@@ -516,7 +515,7 @@ class StringChoice(Property):
     @choices.setter
     def choices(self, value):
         if not isinstance(value, (list, tuple, dict)):
-            raise ValueError('value must be a list, tuple, or dict')
+            raise TypeError('value must be a list, tuple, or dict')
         if isinstance(value, (list, tuple)):
             value = {v: v for v in value}
         for key, val in value.items():
@@ -524,10 +523,10 @@ class StringChoice(Property):
                 value[key] = [val]
         for key, val in value.items():
             if not isinstance(key, string_types):
-                raise ValueError('value must be strings')
+                raise TypeError('value must be strings')
             for sub_val in val:
                 if not isinstance(sub_val, string_types):
-                    raise ValueError('value must be strings')
+                    raise TypeError('value must be strings')
         self._choices = value
 
     def validate(self, instance, value):
@@ -653,8 +652,8 @@ class Array(Property):
                 typ=value.dtype
             )
         raise error(
-            'The \'{name}\' property of a {cls} instance must be {info}. '
-            '{desc} was specified. {extra}'.format(
+            "The '{name}' property of a {cls} instance must be {info}. "
+            "{desc} was specified. {extra}".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
                 info=self.info(),
@@ -677,11 +676,19 @@ class Array(Property):
 
     @staticmethod
     def to_json(value):
-        return value.tolist()
+        """Convert array to JSON list
+
+        nan values are converted to string 'nan', inf values to 'inf'.
+        """
+        def _recurse_list(val):
+            if len(val) > 0 and isinstance(val[0], list):
+                return [_recurse_list(v) for v in val]
+            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]  #pylint: disable=no-member
+        return _recurse_list(value.tolist())
 
     @staticmethod
     def from_json(value):
-        return np.array(value)
+        return np.array(value).astype(float)
 
 
 class Color(Property):
@@ -737,6 +744,14 @@ class Color(Property):
                 )
         return tuple(value)
 
+    @staticmethod
+    def to_json(value):
+        return list(value)
+
+    @staticmethod
+    def from_json(value):
+        return tuple(value)
+
 
 class DateTime(Property):
     """DateTime property using 'datetime.datetime'
@@ -753,28 +768,28 @@ class DateTime(Property):
         if isinstance(value, datetime.datetime):
             return value
         if not isinstance(value, string_types):
-            self.error(value, instance)
+            self.error(instance, value)
         try:
             return self.from_json(value)
         except ValueError:
-            self.error(value, instance)
+            self.error(instance, value)
 
     @staticmethod
     def to_json(value):
-        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return value.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
     def from_json(value):
         if len(value) == 10:
             return datetime.datetime.strptime(value.replace('-', '/'),
-                                              "%Y/%m/%d")
-        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+                                              '%Y/%m/%d')
+        return datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
 
 
 class Uuid(GettableProperty):
     """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
 
-    info_text = 'an auto-generated :class:`UUID <properties.basic.Uuid>`'
+    info_text = 'an auto-generated UUID'
 
     @property
     def default(self):
@@ -786,7 +801,7 @@ class Uuid(GettableProperty):
             value = getattr(instance, self.name, None)
         if not isinstance(value, uuid.UUID) or not value.version == 4:
             raise ValueError(
-                "The `{name}` property of a {cls} instance must be a unique "
+                "The '{name}' property of a {cls} instance must be a unique "
                 "ID generated with uuid.uuid4().".format(
                     name=self.name,
                     cls=instance.__class__.__name__

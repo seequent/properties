@@ -31,8 +31,8 @@ def defaults(func):
 
     if not func.__name__ == '_defaults':
         raise AttributeError(
-            'The defaults must be put in `_defualts` please rename '
-            'the attribute `{}`'.format(
+            "The defaults must be put in '_defualts' please rename "
+            "the attribute '{}'".format(
                 func.__name__
             )
         )
