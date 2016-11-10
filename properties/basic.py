@@ -249,9 +249,10 @@ class Property(GettableProperty):
     def get_property(self):
         """Establishes access of Property values"""
 
-        # scope is the containing HasProperties instance
+        # scope is the Property instance
         scope = self
 
+        # in the following functions self is the HasProperties instance
         def fget(self):
             """Call the HasProperties _get method"""
             return self._get(scope.name)
