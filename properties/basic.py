@@ -4,17 +4,34 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import collections
 import datetime
 import uuid
 
 import numpy as np
 from six import integer_types
 from six import string_types
+from six import with_metaclass
 
 from .utils import undefined
 
+PropertyTerms = collections.namedtuple(
+    'PropertyTerms',
+    ('name', 'cls', 'args', 'kwargs', 'meta'),
+)
 
-class GettableProperty(object):
+
+class ArgumentWrangler(type):
+    """Stores arguments to property initialization for later use"""
+
+    def __call__(cls, *args, **kwargs):
+        """Wrap __init__ call in GettableProperty subclasses"""
+        instance = super(ArgumentWrangler, cls).__call__(*args, **kwargs)
+        instance.terms = {'args': args, 'kwargs': kwargs}
+        return instance
+
+
+class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #pylint: disable=too-many-instance-attributes
     """Base property class that establishes gettable property behavior
 
     Available keywords:
@@ -29,6 +46,7 @@ class GettableProperty(object):
 
     def __init__(self, helpdoc, **kwargs):
         self._base_help = helpdoc
+        self._meta = {}
         for key in kwargs:
             if key[0] == '_':
                 raise AttributeError(
@@ -44,6 +62,30 @@ class GettableProperty(object):
                 raise AttributeError(
                     'Cannot set property: "{}".'.format(key)
                 )
+
+    @property
+    def terms(self):
+        """Initialization terms & options for property"""
+        terms = PropertyTerms(
+            self.name,
+            self.__class__,
+            self._args,
+            self._kwargs,
+            self.meta
+        )
+        return terms
+
+    @terms.setter
+    def terms(self, value):
+        if not isinstance(value, dict) or len(value) != 2:
+            raise TypeError("terms must be set with a dictionary of 'args' "
+                            "and 'kwargs'")
+        if 'args' not in value or not isinstance(value['args'], tuple):
+            raise TypeError("terms must have a tuple 'args'")
+        if 'kwargs' not in value or not isinstance(value['kwargs'], dict):
+            raise TypeError("terms must have a dictionary 'kwargs'")
+        self._args = value['args']
+        self._kwargs = value['kwargs']
 
     @property
     def default(self):
@@ -86,6 +128,23 @@ class GettableProperty(object):
         if getattr(self, '_help', None) is None:
             self._help = self._base_help
         return self._help
+
+    @property
+    def meta(self):
+        """Get the tagged metadata of a Property instance"""
+        return self._meta
+
+    def tag(self, *tag, **kwtags):
+        """Tag a Property instance with arbitrary metadata"""
+        if len(tag) == 0:
+            pass
+        elif len(tag) == 1 and isinstance(tag[0], dict):
+            self._meta.update(tag[0])
+        else:
+            raise TypeError('Tags must be provided as key-word arguments or '
+                            'a dictionary')
+        self._meta.update(kwtags)
+        return self
 
     def info(self):
         """Description of the property, supplemental to the help doc"""

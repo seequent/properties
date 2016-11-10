@@ -28,12 +28,20 @@ class TestBasic(unittest.TestCase):
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
 
+        gpo = GettablePropOpt()
         with self.assertRaises(AttributeError):
-            setattr(GettablePropOpt(), 'mygp', 5)
+            setattr(gpo, 'mygp', 5)
         with self.assertRaises(AttributeError):
             GettablePropOpt(not_mygp=0)
+        with self.assertRaises(AttributeError):
+            GettablePropOpt(help='help')
 
-        assert GettablePropOpt().validate()
+        assert gpo.validate()
+        assert gpo._props['mygp'].terms.name == 'mygp'
+        assert gpo._props['mygp'].terms.cls is properties.GettableProperty
+        assert gpo._props['mygp'].terms.args == ('gettable prop',)
+        assert gpo._props['mygp'].terms.kwargs == {}
+        assert gpo._props['mygp'].terms.meta == {}
 
         def twelve():
             return 12
@@ -377,6 +385,20 @@ class TestBasic(unittest.TestCase):
 
         assert properties.Uuid.to_json(json_uuid) == json_uuid_str
         assert str(properties.Uuid.from_json(json_uuid_str)) == json_uuid_str
+
+    def test_tagging(self):
+
+        with self.assertRaises(TypeError):
+            myint = properties.Integer('an int').tag('bad tag')
+
+        myint = properties.Integer('an int')
+        assert len(myint.meta) == 0
+        myint = properties.Integer('an int').tag(first=1, second=2)
+        assert myint.meta == {'first': 1, 'second': 2}
+        myint.tag({'third': 3})
+        assert myint.meta == {'first': 1, 'second': 2, 'third': 3}
+
+        assert myint.terms.meta == myint.meta
 
 
 if __name__ == '__main__':
