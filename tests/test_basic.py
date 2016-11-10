@@ -28,12 +28,19 @@ class TestBasic(unittest.TestCase):
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
 
+        gpo = GettablePropOpt()
         with self.assertRaises(AttributeError):
-            setattr(GettablePropOpt(), 'mygp', 5)
+            setattr(gpo, 'mygp', 5)
         with self.assertRaises(AttributeError):
             GettablePropOpt(not_mygp=0)
+        with self.assertRaises(AttributeError):
+            GettablePropOpt(help='help')
 
-        assert GettablePropOpt().validate()
+        assert gpo.validate()
+        assert gpo._props['mygp'].terms.name == 'mygp'
+        assert gpo._props['mygp'].terms.cls is properties.GettableProperty
+        assert gpo._props['mygp'].terms.args == ('gettable prop',)
+        assert gpo._props['mygp'].terms.kwargs == {}
 
         def twelve():
             return 12
