@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import collections
 import datetime
 import uuid
 
@@ -14,6 +15,11 @@ from six import with_metaclass
 
 from .utils import undefined
 
+PropertyTerms = collections.namedtuple(
+    'PropertyTerms',
+    ('name', 'cls', 'args', 'kwargs'),
+)
+
 
 class ArgumentWrangler(type):
     """Stores arguments to property initialization for later use"""
@@ -21,8 +27,8 @@ class ArgumentWrangler(type):
     def __call__(cls, *args, **kwargs):
         """Wrap __init__ call in GettableProperty subclasses"""
         instance = super(ArgumentWrangler, cls).__call__(*args, **kwargs)
-        instance.args = args
-        instance.kwargs = kwargs
+        instance._args = args
+        instance._kwargs = kwargs
         return instance
 
 
@@ -56,6 +62,17 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):
                 raise AttributeError(
                     'Cannot set property: "{}".'.format(key)
                 )
+
+    @property
+    def terms(self):
+        """Initialization terms & options for property"""
+        terms = PropertyTerms(
+            self.name,
+            self.__class__,
+            self._args,
+            self._kwargs,
+        )
+        return terms
 
     @property
     def default(self):
