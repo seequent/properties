@@ -31,7 +31,7 @@ class ArgumentWrangler(type):
         return instance
 
 
-class GettableProperty(with_metaclass(ArgumentWrangler, object)):
+class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #pylint: disable=too-many-instance-attributes
     """Base property class that establishes gettable property behavior
 
     Available keywords:
@@ -131,6 +131,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):
 
     @property
     def meta(self):
+        """Get the tagged metadata of a Property instance"""
         return self._meta
 
     def tag(self, *tag, **kwtags):
