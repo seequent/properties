@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -210,6 +211,9 @@ class TestBasic(unittest.TestCase):
         assert StringOpts.deserialize(
             {'mystringupper': 'a string'}
         ).mystringupper == 'A STRING'
+
+        strings.mystring = u'∏Øˆ∏ØÎ'
+        assert strings.mystring == u'∏Øˆ∏ØÎ'
 
     def test_string_choice(self):
 

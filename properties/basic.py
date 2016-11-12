@@ -11,6 +11,7 @@ import uuid
 import numpy as np
 from six import integer_types
 from six import string_types
+from six import text_type
 from six import with_metaclass
 
 from .utils import undefined
@@ -530,7 +531,7 @@ class String(Property):
         """Check if value is a string, and strips it and changes case"""
         if not isinstance(value, string_types):
             self.error(instance, value)
-        value = str(value)
+        value = text_type(value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
             value = value.upper()
