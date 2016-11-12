@@ -29,21 +29,15 @@ class PropertyMetaclass(type):
         # Grab all the properties, observers, and validators
         prop_dict = {
             key: value for key, value in classdict.items()
-            if (
-                isinstance(value, basic.GettableProperty)
-            )
+            if isinstance(value, basic.GettableProperty)
         }
         observer_dict = {
             key: value for key, value in classdict.items()
-            if (
-                isinstance(value, handlers.Observer)
-            )
+            if isinstance(value, handlers.Observer)
         }
         validator_dict = {
             key: value for key, value in classdict.items()
-            if (
-                isinstance(value, handlers.ClassValidator)
-            )
+            if isinstance(value, handlers.ClassValidator)
         }
 
         # get pointers to all inherited properties, observers, and validators
@@ -66,7 +60,7 @@ class PropertyMetaclass(type):
             if hasattr(base, '_class_validators'):
                 _class_validators.update({
                     k: v for k, v in iteritems(base._class_validators)
-                    # drop ones which are no longer observers
+                    # drop ones which are no longer validators
                     if not (k not in validator_dict and k in classdict)
                 })
         # Overwrite with this classes properties
@@ -93,25 +87,37 @@ class PropertyMetaclass(type):
             classdict[key] = hand.func
 
         # Document Properties
+        _doc_order = classdict.pop('_doc_order', [])
+        if not isinstance(_doc_order, (list, tuple)):
+            raise AttributeError(
+                '_doc_order must be a list of property names'
+            )
+        if len(_doc_order) == 0:
+            _doc_order = sorted(_props)
+        if sorted(list(_doc_order)) != sorted(_props):
+            raise AttributeError(
+                '_doc_order must be unspecified or contain ALL property names'
+            )
+
         doc_str = classdict.get('__doc__', '')
-        req = {key: value for key, value in iteritems(_props)
-               if getattr(value, 'required', False)}
-        opt = {key: value for key, value in iteritems(_props)
-               if not getattr(value, 'required', True)}
-        imm = {key: value for key, value in iteritems(_props)
-               if not hasattr(value, 'required')}
+        req = [key for key in _doc_order
+               if getattr(_props[key], 'required', False)]
+        opt = [key for key in _doc_order
+               if not getattr(_props[key], 'required', True)]
+        imm = [key for key in _doc_order
+               if not hasattr(_props[key], 'required')]
 
         if req:
             doc_str += '\n\n**Required**\n\n' + '\n'.join(
-                (v.sphinx() for k, v in iteritems(req))
+                (_props[key].sphinx() for key in req)
             )
         if opt:
             doc_str += '\n\n**Optional**\n\n' + '\n'.join(
-                (v.sphinx() for k, v in iteritems(opt))
+                (_props[key].sphinx() for key in opt)
             )
         if imm:
             doc_str += '\n\n**Immutable**\n\n' + '\n'.join(
-                (v.sphinx() for k, v in iteritems(imm))
+                (_props[key].sphinx() for key in imm)
             )
         classdict['__doc__'] = doc_str
 

@@ -60,6 +60,31 @@ class TestBasic(unittest.TestCase):
 
         assert PropOpts(myprop=5).validate()
 
+        with self.assertRaises(AttributeError):
+            class BadDocOrder(properties.HasProperties):
+                _doc_order = 5
+
+        with self.assertRaises(AttributeError):
+            class BadDocOrder(properties.HasProperties):
+                _doc_order = ['myprop', 'another_prop']
+                myprop = properties.Property('empty property')
+
+        class WithDocOrder(properties.HasProperties):
+            _doc_order = ['myprop1', 'myprop2', 'myprop3']
+            myprop1 = properties.Property('empty property')
+            myprop2 = properties.Property('empty property')
+            myprop3 = properties.Property('empty property')
+
+        assert WithDocOrder().__doc__ == (
+            '\n\n**Required**\n\n'
+            ':param myprop1: empty property\n'
+            ':type myprop1: :class:`Property <properties.basic.Property>`\n'
+            ':param myprop2: empty property\n'
+            ':type myprop2: :class:`Property <properties.basic.Property>`\n'
+            ':param myprop3: empty property\n'
+            ':type myprop3: :class:`Property <properties.basic.Property>`'
+        )
+
     def test_bool(self):
 
         class BoolOpts(properties.HasProperties):
