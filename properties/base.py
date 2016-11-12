@@ -24,7 +24,7 @@ class PropertyMetaclass(type):
     docstrings, and add HasProperties class to Registry
     """
 
-    def __new__(mcs, name, bases, classdict):                                  #pylint: disable=too-many-locals
+    def __new__(mcs, name, bases, classdict):                                  #pylint: disable=too-many-locals, too-many-branches
 
         # Grab all the properties, observers, and validators
         prop_dict = {
