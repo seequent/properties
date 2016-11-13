@@ -10,6 +10,7 @@ import uuid
 
 import numpy as np
 import properties
+import six
 
 
 class TestBasic(unittest.TestCase):
@@ -176,6 +177,8 @@ class TestBasic(unittest.TestCase):
             properties.String('bad strip', strip=5)
         with self.assertRaises(TypeError):
             properties.String('bad case', change_case='mixed')
+        with self.assertRaises(TypeError):
+            properties.String('bad unicode', unicode='no')
 
         class StringOpts(properties.HasProperties):
             mystring = properties.String('My string')
@@ -214,6 +217,15 @@ class TestBasic(unittest.TestCase):
 
         strings.mystring = u'∏Øˆ∏ØÎ'
         assert strings.mystring == u'∏Øˆ∏ØÎ'
+
+        class StringOpts(properties.HasProperties):
+            mystring = properties.String('my string', unicode=False)
+
+        strings = StringOpts()
+        strings.mystring = str('hi')
+        assert isinstance(strings.mystring, str)
+        strings.mystring = u'hi'
+        assert isinstance(strings.mystring, six.text_type)
 
     def test_string_choice(self):
 
