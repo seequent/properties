@@ -232,6 +232,12 @@ class TestBasic(unittest.TestCase):
                 'dict of choices', {'vowel': ['a', 'e', 'i', 'o', 'u'],
                                     'maybe': 'y'}
             )
+            mychoicetuple = properties.StringChoice(
+                'tuple of choices', ('a', 'e', 'i', 'o', 'u')
+            )
+            mychoiceset = properties.StringChoice(
+                'set of choices', {'a', 'e', 'i', 'o', 'u'}
+            )
 
         choices = StrChoicesOpts()
 
@@ -251,7 +257,7 @@ class TestBasic(unittest.TestCase):
         })
         assert StrChoicesOpts.deserialize(
             {'mychoicedict': 'a'}
-        ).mychoicedict == 'vowel'∏
+        ).mychoicedict == 'vowel'
 
     def test_array(self):
 
