@@ -219,6 +219,10 @@ class TestBasic(unittest.TestCase):
             properties.StringChoice('bad choices', {5: '5'})
         with self.assertRaises(TypeError):
             properties.StringChoice('bad choices', {'5': 5})
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', ['a', 'a', 'b'])
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', {'a': 'b', 'c': 'a'})
 
         class StrChoicesOpts(properties.HasProperties):
             mychoicelist = properties.StringChoice(
@@ -247,7 +251,7 @@ class TestBasic(unittest.TestCase):
         })
         assert StrChoicesOpts.deserialize(
             {'mychoicedict': 'a'}
-        ).mychoicedict == 'vowel'
+        ).mychoicedict == 'vowel'∏
 
     def test_array(self):
 
