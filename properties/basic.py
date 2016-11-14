@@ -576,12 +576,15 @@ class StringChoice(Property):
         if isinstance(value, (set, list, tuple)):
             if len(value) != len(set(value)):
                 raise TypeError("'choices' must contain no duplicate strings")
-            self._choices = {v: v for v in value}
+            self._choices = {v: [] for v in value}
             return
         if not isinstance(value, dict):
             raise TypeError("'choices' must be a set, list, tuple, or dict")
         for key, val in value.items():
-            value[key] = list(val)
+            if isinstance(val, (set, list, tuple)):
+                value[key] = list(val)
+            else:
+                value[key] = [val]
         all_items = []
         for key, val in value.items():
             if not isinstance(key, string_types):
