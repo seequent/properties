@@ -223,6 +223,8 @@ class TestBasic(unittest.TestCase):
             properties.StringChoice('bad choices', ['a', 'a', 'b'])
         with self.assertRaises(TypeError):
             properties.StringChoice('bad choices', {'a': 'b', 'c': 'a'})
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', [5, 6, 7])
 
         class StrChoicesOpts(properties.HasProperties):
             mychoicelist = properties.StringChoice(
