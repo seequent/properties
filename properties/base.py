@@ -87,14 +87,14 @@ class PropertyMetaclass(type):
             classdict[key] = hand.func
 
         # Document Properties
-        _doc_order = classdict.pop('_doc_order', [])
-        if not isinstance(_doc_order, (list, tuple)):
+        _doc_order = classdict.pop('_doc_order', None)
+        if _doc_order is None:
+            _doc_order = sorted(_props)
+        elif not isinstance(_doc_order, (list, tuple)):
             raise AttributeError(
                 '_doc_order must be a list of property names'
             )
-        if len(_doc_order) == 0:
-            _doc_order = sorted(_props)
-        if sorted(list(_doc_order)) != sorted(_props):
+        elif sorted(list(_doc_order)) != sorted(_props):
             raise AttributeError(
                 '_doc_order must be unspecified or contain ALL property names'
             )
