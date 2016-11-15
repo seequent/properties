@@ -9,9 +9,7 @@ import datetime
 import uuid
 
 import numpy as np
-from six import integer_types
-from six import string_types
-from six import with_metaclass
+from six import integer_types, string_types, text_type, with_metaclass
 
 from .utils import undefined
 
@@ -495,6 +493,9 @@ class String(Property):
     * **strip** - substring to strip off input
 
     * **change_case** - forces 'lower', 'upper', or None
+
+    * **unicode** - if True, coerce strings to unicode. Default is True
+      to ensure consistent behaviour across Python 2/3.
     """
 
     info_text = 'a string'
@@ -526,16 +527,31 @@ class String(Property):
                             "'lower' or None")
         self._change_case = value
 
+    @property
+    def unicode(self):
+        """Coerces string value to unicode"""
+        return getattr(self, '_unicode', True)
+
+    @unicode.setter
+    def unicode(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'unicode' property must be a boolean")
+        self._unicode = value
+
     def validate(self, instance, value):
         """Check if value is a string, and strips it and changes case"""
+        value_type = type(value)
         if not isinstance(value, string_types):
             self.error(instance, value)
-        value = str(value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
             value = value.upper()
         elif self.change_case == 'lower':
             value = value.lower()
+        if self.unicode:
+            value = text_type(value)
+        else:
+            value = value_type(value)
         return value
 
 
@@ -573,19 +589,27 @@ class StringChoice(Property):
 
     @choices.setter
     def choices(self, value):
-        if not isinstance(value, (list, tuple, dict)):
-            raise TypeError('value must be a list, tuple, or dict')
-        if isinstance(value, (list, tuple)):
-            value = {v: v for v in value}
+        if isinstance(value, (set, list, tuple)):
+            if len(value) != len(set(value)):
+                raise TypeError("'choices' must contain no duplicate strings")
+            value = {v: [] for v in value}
+        if not isinstance(value, dict):
+            raise TypeError("'choices' must be a set, list, tuple, or dict")
         for key, val in value.items():
-            if not isinstance(val, (list, tuple)):
+            if isinstance(val, (set, list, tuple)):
+                value[key] = list(val)
+            else:
                 value[key] = [val]
+        all_items = []
         for key, val in value.items():
             if not isinstance(key, string_types):
-                raise TypeError('value must be strings')
+                raise TypeError("'choices' must be strings")
             for sub_val in val:
                 if not isinstance(sub_val, string_types):
-                    raise TypeError('value must be strings')
+                    raise TypeError("'choices' must be strings")
+            all_items += [key] + val
+        if len(all_items) != len(set(all_items)):
+            raise TypeError("'choices' must contain no duplicate strings")
         self._choices = value
 
     def validate(self, instance, value):

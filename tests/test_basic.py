@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -9,6 +10,7 @@ import uuid
 
 import numpy as np
 import properties
+import six
 
 
 class TestBasic(unittest.TestCase):
@@ -200,6 +202,8 @@ class TestBasic(unittest.TestCase):
             properties.String('bad strip', strip=5)
         with self.assertRaises(TypeError):
             properties.String('bad case', change_case='mixed')
+        with self.assertRaises(TypeError):
+            properties.String('bad unicode', unicode='no')
 
         class StringOpts(properties.HasProperties):
             mystring = properties.String('My string')
@@ -236,6 +240,18 @@ class TestBasic(unittest.TestCase):
             {'mystringupper': 'a string'}
         ).mystringupper == 'A STRING'
 
+        strings.mystring = u'∏Øˆ∏ØÎ'
+        assert strings.mystring == u'∏Øˆ∏ØÎ'
+
+        class StringOpts(properties.HasProperties):
+            mystring = properties.String('my string', unicode=False)
+
+        strings = StringOpts()
+        strings.mystring = str('hi')
+        assert isinstance(strings.mystring, str)
+        strings.mystring = u'hi'
+        assert isinstance(strings.mystring, six.text_type)
+
     def test_string_choice(self):
 
         with self.assertRaises(TypeError):
@@ -244,6 +260,12 @@ class TestBasic(unittest.TestCase):
             properties.StringChoice('bad choices', {5: '5'})
         with self.assertRaises(TypeError):
             properties.StringChoice('bad choices', {'5': 5})
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', ['a', 'a', 'b'])
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', {'a': 'b', 'c': 'a'})
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', [5, 6, 7])
 
         class StrChoicesOpts(properties.HasProperties):
             mychoicelist = properties.StringChoice(
@@ -252,6 +274,12 @@ class TestBasic(unittest.TestCase):
             mychoicedict = properties.StringChoice(
                 'dict of choices', {'vowel': ['a', 'e', 'i', 'o', 'u'],
                                     'maybe': 'y'}
+            )
+            mychoicetuple = properties.StringChoice(
+                'tuple of choices', ('a', 'e', 'i', 'o', 'u')
+            )
+            mychoiceset = properties.StringChoice(
+                'set of choices', {'a', 'e', 'i', 'o', 'u'}
             )
 
         choices = StrChoicesOpts()
