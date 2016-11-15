@@ -587,11 +587,11 @@ class StringChoice(Property):
         all_items = []
         for key, val in value.items():
             if not isinstance(key, string_types):
-                raise TypeError("'choices' must be strings'")
+                raise TypeError("'choices' must be strings")
             for sub_val in val:
                 if not isinstance(sub_val, string_types):
                     raise TypeError("'choices' must be strings")
-            all_items = all_items + [key] + val
+            all_items += [key] + val
         if len(all_items) != len(set(all_items)):
             raise TypeError("'choices' must contain no duplicate strings")
         self._choices = value
