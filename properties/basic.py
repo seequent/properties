@@ -287,7 +287,8 @@ class Property(GettableProperty):
 
         def fset(self, value):
             """Validate value and call the HasProperties _set method"""
-            value = scope.validate(self, value)
+            if value is not undefined:
+                value = scope.validate(self, value)
             self._set(scope.name, value)
 
         def fdel(self):
