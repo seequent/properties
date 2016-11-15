@@ -9,10 +9,7 @@ import datetime
 import uuid
 
 import numpy as np
-from six import integer_types
-from six import string_types
-from six import text_type
-from six import with_metaclass
+from six import integer_types, string_types, text_type, with_metaclass
 
 from .utils import undefined
 
