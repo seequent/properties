@@ -235,6 +235,12 @@ class TestBasic(unittest.TestCase):
             properties.StringChoice('bad choices', {5: '5'})
         with self.assertRaises(TypeError):
             properties.StringChoice('bad choices', {'5': 5})
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', ['a', 'a', 'b'])
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', {'a': 'b', 'c': 'a'})
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad choices', [5, 6, 7])
 
         class StrChoicesOpts(properties.HasProperties):
             mychoicelist = properties.StringChoice(
@@ -243,6 +249,12 @@ class TestBasic(unittest.TestCase):
             mychoicedict = properties.StringChoice(
                 'dict of choices', {'vowel': ['a', 'e', 'i', 'o', 'u'],
                                     'maybe': 'y'}
+            )
+            mychoicetuple = properties.StringChoice(
+                'tuple of choices', ('a', 'e', 'i', 'o', 'u')
+            )
+            mychoiceset = properties.StringChoice(
+                'set of choices', {'a', 'e', 'i', 'o', 'u'}
             )
 
         choices = StrChoicesOpts()
