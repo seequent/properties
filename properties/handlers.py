@@ -6,9 +6,13 @@ from __future__ import unicode_literals
 
 from six import string_types
 
+from .utils import everything
+
 
 def _set_listener(instance, obs):
     """Add listeners to a Properties class instance"""
+    if obs.names is everything:
+        obs.names = list(instance._props)
     for name in obs.names:
         if name not in instance._listeners:
             instance._listeners[name] = {'validate': [], 'observe': []}
@@ -40,6 +44,9 @@ class Observer(object):
 
     @names.setter
     def names(self, value):
+        if value is everything:
+            self._names = value
+            return
         if not isinstance(value, (tuple, list)):
             value = [value]
         for val in value:

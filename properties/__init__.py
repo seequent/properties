@@ -41,7 +41,7 @@ from .math import (
     Vector3Array,
     Vector2Array,
 )
-from .utils import undefined, filter_props
+from .utils import everything, undefined, filter_props
 from .handlers import observer, validator
 from . import task
 

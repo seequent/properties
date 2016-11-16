@@ -106,6 +106,24 @@ class TestHandlers(unittest.TestCase):
         assert hand.c == 12
         assert hand.d == 0
 
+    def test_everything(self):
+        class HandleEverything(ConsiderItHandled):
+            @properties.observer(properties.everything)
+            def _raise_attribute_error(self, change):
+                raise AttributeError()
+
+        he = HandleEverything()
+
+        with self.assertRaises(AttributeError):
+            he.a = 0
+        with self.assertRaises(AttributeError):
+            he.b = 0
+        with self.assertRaises(AttributeError):
+            he.c = 0
+        with self.assertRaises(AttributeError):
+            he.d = 0
+
+
 
 if __name__ == '__main__':
     unittest.main()

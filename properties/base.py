@@ -85,6 +85,8 @@ class PropertyMetaclass(type):
 
         # Ensure observed names are valid
         for key, hand in iteritems(observer_dict):
+            if hand.names is utils.everything:
+                continue
             for prop in hand.names:
                 if prop in _props and isinstance(_props[prop], basic.Property):
                     continue
