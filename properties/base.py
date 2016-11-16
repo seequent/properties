@@ -231,7 +231,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         if name is None:
             for key in self._props:
                 if isinstance(self._props[key], basic.Property):
-                    self.reset(key)
+                    self.reset(name=key, silent=silent)
             return
         if name not in self._props:
             raise AttributeError("Input name '{}' is not a known "
