@@ -12,8 +12,10 @@ from .utils import everything
 def _set_listener(instance, obs):
     """Add listeners to a Properties class instance"""
     if obs.names is everything:
-        obs.names = list(instance._props)
-    for name in obs.names:
+        names = list(instance._props)
+    else:
+        names = obs.names
+    for name in names:
         if name not in instance._listeners:
             instance._listeners[name] = {'validate': [], 'observe': []}
         instance._listeners[name][obs.mode] += [obs]
