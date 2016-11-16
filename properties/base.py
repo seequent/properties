@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 import json
 import pickle
 from warnings import warn
@@ -42,27 +43,25 @@ class PropertyMetaclass(type):
 
         # Get pointers to all inherited properties, observers, and validators
         _props = dict()
-        _prop_observers = dict()
-        _class_validators = dict()
+        _prop_observers = OrderedDict()
+        _class_validators = OrderedDict()
         for base in reversed(bases):
-            if hasattr(base, '_props'):
-                _props.update({
-                    k: v for k, v in iteritems(base._props)
-                    # drop ones which are no longer properties
-                    if not (k not in prop_dict and k in classdict)
-                })
-            if hasattr(base, '_prop_observers'):
-                _prop_observers.update({
-                    k: v for k, v in iteritems(base._prop_observers)
-                    # drop ones which are no longer observers
-                    if not (k not in observer_dict and k in classdict)
-                })
-            if hasattr(base, '_class_validators'):
-                _class_validators.update({
-                    k: v for k, v in iteritems(base._class_validators)
-                    # drop ones which are no longer validators
-                    if not (k not in validator_dict and k in classdict)
-                })
+            if not (hasattr(base, '_props') and
+                    hasattr(base, '_prop_observers') and
+                    hasattr(base, '_class_validators')):
+                continue
+            for key, val in iteritems(base._props):
+                if key not in prop_dict and key in classdict:
+                    continue
+                _props.update({key: val})
+            for key, val in iteritems(base._prop_observers):
+                if key not in observer_dict and key in classdict:
+                    continue
+                _prop_observers.update({key: val})
+            for key, val in iteritems(base._class_validators):
+                if key not in validator_dict and key in classdict:
+                    continue
+                _class_validators.update({key: val})
 
         # Overwrite with this class's properties
         _props.update(prop_dict)
@@ -193,8 +192,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     continue
                 if callable(val):
                     val = val()
-                self._props[key].validate(self, val)
-                self._backend[key] = val
+                self._backend[key] = self._props[key].validate(self, val)
 
         # Set the other defaults without triggering change notifications
         self.reset(silent=True)
