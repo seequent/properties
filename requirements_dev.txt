@@ -2,4 +2,5 @@ sphinx
 sphinxcontrib-pyexec
 nose-cov
 pylint
+properties_image
 -e .
