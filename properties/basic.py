@@ -895,11 +895,11 @@ class Uuid(GettableProperty):
 
     @staticmethod
     def to_json(value):
-        return str(value)
+        return text_type(value)
 
     @staticmethod
     def from_json(value):
-        return uuid.UUID(str(value))
+        return uuid.UUID(text_type(value))
 
 
 COLORS_20 = [
