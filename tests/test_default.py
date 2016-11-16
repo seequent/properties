@@ -292,7 +292,7 @@ class TestDefault(unittest.TestCase):
         hu = HasUid()
 
         with self.assertRaises(AttributeError):
-            hi.reset('uid')
+            hu.reset('uid')
 
 
     def test_callable(self):
