@@ -3,7 +3,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import random
 import unittest
+import uuid
 import warnings
 
 import properties
@@ -257,6 +259,75 @@ class TestDefault(unittest.TestCase):
             properties.List('list', properties.Integer('', default=5))
             assert len(w) == 1
             assert issubclass(w[0].category, RuntimeWarning)
+
+    def test_reset(self):
+
+        class HasInts(properties.HasProperties):
+            _defaults = {'b': 10}
+            a = properties.Integer('int a', default=1)
+            b = properties.Integer('int b')
+
+            @properties.observer('a')
+            def _set_b_to_five(self, change):
+                self.b = 5
+
+        hi = HasInts()
+        assert hi.a == 1
+        assert hi.b == 10
+        del hi.a
+        assert hi.a is None
+        assert hi.b == 5
+        hi.reset('b')
+        assert hi.b == 10
+        hi.reset('a', silent=True)
+        assert hi.a == 1
+        assert hi.b == 10
+
+        with self.assertRaises(AttributeError):
+            hi.reset('c')
+
+        class HasUid(properties.HasProperties):
+            uid = properties.Uuid('uid')
+
+        hu = HasUid()
+
+        with self.assertRaises(AttributeError):
+            hi.reset('uid')
+
+
+    def test_callable(self):
+
+        class HasUid(properties.HasProperties):
+            uid = properties.Uuid('uid')
+
+        class HasUidZero(HasUid):
+            _defaults = {'uid': lambda: uuid.UUID(int=0)}
+
+        huz = HasUidZero()
+        assert (properties.Uuid.to_json(huz.uid) ==
+                '00000000-0000-0000-0000-000000000000')
+
+        NUMBER = 1
+
+        def generate_int():
+            return NUMBER
+
+        class HasInt(properties.HasProperties):
+            a = properties.Integer('an int', default=generate_int)
+
+        hi = HasInt()
+        assert hi.a == 1
+
+        NUMBER = 2
+
+        hi.reset('a')
+        assert hi.a == 2
+
+        class HasNewInt(HasInt):
+            _defaults = {'a': lambda: generate_int()+1}
+
+        hi = HasNewInt()
+        assert hi.a == 3
 
 
 if __name__ == '__main__':
