@@ -195,7 +195,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 self._backend[key] = self._props[key].validate(self, val)
 
         # Set the other defaults without triggering change notifications
-        self.reset(silent=True)
+        self._reset(silent=True)
 
         # Set the keyword arguments with change notifications
         for key, val in iteritems(kwargs):
@@ -222,7 +222,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         change.update(name=name, mode='observe')
         self._notify(change)
 
-    def reset(self, name=None, silent=False):
+    def _reset(self, name=None, silent=False):
         """Revert specified property to default value
 
         If no property is specified, all properties are returned to default.
@@ -231,7 +231,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         if name is None:
             for key in self._props:
                 if isinstance(self._props[key], basic.Property):
-                    self.reset(name=key, silent=silent)
+                    self._reset(name=key, silent=silent)
             return
         if name not in self._props:
             raise AttributeError("Input name '{}' is not a known "
