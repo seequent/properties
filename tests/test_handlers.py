@@ -123,6 +123,38 @@ class TestHandlers(unittest.TestCase):
         with self.assertRaises(AttributeError):
             he.d = 0
 
+    def test_overriding(self):
+        class OverrideThings(ConsiderItHandled):
+
+            b = properties.Float('float a')
+
+            @property
+            def c(self):
+                return self.a
+
+            d = 'd'
+
+            _a_cannot_be_five = 5
+
+            def _mirror_to_b(self, change):
+                pass
+
+            def _a_also_cannot_be_twentyseventhousand(self, change):
+                pass
+
+            def _d_is_five(self, change):
+                pass
+
+            def _set_b_to_twelve(self):
+                self.b = 12
+
+        ot = OverrideThings()
+
+        assert len(ot._props) == 2
+        assert isinstance(ot._props['a'], properties.Integer)
+        assert isinstance(ot._props['b'], properties.Float)
+        assert len(ot._prop_observers) == 0
+        assert len(ot._prop_observers) == 0
 
 
 if __name__ == '__main__':
