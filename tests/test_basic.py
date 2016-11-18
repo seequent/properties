@@ -309,6 +309,8 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.Array('bad dtype', dtype=(float, 'bad dtype'))
         with self.assertRaises(TypeError):
+            properties.Array('bad dtype', dtype=tuple())
+        with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=5)
         with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=(5, 'any'))
@@ -335,6 +337,8 @@ class TestBasic(unittest.TestCase):
             arrays.myarray222 = [[[0.]]]
         with self.assertRaises(ValueError):
             arrays.myarraybool = np.array([0, 1, 0])
+        with self.assertRaises(ValueError):
+            arrays.myarrayint = np.array([0, 1, 0]).astype(bool)
 
         arrays.myarraybool = np.array([0, 1, 0]).astype(bool)
 
