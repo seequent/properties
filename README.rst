@@ -23,6 +23,13 @@ properties
     :alt: Code issues
 
 
+Overview
+--------
+
+.. image:: https://img.youtube.com/vi/DJfOHVaglqs/0.jpg
+    :target: https://www.youtube.com/watch?v=DJfOHVaglqs
+    :alt: Overview of Properties
+
 Why
 ---
 
