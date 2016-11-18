@@ -277,14 +277,14 @@ class TestDefault(unittest.TestCase):
         del hi.a
         assert hi.a is None
         assert hi.b == 5
-        hi.reset('b')
+        hi._reset('b')
         assert hi.b == 10
-        hi.reset('a', silent=True)
+        hi._reset('a', silent=True)
         assert hi.a == 1
         assert hi.b == 10
 
         with self.assertRaises(AttributeError):
-            hi.reset('c')
+            hi._reset('c')
 
         class HasUid(properties.HasProperties):
             uid = properties.Uuid('uid')
@@ -292,7 +292,7 @@ class TestDefault(unittest.TestCase):
         hu = HasUid()
 
         with self.assertRaises(AttributeError):
-            hu.reset('uid')
+            hu._reset('uid')
 
 
     def test_callable(self):
@@ -320,7 +320,7 @@ class TestDefault(unittest.TestCase):
 
         NUMBER = 2
 
-        hi.reset('a')
+        hi._reset('a')
         assert hi.a == 2
 
         class HasNewInt(HasInt):
