@@ -2,4 +2,4 @@ sphinx
 sphinxcontrib-pyexec
 nose-cov
 pylint
--e .
+-r requirements.txt
