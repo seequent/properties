@@ -23,6 +23,15 @@ properties
     :alt: Code issues
 
 
+Overview Video
+--------------
+
+.. image:: https://img.youtube.com/vi/DJfOHVaglqs/0.jpg
+    :target: https://www.youtube.com/watch?v=DJfOHVaglqs
+    :alt: Python Properties
+
+An overview of Properties, November 2016.
+
 Why
 ---
 
