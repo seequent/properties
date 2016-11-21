@@ -120,7 +120,7 @@ Math Properties
 Array
 -----
 
-.. autoclass:: properties.basic.Array
+.. autoclass:: properties.math.Array
     :members:
     :undoc-members:
 
@@ -154,3 +154,13 @@ Vector2Array
     :members:
     :undoc-members:
 
+
+Image Properties
+================
+
+ImagePNG
+--------
+
+.. autoclass:: properties.images.ImagePNG
+    :members:
+    :undoc-members:
