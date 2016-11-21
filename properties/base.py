@@ -328,11 +328,11 @@ class Instance(basic.Property):
 
     info_text = 'an instance'
 
-    def __init__(self, helpdoc, instance_class, **kwargs):
+    def __init__(self, doc, instance_class, **kwargs):
         if not isinstance(instance_class, type):
             raise TypeError('instance_class must be class')
         self.instance_class = instance_class
-        super(Instance, self).__init__(helpdoc, **kwargs)
+        super(Instance, self).__init__(doc, **kwargs)
 
     @property
     def _class_default(self):
@@ -353,7 +353,7 @@ class Instance(basic.Property):
         self._auto_create = value
 
     def info(self):
-        """Description of the property, supplemental to the help doc"""
+        """Description of the property, supplemental to the basic doc"""
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
 
     def validate(self, instance, value):
@@ -459,13 +459,13 @@ class List(basic.Property):
     info_text = 'a list'
     _class_default = list
 
-    def __init__(self, helpdoc, prop, **kwargs):
+    def __init__(self, doc, prop, **kwargs):
         if isinstance(prop, type) and issubclass(prop, HasProperties):
-            prop = Instance(helpdoc, prop)
+            prop = Instance(doc, prop)
         if not isinstance(prop, basic.Property):
             raise TypeError('prop must be a Property or HasProperties class')
         self.prop = prop
-        super(List, self).__init__(helpdoc, **kwargs)
+        super(List, self).__init__(doc, **kwargs)
         self._unused_default_warning()
 
     @property
@@ -614,23 +614,23 @@ class Union(basic.Property):
 
     info_text = 'a union of multiple property types'
 
-    def __init__(self, helpdoc, props, **kwargs):
+    def __init__(self, doc, props, **kwargs):
         if not isinstance(props, (tuple, list)):
             raise TypeError('props must be a list')
         new_props = tuple()
         for prop in props:
             if isinstance(prop, type) and issubclass(prop, HasProperties):
-                prop = Instance(help, prop)
+                prop = Instance(doc, prop)
             if not isinstance(prop, basic.Property):
                 raise TypeError('all props must be Property instance or '
                                 'HasProperties class')
             new_props += (prop,)
         self.props = new_props
-        super(Union, self).__init__(helpdoc, **kwargs)
+        super(Union, self).__init__(doc, **kwargs)
         self._unused_default_warning()
 
     def info(self):
-        """Description of the property, supplemental to the help doc"""
+        """Description of the property, supplemental to the basic doc"""
         return ' or '.join([p.info() for p in self.props])
 
     @property

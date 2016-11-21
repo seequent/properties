@@ -34,7 +34,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     Available keywords:
 
-    * **help** - property's custom help string
+    * **doc** - property's custom doc string
     * **default** - property's default value
     """
 
@@ -42,8 +42,8 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     name = ''
     _class_default = undefined
 
-    def __init__(self, helpdoc, **kwargs):
-        self._base_help = helpdoc
+    def __init__(self, doc, **kwargs):
+        self._base_doc = doc
         self._meta = {}
         for key in kwargs:
             if key[0] == '_':
@@ -121,11 +121,11 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         self._deserializer = value
 
     @property
-    def help(self):
-        """Get the help documentation of a Property instance"""
-        if getattr(self, '_help', None) is None:
-            self._help = self._base_help
-        return self._help
+    def doc(self):
+        """Get the doc documentation of a Property instance"""
+        if getattr(self, '_doc', None) is None:
+            self._doc = self._base_doc
+        return self._doc
 
     @property
     def meta(self):
@@ -145,7 +145,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return self
 
     def info(self):
-        """Description of the property, supplemental to the help doc"""
+        """Description of the property, supplemental to the base doc"""
         return self.info_text
 
     def validate(self, instance, value):                                       #pylint: disable=unused-argument,no-self-use
@@ -170,7 +170,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             """Call the HasProperties _get method"""
             return self._get(scope.name)
 
-        return property(fget=fget, doc=scope.help)
+        return property(fget=fget, doc=scope.doc)
 
     def serialize(self, value, include_class=True):                            #pylint: disable=unused-argument
         """Serialize the property value to JSON
@@ -213,9 +213,9 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
         return (
-            ':attribute {name}: ({cls}) - {help}{info}'.format(
+            ':attribute {name}: ({cls}) - {doc}{info}'.format(
                 name=self.name,
-                help=self.help,
+                doc=self.doc,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
                 cls=self.sphinx_class(),
             )
@@ -238,10 +238,10 @@ class Property(GettableProperty):
       HasProperties instance to be valid
     """
 
-    def __init__(self, helpdoc, **kwargs):
+    def __init__(self, doc, **kwargs):
         if 'required' in kwargs:
             self.required = kwargs.pop('required')
-        super(Property, self).__init__(helpdoc, **kwargs)
+        super(Property, self).__init__(doc, **kwargs)
 
     @property
     def required(self):
@@ -295,7 +295,7 @@ class Property(GettableProperty):
             """Set value to utils.undefined on delete"""
             self._set(scope.name, undefined)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
 
     def error(self, instance, value, error=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
@@ -333,9 +333,9 @@ class Property(GettableProperty):
             default_str = ', Default: {}'.format(default_str)
 
         return (
-            ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
+            ':param {name}: {doc}{info}{default}\n:type {name}: {cls}'.format(
                 name=self.name,
-                help=self.help,
+                doc=self.doc,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
                 default=default_str,
                 cls=self.sphinx_class(),
@@ -566,9 +566,9 @@ class StringChoice(Property):
       where any string in the value list is coerced into the key string.
     """
 
-    def __init__(self, helpdoc, choices, **kwargs):
+    def __init__(self, doc, choices, **kwargs):
         self.choices = choices
-        super(StringChoice, self).__init__(helpdoc, **kwargs)
+        super(StringChoice, self).__init__(doc, **kwargs)
 
     @property
     def info_text(self):
