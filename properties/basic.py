@@ -6,12 +6,16 @@ from __future__ import unicode_literals
 
 import collections
 import datetime
+import math
+import random
 import uuid
 
 import numpy as np
 from six import integer_types, string_types, text_type, with_metaclass
 
 from .utils import undefined
+
+TOL = 1e-6
 
 PropertyTerms = collections.namedtuple(
     'PropertyTerms',
@@ -410,7 +414,7 @@ class Integer(Property):
 
     def validate(self, instance, value):
         """Checks that value is an integer and in min/max bounds"""
-        if isinstance(value, float) and np.isclose(value, int(value)):
+        if isinstance(value, float) and abs(value - int(value)) < TOL:
             value = int(value)
         if not isinstance(value, integer_types):
             self.error(instance, value)
@@ -451,7 +455,7 @@ class Float(Integer):
 
     @staticmethod
     def to_json(value):
-        if np.isnan(value) or np.isinf(value):                                 #pylint: disable=no-member
+        if math.isnan(value) or math.isinf(value):
             return str(value)
         return value
 
@@ -799,7 +803,7 @@ class Color(Property):
             if value in COLORS_NAMED:
                 value = COLORS_NAMED[value]
             if value.upper() == 'RANDOM':
-                value = COLORS_20[np.random.randint(0, 20)]                    #pylint: disable=no-member
+                value = random.choice(COLORS_20)
             value = value.upper().lstrip('#')
             if len(value) == 3:
                 value = ''.join(v*2 for v in value)
@@ -814,11 +818,6 @@ class Color(Property):
             except ValueError:
                 raise ValueError(
                     '{}: Hex color must be base 16 (0-F)'.format(value))
-
-        if isinstance(value, np.ndarray):
-            # convert numpy arrays to lists
-            value = value.tolist()                                             #pylint: disable=no-member
-
         if not isinstance(value, (list, tuple)):
             raise ValueError(
                 '{}: Color must be a list or tuple of length 3'.format(value)
