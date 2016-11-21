@@ -7,8 +7,7 @@ developer to set expectations for what you want to work with.
 
 import properties
 class Profile(properties.HasProperties):
-    name = properties.String('What is your name!', required=True)
-
+    name = properties.String('What is your name?')
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -21,6 +20,7 @@ from .base import (
     List,
     Union,
 )
+
 from .basic import (
     Bool,
     Color,
@@ -34,16 +34,33 @@ from .basic import (
     StringChoice,
     Uuid,
 )
-from .math import (
-    Array,
-    Vector2,
-    Vector2Array,
-    Vector3,
-    Vector3Array,
-)
-from .images import (
-    ImagePNG
-)
+
+# Attempt to import image classes. Requires:
+# >> pip install properties[image]
+# or
+# >> pip install properties[full]
+try:
+    from .images import (
+        ImagePNG
+    )
+except ImportError:
+    pass
+
+# Attempt to import math/array classes. Requires:
+# >> pip install properties[math]
+# or
+# >> pip install properties[full]
+try:
+    from .math import (
+        Array,
+        Vector2,
+        Vector2Array,
+        Vector3,
+        Vector3Array,
+    )
+except ImportError:
+    pass
+
 from .utils import defaults, filter_props, undefined
 from .handlers import observer, validator
 from . import task
