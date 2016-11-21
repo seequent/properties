@@ -22,26 +22,26 @@ from .base import (
     Union,
 )
 from .basic import (
-    GettableProperty,
-    Property,
     Bool,
-    Integer,
-    Float,
+    Color,
     Complex,
+    DateTime,
+    Float,
+    GettableProperty,
+    Integer,
+    Property,
     String,
     StringChoice,
-    DateTime,
-    Array,
-    Color,
     Uuid,
 )
 from .math import (
-    Vector3,
+    Array,
     Vector2,
-    Vector3Array,
     Vector2Array,
+    Vector3,
+    Vector3Array,
 )
-from .utils import defaults, undefined, filter_props
+from .utils import defaults, filter_props, undefined
 from .handlers import observer, validator
 from . import task
 
