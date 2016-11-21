@@ -41,6 +41,9 @@ from .math import (
     Vector3,
     Vector3Array,
 )
+from .images import (
+    ImagePNG
+)
 from .utils import defaults, filter_props, undefined
 from .handlers import observer, validator
 from . import task
