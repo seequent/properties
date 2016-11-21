@@ -380,8 +380,6 @@ class TestBasic(unittest.TestCase):
         assert col.mycolor == (255, 255, 255)
         col.mycolor = [50, 50, 50]
         assert col.mycolor == (50, 50, 50)
-        col.mycolor = np.r_[50, 50, 50]
-        assert col.mycolor == (50, 50, 50)
         col.mycolor = 'random'
         assert len(col.mycolor) == 3
         with self.assertRaises(ValueError):
