@@ -165,6 +165,36 @@ class PropertyMetaclass(type):
 
         return newcls
 
+    def __call__(cls, *args, **kwargs):
+        """Here additional instance setup happens before init"""
+
+        obj = cls.__new__(cls)
+        obj._backend = dict()
+        obj._listeners = dict()
+
+        # Register the listeners
+        for _, val in iteritems(obj._prop_observers):
+            handlers._set_listener(obj, val)
+
+        # Set the GettableProperties from defaults - these are only set here
+        for key, prop in iteritems(obj._props):
+            if not isinstance(prop, basic.Property):
+                if key in obj._defaults:
+                    val = obj._defaults[key]
+                else:
+                    val = prop.default
+                if val is utils.undefined:
+                    continue
+                if callable(val):
+                    val = val()
+                prop.validate(obj, val)
+                obj._backend[key] = val
+
+        # Set the other defaults without triggering change notifications
+        obj.reset(silent=True)
+        obj.__init__(*args, **kwargs)
+        return obj
+
 
 class HasProperties(with_metaclass(PropertyMetaclass, object)):
     """HasProperties class with properties"""
@@ -173,30 +203,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     _REGISTRY = dict()
 
     def __init__(self, **kwargs):
-        self._backend = dict()
-        self._listeners = dict()
-
-        # Register the listeners
-        for _, val in iteritems(self._prop_observers):
-            handlers._set_listener(self, val)
-
-        # Set the GettableProperties from defaults - these are only set here
-        for key, prop in iteritems(self._props):
-            if not isinstance(prop, basic.Property):
-                if key in self._defaults:
-                    val = self._defaults[key]
-                else:
-                    val = prop.default
-                if val is utils.undefined:
-                    continue
-                if callable(val):
-                    val = val()
-                prop.validate(self, val)
-                self._backend[key] = val
-
-        # Set the other defaults without triggering change notifications
-        self.reset(silent=True)
-
         # Set the keyword arguments with change notifications
         for key, val in iteritems(kwargs):
             if not hasattr(self, key) and key not in self._props.keys():
@@ -205,7 +211,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             setattr(self, key, val)
 
     def _get(self, name):
-        return self._backend.get(name, None)
+        return self._backend.get(name, None)                                   #pylint: disable=no-member
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -216,9 +222,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         change = dict(name=name, value=value, mode='validate')
         self._notify(change)
         if change['value'] is utils.undefined:
-            self._backend.pop(name, None)
+            self._backend.pop(name, None)                                      #pylint: disable=no-member
         else:
-            self._backend[name] = change['value']
+            self._backend[name] = change['value']                              #pylint: disable=no-member
         change.update(name=name, mode='observe')
         self._notify(change)
 
@@ -245,7 +251,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             val = self._props[name].default
         if callable(val):
             val = val()
-        _listener_stash = self._listeners
+        _listener_stash = self._listeners                                      #pylint: disable=access-member-before-definition
         if silent:
             self._listeners = dict()
         setattr(self, name, val)
