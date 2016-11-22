@@ -63,7 +63,6 @@ except ImportError:
 
 from .utils import defaults, filter_props, undefined
 from .handlers import observer, validator
-from . import task
 
 __version__ = '0.2.3'
 __author__ = '3point Science'

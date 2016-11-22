@@ -29,8 +29,9 @@ setup(
     install_requires=['six'],
     extras_require={
         'math': ['numpy>=1.7', 'vectormath>=0.1.1'],
-        'image': ['pypng'],
+        'image': ['matplotlib', 'pypng'],
         'full': [
+            'matplotlib',
             'numpy>=1.7',
             'pypng',
             'vectormath>=0.1.1',
