@@ -84,8 +84,8 @@ class PropertyMetaclass(type):
             classdict[key] = prop.get_property()
 
         # Ensure observed names are valid
-        for key, hand in iteritems(observer_dict):
-            for prop in hand.names:
+        for key, handler in iteritems(observer_dict):
+            for prop in handler.names:
                 if prop in _props and isinstance(_props[prop], basic.Property):
                     continue
                 raise TypeError('Observed name must be a mutable '
@@ -93,8 +93,8 @@ class PropertyMetaclass(type):
 
         # Overwrite observers and validators with their function
         observer_dict.update(validator_dict)
-        for key, hand in iteritems(observer_dict):
-            classdict[key] = hand.func
+        for key, handler in iteritems(observer_dict):
+            classdict[key] = handler.func
 
         # Order the properties for the docs (default is alphabetical)
         _doc_order = classdict.pop('_doc_order', None)
