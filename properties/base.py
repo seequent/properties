@@ -46,9 +46,9 @@ class PropertyMetaclass(type):
         _prop_observers = OrderedDict()
         _class_validators = OrderedDict()
         for base in reversed(bases):
-            if not (hasattr(base, '_props') and
-                    hasattr(base, '_prop_observers') and
-                    hasattr(base, '_class_validators')):
+            if not all((hasattr(base, '_props'),
+                        hasattr(base, '_prop_observers'),
+                        hasattr(base, '_class_validators'))):
                 continue
             for key, val in iteritems(base._props):
                 if key not in prop_dict and key in classdict:
