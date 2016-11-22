@@ -6,12 +6,15 @@ from __future__ import unicode_literals
 
 import collections
 import datetime
+import math
+import random
 import uuid
 
-import numpy as np
 from six import integer_types, string_types, text_type, with_metaclass
 
 from .utils import undefined
+
+TOL = 1e-6
 
 PropertyTerms = collections.namedtuple(
     'PropertyTerms',
@@ -410,7 +413,7 @@ class Integer(Property):
 
     def validate(self, instance, value):
         """Checks that value is an integer and in min/max bounds"""
-        if isinstance(value, float) and np.isclose(value, int(value)):
+        if isinstance(value, float) and abs(value - int(value)) < TOL:
             value = int(value)
         if not isinstance(value, integer_types):
             self.error(instance, value)
@@ -451,7 +454,7 @@ class Float(Integer):
 
     @staticmethod
     def to_json(value):
-        if np.isnan(value) or np.isinf(value):                                 #pylint: disable=no-member
+        if math.isnan(value) or math.isinf(value):
             return str(value)
         return value
 
@@ -625,160 +628,6 @@ class StringChoice(Property):
         self.error(instance, value)
 
 
-class Array(Property):
-    """Serializable float or int array property
-
-    Available keywords:
-
-    * **shape** - tuple with integer or '*' entries corresponding to valid
-      array shapes. '*' means the dimension can be any length.
-      array dimension shapes. '*' means the dimension can be any length.
-      For example, an n x 3 array would be shape ('*', 3).
-      Default: ('*',)
-    * **dtype** - float, int, bool, or a tuple containing any of these.
-      Default: (float, int)
-    """
-
-    info_text = 'a list or numpy array'
-
-    @property
-    def wrapper(self):
-        """Class used to wrap the value in the validation call.
-
-        This is usually a :func:`numpy.array` but could also be a
-        :class:`tuple`, :class:`list` or :class:`vectormath.vector.Vector3`
-        """
-        return np.array
-
-    @property
-    def shape(self):
-        """Valid array shape.
-
-        Must be a tuple with integer or '*' engries corresponding to valid
-        array shapes. '*' means the dimension can be any length.
-        """
-        return getattr(self, '_shape', ('*',))
-
-    @shape.setter
-    def shape(self, value):
-        if not isinstance(value, tuple):
-            raise TypeError("{}: Invalid shape - must be a tuple "
-                            "(e.g. ('*',3) for an array of length-3 "
-                            "arrays)".format(value))
-        for shp in value:
-            if shp != '*' and not isinstance(shp, integer_types):
-                raise TypeError("{}: Invalid shape - values "
-                                "must be '*' or int".format(value))
-        self._shape = value
-
-    @property
-    def dtype(self):
-        """Valid type of the array
-
-        May be float, int, bool or a tuple of any of these
-
-        """
-        return getattr(self, '_dtype', (float, int))
-
-    @dtype.setter
-    def dtype(self, value):
-        if not isinstance(value, (list, tuple)):
-            value = (value,)
-        if len(value) == 0:
-            raise TypeError('No dtype specified - must be int, float, '
-                            'and/or bool')
-        if any([val not in (float, int, bool) for val in value]):
-            raise TypeError('{}: Invalid dtype - must be int, float, '
-                            'and/or bool'.format(value))
-        self._dtype = value
-
-    def info(self):
-        return '{info} of {type} with shape {shp}'.format(
-            info=self.info_text,
-            type=', '.join([str(t) for t in self.dtype]),
-            shp='(' + ', '.join(['\*' if s == '*' else str(s)                  #pylint: disable=anomalous-backslash-in-string
-                                 for s in self.shape]) + ')',
-        )
-
-    def validate(self, instance, value):
-        """Determine if array is valid based on shape and dtype"""
-        if not isinstance(value, (tuple, list, np.ndarray)):
-            self.error(instance, value)
-        value = self.wrapper(value)
-        if isinstance(value, np.ndarray):
-            if value.dtype.kind == 'i' and int not in self.dtype:
-                self.error(instance, value)
-            if value.dtype.kind == 'f' and float not in self.dtype:
-                self.error(instance, value)
-            if value.dtype.kind == 'b' and bool not in self.dtype:
-                self.error(instance, value)
-            if len(self.shape) != value.ndim:
-                self.error(instance, value)
-            for i, shp in enumerate(self.shape):
-                if shp != '*' and value.shape[i] != shp:
-                    self.error(instance, value)
-        else:
-            raise NotImplementedError(
-                'Array validation is only implmented for wrappers that are '
-                'subclasses of numpy.ndarray'
-            )
-        return value
-
-    def error(self, instance, value, error=None, extra=''):
-        """Generates a ValueError on setting property to an invalid value"""
-        error = error if error is not None else ValueError
-        if not isinstance(value, (list, tuple, np.ndarray)):
-            super(Array, self).error(instance, value, error, extra)
-        if isinstance(value, (list, tuple)):
-            val_description = 'A {typ} of length {len}'.format(
-                typ=value.__class__.__name__,
-                len=len(value)
-            )
-        else:
-            val_description = 'An array of shape {shp} and dtype {typ}'.format(
-                shp=value.shape,
-                typ=value.dtype
-            )
-        raise error(
-            "The '{name}' property of a {cls} instance must be {info}. "
-            "{desc} was specified. {extra}".format(
-                name=self.name,
-                cls=instance.__class__.__name__,
-                info=self.info(),
-                desc=val_description,
-                extra=extra,
-            )
-        )
-
-    def deserialize(self, value, trusted=False):
-        """De-serialize the property value from JSON
-
-        If no deserializer has been registered, this converts the value
-        to the wrapper class with given dtype.
-        """
-        if self.deserializer is not None:
-            return self.deserializer(value)
-        if value is None:
-            return None
-        return self.wrapper(value).astype(self.dtype[0])
-
-    @staticmethod
-    def to_json(value):
-        """Convert array to JSON list
-
-        nan values are converted to string 'nan', inf values to 'inf'.
-        """
-        def _recurse_list(val):
-            if len(val) > 0 and isinstance(val[0], list):
-                return [_recurse_list(v) for v in val]
-            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]  #pylint: disable=no-member
-        return _recurse_list(value.tolist())
-
-    @staticmethod
-    def from_json(value):
-        return np.array(value).astype(float)
-
-
 class Color(Property):
     """Color property for RGB colors.
 
@@ -799,7 +648,7 @@ class Color(Property):
             if value in COLORS_NAMED:
                 value = COLORS_NAMED[value]
             if value.upper() == 'RANDOM':
-                value = COLORS_20[np.random.randint(0, 20)]                    #pylint: disable=no-member
+                value = random.choice(COLORS_20)
             value = value.upper().lstrip('#')
             if len(value) == 3:
                 value = ''.join(v*2 for v in value)
@@ -814,11 +663,6 @@ class Color(Property):
             except ValueError:
                 raise ValueError(
                     '{}: Hex color must be base 16 (0-F)'.format(value))
-
-        if isinstance(value, np.ndarray):
-            # convert numpy arrays to lists
-            value = value.tolist()                                             #pylint: disable=no-member
-
         if not isinstance(value, (list, tuple)):
             raise ValueError(
                 '{}: Color must be a list or tuple of length 3'.format(value)

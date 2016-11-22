@@ -26,11 +26,17 @@ setup(
     name="properties",
     version="0.2.3",
     packages=find_packages(exclude=('tests',)),
-    install_requires=[
-        'numpy>=1.7',
-        'six',
-        'vectormath>=0.1.1',
-    ],
+    install_requires=['six'],
+    extras_require={
+        'math': ['numpy>=1.7', 'vectormath>=0.1.1'],
+        'image': ['matplotlib', 'pypng'],
+        'full': [
+            'matplotlib',
+            'numpy>=1.7',
+            'pypng',
+            'vectormath>=0.1.1',
+        ]
+    },
     author="3point Science",
     author_email="info@3ptscience.com",
     description="properties",
