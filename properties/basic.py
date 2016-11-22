@@ -633,8 +633,10 @@ class Array(Property):
     * **shape** - tuple with integer or '*' entries corresponding to valid
       array shapes. '*' means the dimension can be any length.
       array dimension shapes. '*' means the dimension can be any length.
-      For example, an n x 3 array would be shape ('*', 3)
-    * **dtype** - float, int, or (float, int) if both are allowed
+      For example, an n x 3 array would be shape ('*', 3).
+      Default: ('*',)
+    * **dtype** - float, int, bool, or a tuple containing any of these.
+      Default: (float, int)
     """
 
     info_text = 'a list or numpy array'
@@ -673,7 +675,8 @@ class Array(Property):
     def dtype(self):
         """Valid type of the array
 
-        May be float, int, or (float, int)
+        May be float, int, bool or a tuple of any of these
+
         """
         return getattr(self, '_dtype', (float, int))
 
@@ -681,10 +684,12 @@ class Array(Property):
     def dtype(self, value):
         if not isinstance(value, (list, tuple)):
             value = (value,)
-        if (float not in value and
-                len(set(value).intersection(integer_types)) == 0):
-            raise TypeError("{}: Invalid dtype - must be int "
-                            "and/or float".format(value))
+        if len(value) == 0:
+            raise TypeError('No dtype specified - must be int, float, '
+                            'and/or bool')
+        if any([val not in (float, int, bool) for val in value]):
+            raise TypeError('{}: Invalid dtype - must be int, float, '
+                            'and/or bool'.format(value))
         self._dtype = value
 
     def info(self):
@@ -701,10 +706,11 @@ class Array(Property):
             self.error(instance, value)
         value = self.wrapper(value)
         if isinstance(value, np.ndarray):
-            if (value.dtype.kind == 'i' and
-                    len(set(self.dtype).intersection(integer_types)) == 0):
+            if value.dtype.kind == 'i' and int not in self.dtype:
                 self.error(instance, value)
             if value.dtype.kind == 'f' and float not in self.dtype:
+                self.error(instance, value)
+            if value.dtype.kind == 'b' and bool not in self.dtype:
                 self.error(instance, value)
             if len(self.shape) != value.ndim:
                 self.error(instance, value)
@@ -716,7 +722,6 @@ class Array(Property):
                 'Array validation is only implmented for wrappers that are '
                 'subclasses of numpy.ndarray'
             )
-
         return value
 
     def error(self, instance, value, error=None, extra=''):

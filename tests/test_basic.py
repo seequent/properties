@@ -307,6 +307,10 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.Array('bad dtype', dtype=str)
         with self.assertRaises(TypeError):
+            properties.Array('bad dtype', dtype=(float, 'bad dtype'))
+        with self.assertRaises(TypeError):
+            properties.Array('bad dtype', dtype=tuple())
+        with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=5)
         with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=(5, 'any'))
@@ -316,6 +320,7 @@ class TestBasic(unittest.TestCase):
             myarray222 = properties.Array('my 3x3x3 array', shape=(2, 2, 2))
             myarrayfloat = properties.Array('my float array', dtype=float)
             myarrayint = properties.Array('my int array', dtype=int)
+            myarraybool = properties.Array('my bool array', dtype=bool)
 
         arrays = ArrayOpts()
         arrays.myarray = [0., 1., 2.]
@@ -330,6 +335,14 @@ class TestBasic(unittest.TestCase):
             arrays.myarrayint = [0., 1, 2, 3]
         with self.assertRaises(ValueError):
             arrays.myarray222 = [[[0.]]]
+        with self.assertRaises(ValueError):
+            arrays.myarraybool = np.array([0, 1, 0])
+        with self.assertRaises(ValueError):
+            arrays.myarrayint = np.array([0, 1, 0]).astype(bool)
+
+        arrays.myarraybool = np.array([0, 1, 0]).astype(bool)
+
+
 
         assert properties.Array.to_json(
             np.array([[0., 1., np.nan, np.inf]])
@@ -345,7 +358,8 @@ class TestBasic(unittest.TestCase):
         arrays.myarray222 = [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
         self.assertEqual(arrays.serialize(include_class=False), {
             'myarray': [0., 1., 2.],
-            'myarray222': [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
+            'myarray222': [[[0, 1], [2, 3]], [[4, 5], [6, 7]]],
+            'myarraybool': [False, True, False]
         })
         assert np.all(ArrayOpts.deserialize(
             {'myarrayint': [0, 1, 2]}
