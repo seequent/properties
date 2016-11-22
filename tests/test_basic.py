@@ -302,7 +302,7 @@ class TestBasic(unittest.TestCase):
             {'mychoicedict': 'a'}
         ).mychoicedict == 'vowel'
 
-   def test_color(self):
+    def test_color(self):
 
         class ColorOpts(properties.HasProperties):
             mycolor = properties.Color('My color')
