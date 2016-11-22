@@ -181,17 +181,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             handlers._set_listener(self, val)
 
         # Set the GettableProperties from defaults - these are only set here
-        for key in self._props:
-            if not isinstance(self._props[key], basic.Property):
+        for key, prop in iteritems(self._props):
+            if not isinstance(prop, basic.Property):
                 if key in self._defaults:
                     val = self._defaults[key]
                 else:
-                    val = self._props[key].default
+                    val = prop.default
                 if val is utils.undefined:
                     continue
                 if callable(val):
                     val = val()
-                self._props[key].validate(self, val)
+                prop.validate(self, val)
                 self._backend[key] = val
 
         # Set the other defaults without triggering change notifications
