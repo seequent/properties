@@ -27,10 +27,6 @@ class Task(HasProperties):
     _REGISTRY = dict()
     Result = BaseResult
 
-    def wrap_call(self):
-        """Carry out common tasks before and after execution"""
-        return self()
-
     def __call__(self):
         """Execute the compute task"""
         raise NotImplementedError('Override in client classes')
