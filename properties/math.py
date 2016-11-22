@@ -10,6 +10,12 @@ import vectormath as vmath
 
 from .basic import Property
 
+TYPE_MAPPINGS = {
+    int: 'i',
+    float: 'f',
+    bool: 'b',
+}
+
 
 class Array(Property):
     """Serializable float or int array property using numpy.ndarray
@@ -73,7 +79,7 @@ class Array(Property):
         if len(value) == 0:
             raise TypeError('No dtype specified - must be int, float, '
                             'and/or bool')
-        if any([val not in (float, int, bool) for val in value]):
+        if any([val not in TYPE_MAPPINGS for val in value]):
             raise TypeError('{}: Invalid dtype - must be int, float, '
                             'and/or bool'.format(value))
         self._dtype = value
@@ -91,23 +97,19 @@ class Array(Property):
         if not isinstance(value, (tuple, list, np.ndarray)):
             self.error(instance, value)
         value = self.wrapper(value)
-        if isinstance(value, np.ndarray):
-            if value.dtype.kind == 'i' and int not in self.dtype:
-                self.error(instance, value)
-            if value.dtype.kind == 'f' and float not in self.dtype:
-                self.error(instance, value)
-            if value.dtype.kind == 'b' and bool not in self.dtype:
-                self.error(instance, value)
-            if len(self.shape) != value.ndim:
-                self.error(instance, value)
-            for i, shp in enumerate(self.shape):
-                if shp != '*' and value.shape[i] != shp:
-                    self.error(instance, value)
-        else:
+        if not isinstance(value, np.ndarray):
             raise NotImplementedError(
                 'Array validation is only implmented for wrappers that are '
                 'subclasses of numpy.ndarray'
             )
+        for typ, kind in TYPE_MAPPINGS.items():
+            if value.dtype.kind == kind and typ not in self.dtype:
+                self.error(instance, value)
+        if len(self.shape) != value.ndim:
+            self.error(instance, value)
+        for i, shp in enumerate(self.shape):
+            if shp != '*' and value.shape[i] != shp:
+                self.error(instance, value)
         return value
 
     def error(self, instance, value, error=None, extra=''):
