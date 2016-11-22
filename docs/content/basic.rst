@@ -82,13 +82,6 @@ StringChoice
     :members:
     :undoc-members:
 
-Array
------
-
-.. autoclass:: properties.basic.Array
-    :members:
-    :undoc-members:
-
 Color
 -----
 
@@ -113,6 +106,13 @@ UUID
 
 Math Properties
 ===============
+
+Array
+-----
+
+.. autoclass:: properties.math.Array
+    :members:
+    :undoc-members:
 
 Vector3
 -------
@@ -143,12 +143,12 @@ Vector2Array
     :undoc-members:
 
 
-Property Plugins
+Image Properties
 ================
 
 ImagePNG
 --------
 
-.. autoclass:: properties_image.ImagePNG
+.. autoclass:: properties.images.ImagePNG
     :members:
     :undoc-members:

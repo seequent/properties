@@ -4,8 +4,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from .base import HasProperties
-from .basic import String, Bool
+from ..base import HasProperties
+from ..basic import String, Bool
 
 
 class BaseResult(HasProperties):
@@ -26,10 +26,6 @@ class Task(HasProperties):
 
     _REGISTRY = dict()
     Result = BaseResult
-
-    def wrap_call(self):
-        """Carry out common tasks before and after execution"""
-        return self()
 
     def __call__(self):
         """Execute the compute task"""

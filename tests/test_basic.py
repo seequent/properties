@@ -302,57 +302,6 @@ class TestBasic(unittest.TestCase):
             {'mychoicedict': 'a'}
         ).mychoicedict == 'vowel'
 
-    def test_array(self):
-
-        with self.assertRaises(TypeError):
-            properties.Array('bad dtype', dtype=str)
-        with self.assertRaises(TypeError):
-            properties.Array('bad shape', shape=5)
-        with self.assertRaises(TypeError):
-            properties.Array('bad shape', shape=(5, 'any'))
-
-        class ArrayOpts(properties.HasProperties):
-            myarray = properties.Array('my array')
-            myarray222 = properties.Array('my 3x3x3 array', shape=(2, 2, 2))
-            myarrayfloat = properties.Array('my float array', dtype=float)
-            myarrayint = properties.Array('my int array', dtype=int)
-
-        arrays = ArrayOpts()
-        arrays.myarray = [0., 1., 2.]
-        assert isinstance(arrays.myarray, np.ndarray)
-        with self.assertRaises(ValueError):
-            arrays.myarray = 'array'
-        with self.assertRaises(ValueError):
-            arrays.myarray = [[0., 1.], [2., 3.]]
-        with self.assertRaises(ValueError):
-            arrays.myarrayfloat = [0, 1, 2, 3]
-        with self.assertRaises(ValueError):
-            arrays.myarrayint = [0., 1, 2, 3]
-        with self.assertRaises(ValueError):
-            arrays.myarray222 = [[[0.]]]
-
-        assert properties.Array.to_json(
-            np.array([[0., 1., np.nan, np.inf]])
-        ) == [[0., 1., 'nan', 'inf']]
-
-        assert isinstance(properties.Array.from_json([1., 2., 3.]), np.ndarray)
-        assert np.all(
-            properties.Array.from_json([1., 2., 3.]) == np.array([1., 2., 3.])
-        )
-        assert np.isnan(properties.Array.from_json(['nan', 'inf'])[0])
-        assert np.isinf(properties.Array.from_json(['nan', 'inf'])[1])
-
-        arrays.myarray222 = [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
-        self.assertEqual(arrays.serialize(include_class=False), {
-            'myarray': [0., 1., 2.],
-            'myarray222': [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
-        })
-        assert np.all(ArrayOpts.deserialize(
-            {'myarrayint': [0, 1, 2]}
-        ).myarrayint == np.array([0, 1, 2]))
-
-        assert ArrayOpts._props['myarrayint'].deserialize(None) is None
-
     def test_color(self):
 
         class ColorOpts(properties.HasProperties):
@@ -365,8 +314,6 @@ class TestBasic(unittest.TestCase):
         col.mycolor = '#FFF'
         assert col.mycolor == (255, 255, 255)
         col.mycolor = [50, 50, 50]
-        assert col.mycolor == (50, 50, 50)
-        col.mycolor = np.r_[50, 50, 50]
         assert col.mycolor == (50, 50, 50)
         col.mycolor = 'random'
         assert len(col.mycolor) == 3
