@@ -14,7 +14,7 @@ from six import integer_types, string_types, text_type, with_metaclass
 
 from .utils import undefined
 
-TOL = 1e-6
+TOL = 1e-9
 
 PropertyTerms = collections.namedtuple(
     'PropertyTerms',
@@ -414,12 +414,14 @@ class Integer(Property):
 
     def validate(self, instance, value):
         """Checks that value is an integer and in min/max bounds"""
-        if isinstance(value, float) and abs(value - int(value)) < TOL:
-            value = int(value)
-        if not isinstance(value, integer_types):
+        try:
+            intval = int(value)
+            if abs(value - intval) > TOL:
+                raise ValueError()
+        except (TypeError, ValueError):
             self.error(instance, value)
-        _in_bounds(self, instance, value)
-        return int(value)
+        _in_bounds(self, instance, intval)
+        return intval
 
     def info(self):
         if (getattr(self, 'min', None) is None and
@@ -444,14 +446,16 @@ class Float(Integer):
     def validate(self, instance, value):
         """Checks that value is a float and in min/max bounds
 
-        Integers are coerced to floats
+        Non-float numbers are coerced to floats
         """
-        if isinstance(value, (float, integer_types)):
-            value = float(value)
-        if not isinstance(value, float):
+        try:
+            floatval = float(value)
+            if abs(value - floatval) > TOL:
+                raise ValueError()
+        except (TypeError, ValueError):
             self.error(instance, value)
-        _in_bounds(self, instance, value)
-        return value
+        _in_bounds(self, instance, floatval)
+        return floatval
 
     @staticmethod
     def to_json(value):
@@ -474,11 +478,16 @@ class Complex(Property):
 
         Floats and Integers are coerced to complex numbers
         """
-        if isinstance(value, (integer_types, float)):
-            value = complex(value)
-        if not isinstance(value, complex):
-            raise ValueError('{} must be complex'.format(self.name))
-        return value
+        try:
+            compval = complex(value)
+            if (
+                    abs(value.real - compval.real) > TOL or
+                    abs(value.imag - compval.imag) > TOL
+            ):
+                raise ValueError()
+        except (TypeError, ValueError, AttributeError):
+            self.error(instance, value)
+        return compval
 
     @staticmethod
     def to_json(value):

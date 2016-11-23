@@ -156,6 +156,9 @@ class TestBasic(unittest.TestCase):
         assert nums.myfloat == 1.
         nums.myfloatmin = nums.myfloatmax = nums.myfloatrange = 10.
 
+        nums.myfloat = np.float32(1)
+        assert nums.myfloat == 1.
+
         assert properties.Integer.to_json(5) == 5
         assert properties.Float.to_json(5.) == 5.
         assert properties.Float.to_json(np.nan) == 'nan'
