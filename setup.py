@@ -19,7 +19,7 @@ CLASSIFIERS = [
     'Natural Language :: English',
 ]
 
-with open("README.rst") as f:
+with open('README.rst') as f:
     LONG_DESCRIPTION = ''.join(f.readlines())
 
 EXTRAS = {
@@ -28,19 +28,19 @@ EXTRAS = {
 }
 EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
-    name="properties",
-    version="0.3.0b0",
+    name='properties',
+    version='0.3.0b0',
     packages=find_packages(exclude=('tests',)),
     install_requires=['six'],
     extras_require=EXTRAS,
-    author="3point Science",
-    author_email="info@3ptscience.com",
-    description="properties",
+    author='3point Science',
+    author_email='info@3ptscience.com',
+    description='properties',
     long_description=LONG_DESCRIPTION,
-    keywords="property",
-    url="http://steno3d.com/",
-    download_url="http://github.com/3ptscience/properties",
+    keywords='property',
+    url='http://steno3d.com/',
+    download_url='http://github.com/3ptscience/properties',
     classifiers=CLASSIFIERS,
-    platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
+    platforms=['Windows', 'Linux', 'Solaris', 'Mac OS-X', 'Unix'],
     use_2to3=False,
 )
