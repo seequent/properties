@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 import json
 import pickle
 from warnings import warn
@@ -42,27 +43,25 @@ class PropertyMetaclass(type):
 
         # Get pointers to all inherited properties, observers, and validators
         _props = dict()
-        _prop_observers = dict()
-        _class_validators = dict()
+        _prop_observers = OrderedDict()
+        _class_validators = OrderedDict()
         for base in reversed(bases):
-            if hasattr(base, '_props'):
-                _props.update({
-                    k: v for k, v in iteritems(base._props)
-                    # drop ones which are no longer properties
-                    if not (k not in prop_dict and k in classdict)
-                })
-            if hasattr(base, '_prop_observers'):
-                _prop_observers.update({
-                    k: v for k, v in iteritems(base._prop_observers)
-                    # drop ones which are no longer observers
-                    if not (k not in observer_dict and k in classdict)
-                })
-            if hasattr(base, '_class_validators'):
-                _class_validators.update({
-                    k: v for k, v in iteritems(base._class_validators)
-                    # drop ones which are no longer validators
-                    if not (k not in validator_dict and k in classdict)
-                })
+            if not all((hasattr(base, '_props'),
+                        hasattr(base, '_prop_observers'),
+                        hasattr(base, '_class_validators'))):
+                continue
+            for key, val in iteritems(base._props):
+                if key not in prop_dict and key in classdict:
+                    continue
+                _props.update({key: val})
+            for key, val in iteritems(base._prop_observers):
+                if key not in observer_dict and key in classdict:
+                    continue
+                _prop_observers.update({key: val})
+            for key, val in iteritems(base._class_validators):
+                if key not in validator_dict and key in classdict:
+                    continue
+                _class_validators.update({key: val})
 
         # Overwrite with this class's properties
         _props.update(prop_dict)
@@ -85,6 +84,8 @@ class PropertyMetaclass(type):
 
         # Ensure observed names are valid
         for key, handler in iteritems(observer_dict):
+            if handler.names is utils.everything:
+                continue
             for prop in handler.names:
                 if prop in _props and isinstance(_props[prop], basic.Property):
                     continue
@@ -187,11 +188,10 @@ class PropertyMetaclass(type):
                     continue
                 if callable(val):
                     val = val()
-                prop.validate(obj, val)
-                obj._backend[key] = val
+                obj._backend[key] = prop.validate(obj, val)
 
         # Set the other defaults without triggering change notifications
-        obj.reset(silent=True)
+        obj._reset(silent=True)
         obj.__init__(*args, **kwargs)
         return obj
 
@@ -228,7 +228,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         change.update(name=name, mode='observe')
         self._notify(change)
 
-    def reset(self, name=None, silent=False):
+    def _reset(self, name=None, silent=False):
         """Revert specified property to default value
 
         If no property is specified, all properties are returned to default.
@@ -237,7 +237,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         if name is None:
             for key in self._props:
                 if isinstance(self._props[key], basic.Property):
-                    self.reset(name=key, silent=silent)
+                    self._reset(name=key, silent=silent)
             return
         if name not in self._props:
             raise AttributeError("Input name '{}' is not a known "

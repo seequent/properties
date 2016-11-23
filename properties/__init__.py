@@ -61,7 +61,7 @@ try:
 except ImportError:
     pass
 
-from .utils import filter_props, undefined
+from .utils import everything, undefined, filter_props
 from .handlers import observer, validator
 
 __version__ = '0.2.3'

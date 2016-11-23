@@ -40,3 +40,4 @@ class Sentinel(object):                                                        #
 
 
 undefined = Sentinel('undefined', 'undefined value for properties.')           #pylint: disable=invalid-name
+everything = Sentinel('everything', 'value representing all properties.')      #pylint: disable=invalid-name

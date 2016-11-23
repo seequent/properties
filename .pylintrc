@@ -314,7 +314,7 @@ valid-metaclass-classmethod-first-arg=mcs
 
 # List of member names, which should be excluded from the protected access
 # warning.
-exclude-protected=_asdict,_fields,_replace,_source,_make,_props,_prop_observers,_class_validators,_REGISTRY,_get_listeners,_set_listener,_get,_listeners,_defaults,_backend
+exclude-protected=_asdict,_fields,_replace,_source,_make,_props,_prop_observers,_class_validators,_REGISTRY,_get_listeners,_set_listener,_get,_listeners,_defaults,_backend,_reset
 
 
 [DESIGN]
