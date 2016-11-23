@@ -4,52 +4,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from functools import wraps
-
-
-def defaults(func):
-    """
-        Wrapper to inherit class defaults without changing the
-        defaults in the individual properties.
-
-        This is useful when composing multiple class hierarchies
-        while maintaining the property code.
-
-        As the defaults are called at class instantiation, they
-        can be dynamic.
-
-        .. code::
-
-            class HomePage(BrandedPage):
-
-                @properties.defaults
-                def _defaults(self):
-                    return dict(
-                        show_legal=self.user.accepted_terms is False
-                    )
-    """
-
-    if not func.__name__ == '_defaults':
-        raise AttributeError(
-            "The defaults must be put in '_defualts' please rename "
-            "the attribute '{}'".format(
-                func.__name__
-            )
-        )
-
-    @property
-    @wraps(func)
-    def func_wrapper(self):
-        """Wrapper function returns _defaults, both inherited and from func"""
-        all_defaults = dict()
-        inherited_defaults = super(self.__class__, self)._defaults or dict()
-        new_defaults = func(self)
-        all_defaults.update(inherited_defaults)
-        all_defaults.update(new_defaults)
-        return all_defaults
-
-    return func_wrapper
-
 
 def filter_props(has_props_cls, input_dict):
     """Separate key/value pairs that correspond to existing properties
@@ -86,3 +40,4 @@ class Sentinel(object):                                                        #
 
 
 undefined = Sentinel('undefined', 'undefined value for properties.')           #pylint: disable=invalid-name
+everything = Sentinel('everything', 'value representing all properties.')      #pylint: disable=invalid-name

@@ -3,7 +3,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import random
 import unittest
+import uuid
 import warnings
 
 import properties
@@ -36,12 +38,6 @@ class TestDefault(unittest.TestCase):
         with self.assertRaises(ValueError):
             hi.validate()
 
-        with self.assertRaises(AttributeError):
-            class BadDefault(HasIntA):
-                @properties.defaults
-                def not_defaults(self):
-                    return {'a': 1}
-
         class HasIntB(properties.HasProperties):
             b = properties.Integer('int b', required=False)
 
@@ -59,7 +55,7 @@ class TestDefault(unittest.TestCase):
         assert hi.c == 5
         hi.c = 10
         del(hi.c)
-        assert hi.c == 5
+        assert hi.c is None
 
         class HasIntClassDef(HasIntC):
             _defaults = {'c': 100}
@@ -68,7 +64,7 @@ class TestDefault(unittest.TestCase):
         assert hi.c == 100
         hi.c = 10
         del(hi.c)
-        assert hi.c == 100
+        assert hi.c is None
 
         with self.assertRaises(AttributeError):
             class HasIntCError(HasIntC):
@@ -82,7 +78,7 @@ class TestDefault(unittest.TestCase):
         assert hi.d == 5
         hi.d = 10
         del(hi.d)
-        assert hi.d == 5
+        assert hi.d is None
 
         class NewDefInt(properties.Integer):
             _class_default = 1000
@@ -94,7 +90,7 @@ class TestDefault(unittest.TestCase):
         assert hi.e == 1000
         hi.e = 10
         del(hi.e)
-        assert hi.e == 1000
+        assert hi.e is None
 
         class HasIntF(properties.HasProperties):
             f = NewDefInt('int e', default=5)
@@ -103,7 +99,7 @@ class TestDefault(unittest.TestCase):
         assert hi.f == 5
         hi.f = 10
         del(hi.f)
-        assert hi.f == 5
+        assert hi.f is None
 
         class HasIntFandG(HasIntF):
             _defaults = {'f': 20, 'g': 25}
@@ -119,30 +115,24 @@ class TestDefault(unittest.TestCase):
 
         class HasIntFGH(HasIntFandG):
             h = NewDefInt('int h')
-
-            @properties.defaults
-            def _defaults(self):
-                return dict(
-                    f=30,
-                )
+            _defaults = dict(f=30)
 
         hi = HasIntFGH()
         assert hi.f == 30
         assert hi.g == 25
         assert hi.h == 1000
 
-        # TODO: Fix @defaults wrapper so this works!
+        with self.assertRaises(AttributeError):
+            class BadDefault(HasIntFGH):
+                _defaults = dict(f='hi')
 
-        # class HasIntFGHDefs(HasIntFGH):
-        #     @properties.defaults
-        #     def _defaults(self):
-        #         return dict(
-        #             h=-10
-        #         )
-        # hi = HasIntFGHDefs()
-        # assert hi.f == 30
-        # assert hi.g == 25
-        # assert hi.h == -10
+        class HasIntFGHDefs(HasIntFGH):
+            _defaults = dict(h=-10)
+
+        hi = HasIntFGHDefs()
+        assert hi.f == 30
+        assert hi.g == 25
+        assert hi.h == -10
 
 
     def test_union_default(self):
@@ -165,7 +155,7 @@ class TestDefault(unittest.TestCase):
         assert hu.b == 5
         hu.b = 'hi'
         del(hu.b)
-        assert hu.b == 5
+        assert hu.b is None
 
         class HasUnionC(properties.HasProperties):
             c = properties.Union('union', (
@@ -178,7 +168,7 @@ class TestDefault(unittest.TestCase):
         assert hu.c == 'hi'
         hu.c = 5
         del(hu.c)
-        assert hu.c == 'hi'
+        assert hu.c is None
 
         class HasUnionD(properties.HasProperties):
             d = properties.Union('union', (
@@ -191,7 +181,7 @@ class TestDefault(unittest.TestCase):
         assert hu.d == 100
         hu.d = 5
         del(hu.d)
-        assert hu.d == 100
+        assert hu.d is None
 
         with self.assertRaises(TypeError):
             properties.Union(
@@ -233,8 +223,7 @@ class TestDefault(unittest.TestCase):
         assert hi1.inst.a is None
 
         del hi0.inst
-        assert isinstance(hi0.inst, HasInt)
-        assert hi0.inst.a is None
+        assert hi0.inst is None
 
         class HasIntSubclass(HasInt):
             pass
@@ -270,6 +259,75 @@ class TestDefault(unittest.TestCase):
             properties.List('list', properties.Integer('', default=5))
             assert len(w) == 1
             assert issubclass(w[0].category, RuntimeWarning)
+
+    def test_reset(self):
+
+        class HasInts(properties.HasProperties):
+            _defaults = {'b': 10}
+            a = properties.Integer('int a', default=1)
+            b = properties.Integer('int b')
+
+            @properties.observer('a')
+            def _set_b_to_five(self, change):
+                self.b = 5
+
+        hi = HasInts()
+        assert hi.a == 1
+        assert hi.b == 10
+        del hi.a
+        assert hi.a is None
+        assert hi.b == 5
+        hi._reset('b')
+        assert hi.b == 10
+        hi._reset('a', silent=True)
+        assert hi.a == 1
+        assert hi.b == 10
+
+        with self.assertRaises(AttributeError):
+            hi._reset('c')
+
+        class HasUid(properties.HasProperties):
+            uid = properties.Uuid('uid')
+
+        hu = HasUid()
+
+        with self.assertRaises(AttributeError):
+            hu._reset('uid')
+
+
+    def test_callable(self):
+
+        class HasUid(properties.HasProperties):
+            uid = properties.Uuid('uid')
+
+        class HasUidZero(HasUid):
+            _defaults = {'uid': lambda: uuid.UUID(int=0)}
+
+        huz = HasUidZero()
+        assert (properties.Uuid.to_json(huz.uid) ==
+                '00000000-0000-0000-0000-000000000000')
+
+        NUMBER = 1
+
+        def generate_int():
+            return NUMBER
+
+        class HasInt(properties.HasProperties):
+            a = properties.Integer('an int', default=generate_int)
+
+        hi = HasInt()
+        assert hi.a == 1
+
+        NUMBER = 2
+
+        hi._reset('a')
+        assert hi.a == 2
+
+        class HasNewInt(HasInt):
+            _defaults = {'a': lambda: generate_int()+1}
+
+        hi = HasNewInt()
+        assert hi.a == 3
 
 
 if __name__ == '__main__':

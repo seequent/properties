@@ -290,7 +290,8 @@ class Property(GettableProperty):
 
         def fset(self, value):
             """Validate value and call the HasProperties _set method"""
-            value = scope.validate(self, value)
+            if value is not undefined:
+                value = scope.validate(self, value)
             self._set(scope.name, value)
 
         def fdel(self):
@@ -752,11 +753,11 @@ class Uuid(GettableProperty):
 
     @staticmethod
     def to_json(value):
-        return str(value)
+        return text_type(value)
 
     @staticmethod
     def from_json(value):
-        return uuid.UUID(str(value))
+        return uuid.UUID(text_type(value))
 
 
 COLORS_20 = [

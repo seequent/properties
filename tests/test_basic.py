@@ -87,6 +87,9 @@ class TestBasic(unittest.TestCase):
             ':type myprop3: :class:`Property <properties.basic.Property>`'
         )
 
+        class NoMoreDocOrder(WithDocOrder):
+            _doc_order = None
+
     def test_bool(self):
 
         class BoolOpts(properties.HasProperties):

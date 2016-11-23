@@ -51,6 +51,14 @@ class TestHandlers(unittest.TestCase):
                     pass
 
         with self.assertRaises(TypeError):
+            class BadHandler(properties.HasProperties):
+                a = properties.Integer('int a')
+
+                @properties.observer('b')
+                def _do_nothing(self, change):
+                    pass
+
+        with self.assertRaises(TypeError):
             properties.handlers.Observer('a', 'nothing')
 
         hand = ConsiderItHandled()
@@ -97,6 +105,56 @@ class TestHandlers(unittest.TestCase):
 
         assert hand.c == 12
         assert hand.d == 0
+
+    def test_everything(self):
+        class HandleEverything(ConsiderItHandled):
+            @properties.observer(properties.everything)
+            def _raise_attribute_error(self, change):
+                raise AttributeError()
+
+        he = HandleEverything()
+
+        with self.assertRaises(AttributeError):
+            he.a = 0
+        with self.assertRaises(AttributeError):
+            he.b = 0
+        with self.assertRaises(AttributeError):
+            he.c = 0
+        with self.assertRaises(AttributeError):
+            he.d = 0
+
+    def test_overriding(self):
+        class OverrideThings(ConsiderItHandled):
+
+            b = properties.Float('float a')
+
+            @property
+            def c(self):
+                return self.a
+
+            d = 'd'
+
+            _a_cannot_be_five = 5
+
+            def _mirror_to_b(self, change):
+                pass
+
+            def _a_also_cannot_be_twentyseventhousand(self, change):
+                pass
+
+            def _d_is_five(self, change):
+                pass
+
+            def _set_b_to_twelve(self):
+                self.b = 12
+
+        ot = OverrideThings()
+
+        assert len(ot._props) == 2
+        assert isinstance(ot._props['a'], properties.Integer)
+        assert isinstance(ot._props['b'], properties.Float)
+        assert len(ot._prop_observers) == 0
+        assert len(ot._prop_observers) == 0
 
 
 if __name__ == '__main__':
