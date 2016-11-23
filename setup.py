@@ -22,21 +22,17 @@ CLASSIFIERS = [
 with open("README.rst") as f:
     LONG_DESCRIPTION = ''.join(f.readlines())
 
+EXTRAS = {
+    'math': ['numpy>=1.7', 'vectormath>=0.1.1'],
+    'image': ['matplotlib', 'pypng']
+}
+EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
     name="properties",
     version="0.2.3",
     packages=find_packages(exclude=('tests',)),
     install_requires=['six'],
-    extras_require={
-        'math': ['numpy>=1.7', 'vectormath>=0.1.1'],
-        'image': ['matplotlib', 'pypng'],
-        'full': [
-            'matplotlib',
-            'numpy>=1.7',
-            'pypng',
-            'vectormath>=0.1.1',
-        ]
-    },
+    extras_require=EXTRAS,
     author="3point Science",
     author_email="info@3ptscience.com",
     description="properties",
