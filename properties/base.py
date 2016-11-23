@@ -83,10 +83,10 @@ class PropertyMetaclass(type):
             classdict[key] = prop.get_property()
 
         # Ensure observed names are valid
-        for key, hand in iteritems(observer_dict):
-            if hand.names is utils.everything:
+        for key, handler in iteritems(observer_dict):
+            if handler.names is utils.everything:
                 continue
-            for prop in hand.names:
+            for prop in handler.names:
                 if prop in _props and isinstance(_props[prop], basic.Property):
                     continue
                 raise TypeError('Observed name must be a mutable '
@@ -94,8 +94,8 @@ class PropertyMetaclass(type):
 
         # Overwrite observers and validators with their function
         observer_dict.update(validator_dict)
-        for key, hand in iteritems(observer_dict):
-            classdict[key] = hand.func
+        for key, handler in iteritems(observer_dict):
+            classdict[key] = handler.func
 
         # Order the properties for the docs (default is alphabetical)
         _doc_order = classdict.pop('_doc_order', None)
@@ -166,6 +166,35 @@ class PropertyMetaclass(type):
 
         return newcls
 
+    def __call__(cls, *args, **kwargs):
+        """Here additional instance setup happens before init"""
+
+        obj = cls.__new__(cls)
+        obj._backend = dict()
+        obj._listeners = dict()
+
+        # Register the listeners
+        for _, val in iteritems(obj._prop_observers):
+            handlers._set_listener(obj, val)
+
+        # Set the GettableProperties from defaults - these are only set here
+        for key, prop in iteritems(obj._props):
+            if not isinstance(prop, basic.Property):
+                if key in obj._defaults:
+                    val = obj._defaults[key]
+                else:
+                    val = prop.default
+                if val is utils.undefined:
+                    continue
+                if callable(val):
+                    val = val()
+                obj._backend[key] = prop.validate(obj, val)
+
+        # Set the other defaults without triggering change notifications
+        obj._reset(silent=True)
+        obj.__init__(*args, **kwargs)
+        return obj
+
 
 class HasProperties(with_metaclass(PropertyMetaclass, object)):
     """HasProperties class with properties"""
@@ -174,29 +203,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     _REGISTRY = dict()
 
     def __init__(self, **kwargs):
-        self._backend = dict()
-        self._listeners = dict()
-
-        # Register the listeners
-        for _, val in iteritems(self._prop_observers):
-            handlers._set_listener(self, val)
-
-        # Set the GettableProperties from defaults - these are only set here
-        for key in self._props:
-            if not isinstance(self._props[key], basic.Property):
-                if key in self._defaults:
-                    val = self._defaults[key]
-                else:
-                    val = self._props[key].default
-                if val is utils.undefined:
-                    continue
-                if callable(val):
-                    val = val()
-                self._backend[key] = self._props[key].validate(self, val)
-
-        # Set the other defaults without triggering change notifications
-        self._reset(silent=True)
-
         # Set the keyword arguments with change notifications
         for key, val in iteritems(kwargs):
             if not hasattr(self, key) and key not in self._props.keys():
@@ -205,7 +211,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             setattr(self, key, val)
 
     def _get(self, name):
-        return self._backend.get(name, None)
+        return self._backend.get(name, None)                                   #pylint: disable=no-member
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -216,9 +222,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         change = dict(name=name, value=value, mode='validate')
         self._notify(change)
         if change['value'] is utils.undefined:
-            self._backend.pop(name, None)
+            self._backend.pop(name, None)                                      #pylint: disable=no-member
         else:
-            self._backend[name] = change['value']
+            self._backend[name] = change['value']                              #pylint: disable=no-member
         change.update(name=name, mode='observe')
         self._notify(change)
 
@@ -245,7 +251,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             val = self._props[name].default
         if callable(val):
             val = val()
-        _listener_stash = self._listeners
+        _listener_stash = self._listeners                                      #pylint: disable=access-member-before-definition
         if silent:
             self._listeners = dict()
         setattr(self, name, val)
@@ -328,11 +334,11 @@ class Instance(basic.Property):
 
     info_text = 'an instance'
 
-    def __init__(self, helpdoc, instance_class, **kwargs):
+    def __init__(self, doc, instance_class, **kwargs):
         if not isinstance(instance_class, type):
             raise TypeError('instance_class must be class')
         self.instance_class = instance_class
-        super(Instance, self).__init__(helpdoc, **kwargs)
+        super(Instance, self).__init__(doc, **kwargs)
 
     @property
     def _class_default(self):
@@ -353,7 +359,7 @@ class Instance(basic.Property):
         self._auto_create = value
 
     def info(self):
-        """Description of the property, supplemental to the help doc"""
+        """Description of the property, supplemental to the basic doc"""
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
 
     def validate(self, instance, value):
@@ -459,13 +465,13 @@ class List(basic.Property):
     info_text = 'a list'
     _class_default = list
 
-    def __init__(self, helpdoc, prop, **kwargs):
+    def __init__(self, doc, prop, **kwargs):
         if isinstance(prop, type) and issubclass(prop, HasProperties):
-            prop = Instance(helpdoc, prop)
+            prop = Instance(doc, prop)
         if not isinstance(prop, basic.Property):
             raise TypeError('prop must be a Property or HasProperties class')
         self.prop = prop
-        super(List, self).__init__(helpdoc, **kwargs)
+        super(List, self).__init__(doc, **kwargs)
         self._unused_default_warning()
 
     @property
@@ -614,23 +620,23 @@ class Union(basic.Property):
 
     info_text = 'a union of multiple property types'
 
-    def __init__(self, helpdoc, props, **kwargs):
+    def __init__(self, doc, props, **kwargs):
         if not isinstance(props, (tuple, list)):
             raise TypeError('props must be a list')
         new_props = tuple()
         for prop in props:
             if isinstance(prop, type) and issubclass(prop, HasProperties):
-                prop = Instance(help, prop)
+                prop = Instance(doc, prop)
             if not isinstance(prop, basic.Property):
                 raise TypeError('all props must be Property instance or '
                                 'HasProperties class')
             new_props += (prop,)
         self.props = new_props
-        super(Union, self).__init__(helpdoc, **kwargs)
+        super(Union, self).__init__(doc, **kwargs)
         self._unused_default_warning()
 
     def info(self):
-        """Description of the property, supplemental to the help doc"""
+        """Description of the property, supplemental to the basic doc"""
         return ' or '.join([p.info() for p in self.props])
 
     @property

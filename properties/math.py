@@ -5,11 +5,166 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import numpy as np
-from six import integer_types
-from six import string_types
+from six import integer_types, string_types
 import vectormath as vmath
 
-from .basic import Array
+from .basic import Property
+
+TYPE_MAPPINGS = {
+    int: 'i',
+    float: 'f',
+    bool: 'b',
+}
+
+
+class Array(Property):
+    """Serializable float or int array property using numpy.ndarray
+
+    Available keywords:
+
+    * **shape** - tuple with integer or '*' entries corresponding to valid
+      array shapes. '*' means the dimension can be any length.
+      array dimension shapes. '*' means the dimension can be any length.
+      For example, an n x 3 array would be shape ('*', 3).
+      Default: ('*',)
+    * **dtype** - float, int, bool, or a tuple containing any of these.
+      Default: (float, int)
+    """
+
+    info_text = 'a list or numpy array'
+
+    @property
+    def wrapper(self):
+        """Class used to wrap the value in the validation call.
+
+        For the base Array class, this is a :func:`numpy.array` but
+        subclasses can use other wrappers such as :class:`tuple`,
+        :class:`list` or :class:`vectormath.vector.Vector3`
+        """
+        return np.array
+
+    @property
+    def shape(self):
+        """Valid array shape.
+
+        Must be a tuple with integer or '*' engries corresponding to valid
+        array shapes. '*' means the dimension can be any length.
+        """
+        return getattr(self, '_shape', ('*',))
+
+    @shape.setter
+    def shape(self, value):
+        if not isinstance(value, tuple):
+            raise TypeError("{}: Invalid shape - must be a tuple "
+                            "(e.g. ('*',3) for an array of length-3 "
+                            "arrays)".format(value))
+        for shp in value:
+            if shp != '*' and not isinstance(shp, integer_types):
+                raise TypeError("{}: Invalid shape - values "
+                                "must be '*' or int".format(value))
+        self._shape = value
+
+    @property
+    def dtype(self):
+        """Valid type of the array
+
+        May be float, int, bool or a tuple of any of these
+        """
+        return getattr(self, '_dtype', (float, int))
+
+    @dtype.setter
+    def dtype(self, value):
+        if not isinstance(value, (list, tuple)):
+            value = (value,)
+        if len(value) == 0:
+            raise TypeError('No dtype specified - must be int, float, '
+                            'and/or bool')
+        if any([val not in TYPE_MAPPINGS for val in value]):
+            raise TypeError('{}: Invalid dtype - must be int, float, '
+                            'and/or bool'.format(value))
+        self._dtype = value
+
+    def info(self):
+        return '{info} of {type} with shape {shp}'.format(
+            info=self.info_text,
+            type=', '.join([str(t) for t in self.dtype]),
+            shp='(' + ', '.join(['\*' if s == '*' else str(s)                  #pylint: disable=anomalous-backslash-in-string
+                                 for s in self.shape]) + ')',
+        )
+
+    def validate(self, instance, value):
+        """Determine if array is valid based on shape and dtype"""
+        if not isinstance(value, (tuple, list, np.ndarray)):
+            self.error(instance, value)
+        value = self.wrapper(value)
+        if not isinstance(value, np.ndarray):
+            raise NotImplementedError(
+                'Array validation is only implmented for wrappers that are '
+                'subclasses of numpy.ndarray'
+            )
+        for typ, kind in TYPE_MAPPINGS.items():
+            if value.dtype.kind == kind and typ not in self.dtype:
+                self.error(instance, value)
+        if len(self.shape) != value.ndim:
+            self.error(instance, value)
+        for i, shp in enumerate(self.shape):
+            if shp != '*' and value.shape[i] != shp:
+                self.error(instance, value)
+        return value
+
+    def error(self, instance, value, error=None, extra=''):
+        """Generates a ValueError on setting property to an invalid value"""
+        error = error if error is not None else ValueError
+        if not isinstance(value, (list, tuple, np.ndarray)):
+            super(Array, self).error(instance, value, error, extra)
+        if isinstance(value, (list, tuple)):
+            val_description = 'A {typ} of length {len}'.format(
+                typ=value.__class__.__name__,
+                len=len(value)
+            )
+        else:
+            val_description = 'An array of shape {shp} and dtype {typ}'.format(
+                shp=value.shape,
+                typ=value.dtype
+            )
+        raise error(
+            "The '{name}' property of a {cls} instance must be {info}. "
+            "{desc} was specified. {extra}".format(
+                name=self.name,
+                cls=instance.__class__.__name__,
+                info=self.info(),
+                desc=val_description,
+                extra=extra,
+            )
+        )
+
+    def deserialize(self, value, trusted=False):
+        """De-serialize the property value from JSON
+
+        If no deserializer has been registered, this converts the value
+        to the wrapper class with given dtype.
+        """
+        if self.deserializer is not None:
+            return self.deserializer(value)
+        if value is None:
+            return None
+        return self.wrapper(value).astype(self.dtype[0])
+
+    @staticmethod
+    def to_json(value):
+        """Convert array to JSON list
+
+        nan values are converted to string 'nan', inf values to 'inf'.
+        """
+        def _recurse_list(val):
+            if len(val) > 0 and isinstance(val[0], list):
+                return [_recurse_list(v) for v in val]
+            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]  #pylint: disable=no-member
+        return _recurse_list(value.tolist())
+
+    @staticmethod
+    def from_json(value):
+        return np.array(value).astype(float)
 
 
 class BaseVector(Array):
