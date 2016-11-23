@@ -51,6 +51,14 @@ class TestHandlers(unittest.TestCase):
                     pass
 
         with self.assertRaises(TypeError):
+            class BadHandler(properties.HasProperties):
+                a = properties.Integer('int a')
+
+                @properties.observer('b')
+                def _do_nothing(self, change):
+                    pass
+
+        with self.assertRaises(TypeError):
             properties.handlers.Observer('a', 'nothing')
 
         hand = ConsiderItHandled()

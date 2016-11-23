@@ -24,7 +24,7 @@ class PropertyMetaclass(type):
     docstrings, and add HasProperties class to Registry
     """
 
-    def __new__(mcs, name, bases, classdict):                                  #pylint: disable=too-many-locals, too-many-branches
+    def __new__(mcs, name, bases, classdict):                                  #pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         # Grab all the properties, observers, and validators
         prop_dict = {
@@ -40,7 +40,7 @@ class PropertyMetaclass(type):
             if isinstance(value, handlers.ClassValidator)
         }
 
-        # get pointers to all inherited properties, observers, and validators
+        # Get pointers to all inherited properties, observers, and validators
         _props = dict()
         _prop_observers = dict()
         _class_validators = dict()
@@ -63,16 +63,18 @@ class PropertyMetaclass(type):
                     # drop ones which are no longer validators
                     if not (k not in validator_dict and k in classdict)
                 })
-        # Overwrite with this classes properties
+
+        # Overwrite with this class's properties
         _props.update(prop_dict)
         _prop_observers.update(observer_dict)
         _class_validators.update(validator_dict)
-        # save these to the class
+
+        # Save these to the class
         classdict['_props'] = _props
         classdict['_prop_observers'] = _prop_observers
         classdict['_class_validators'] = _class_validators
 
-        # Overwrite properties with @property
+        # Ensure prop names are valid and overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             if key[0] == '_':
                 raise AttributeError(
@@ -81,12 +83,20 @@ class PropertyMetaclass(type):
             prop.name = key
             classdict[key] = prop.get_property()
 
-        # Overwrite handlers with their function
-        observer_dict.update(validator_dict)
-        for key, hand in iteritems(observer_dict):
-            classdict[key] = hand.func
+        # Ensure observed names are valid
+        for key, handler in iteritems(observer_dict):
+            for prop in handler.names:
+                if prop in _props and isinstance(_props[prop], basic.Property):
+                    continue
+                raise TypeError('Observed name must be a mutable '
+                                'property: {}'.format(prop))
 
-        # Document Properties
+        # Overwrite observers and validators with their function
+        observer_dict.update(validator_dict)
+        for key, handler in iteritems(observer_dict):
+            classdict[key] = handler.func
+
+        # Order the properties for the docs (default is alphabetical)
         _doc_order = classdict.pop('_doc_order', None)
         if _doc_order is None:
             _doc_order = sorted(_props)
@@ -99,6 +109,7 @@ class PropertyMetaclass(type):
                 '_doc_order must be unspecified or contain ALL property names'
             )
 
+        # Sort props into required, optional, and immutable
         doc_str = classdict.get('__doc__', '')
         req = [key for key in _doc_order
                if getattr(_props[key], 'required', False)]
@@ -107,6 +118,7 @@ class PropertyMetaclass(type):
         imm = [key for key in _doc_order
                if not hasattr(_props[key], 'required')]
 
+        # Build the documentation based on above sorting
         if req:
             doc_str += '\n\n**Required**\n\n' + '\n'.join(
                 (_props[key].sphinx() for key in req)
@@ -126,61 +138,80 @@ class PropertyMetaclass(type):
             mcs, name, bases, classdict
         )
 
+        # Update the class defaults to include inherited values
+        _defaults = dict()
+        for parent in reversed(newcls.__mro__):
+            _defaults.update(getattr(parent, '_defaults', dict()))
+
+        # Ensure defaults are valid and add them to the class
+        for key, value in iteritems(_defaults):
+            if key not in newcls._props:
+                raise AttributeError(
+                    "Default input '{}' is not a known property".format(key)
+                )
+            try:
+                if callable(value):
+                    newcls._props[key].validate(None, value())
+                else:
+                    newcls._props[key].validate(None, value)
+            except ValueError:
+                raise AttributeError(
+                    "Invalid default for property '{}'".format(key)
+                )
+        newcls._defaults = _defaults
+
         # Save the class in the registry
         newcls._REGISTRY[name] = newcls
 
         return newcls
 
+    def __call__(cls, *args, **kwargs):
+        """Here additional instance setup happens before init"""
+
+        obj = cls.__new__(cls)
+        obj._backend = dict()
+        obj._listeners = dict()
+
+        # Register the listeners
+        for _, val in iteritems(obj._prop_observers):
+            handlers._set_listener(obj, val)
+
+        # Set the GettableProperties from defaults - these are only set here
+        for key, prop in iteritems(obj._props):
+            if not isinstance(prop, basic.Property):
+                if key in obj._defaults:
+                    val = obj._defaults[key]
+                else:
+                    val = prop.default
+                if val is utils.undefined:
+                    continue
+                if callable(val):
+                    val = val()
+                prop.validate(obj, val)
+                obj._backend[key] = val
+
+        # Set the other defaults without triggering change notifications
+        obj.reset(silent=True)
+        obj.__init__(*args, **kwargs)
+        return obj
+
 
 class HasProperties(with_metaclass(PropertyMetaclass, object)):
     """HasProperties class with properties"""
 
-    _backend_name = "dict"
-    _backend_class = dict
-    _defaults = None
+    _defaults = dict()
     _REGISTRY = dict()
 
     def __init__(self, **kwargs):
-        self._backend = self._backend_class()
-
-        # add the default listeners
-        self._listeners = dict()
-        for _, val in iteritems(self._prop_observers):
-            handlers._set_listener(self, val)
-
-        # set the defaults
-        defaults = self._defaults or dict()
-        for key, value in iteritems(defaults):
-            if key not in self._props.keys():
-                raise AttributeError(
-                    "Default input '{:s}' is not a known property".format(key)
-                )
-            if callable(value):
-                setattr(self, key, value())
-            else:
-                setattr(self, key, value)
-
-        # set the keywords
-        for key in kwargs:
+        # Set the keyword arguments with change notifications
+        for key, val in iteritems(kwargs):
             if not hasattr(self, key) and key not in self._props.keys():
-                raise AttributeError("Keyword input '{:s}' is not a known "
+                raise AttributeError("Keyword input '{}' is not a known "
                                      "property or attribute".format(key))
-            setattr(self, key, kwargs[key])
+            setattr(self, key, val)
 
     def _get(self, name):
-        if name in self._backend:
-            return self._backend[name]
-
-        # Fixes initial default value so ie 'random' states become fixed
-        if self._defaults is not None and name in self._defaults:              #pylint: disable=unsupported-membership-test
-            default = self._defaults[name]                                     #pylint: disable=unsubscriptable-object
-        else:
-            default = self._props[name].default
-        if callable(default):
-            self._backend[name] = self._props[name].validate(self, default())
-        elif default is not utils.undefined:
-            self._backend[name] = self._props[name].validate(self, default)
-        return self._backend.get(name, None)
+        return self._backend.get(name, None)                                   #pylint: disable=no-member
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -190,12 +221,41 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     def _set(self, name, value):
         change = dict(name=name, value=value, mode='validate')
         self._notify(change)
-        if change['value'] is utils.undefined and name in self._backend:
-            self._backend.pop(name)
+        if change['value'] is utils.undefined:
+            self._backend.pop(name, None)                                      #pylint: disable=no-member
         else:
-            self._backend[name] = change['value']
+            self._backend[name] = change['value']                              #pylint: disable=no-member
         change.update(name=name, mode='observe')
         self._notify(change)
+
+    def reset(self, name=None, silent=False):
+        """Revert specified property to default value
+
+        If no property is specified, all properties are returned to default.
+        If silent is True, notifications will not be fired.
+        """
+        if name is None:
+            for key in self._props:
+                if isinstance(self._props[key], basic.Property):
+                    self.reset(name=key, silent=silent)
+            return
+        if name not in self._props:
+            raise AttributeError("Input name '{}' is not a known "
+                                 "property or attribute".format(name))
+        if not isinstance(self._props[name], basic.Property):
+            raise AttributeError("Cannot reset GettableProperty "
+                                 "'{}'".format(name))
+        if name in self._defaults:
+            val = self._defaults[name]
+        else:
+            val = self._props[name].default
+        if callable(val):
+            val = val()
+        _listener_stash = self._listeners                                      #pylint: disable=access-member-before-definition
+        if silent:
+            self._listeners = dict()
+        setattr(self, name, val)
+        self._listeners = _listener_stash
 
     def validate(self):
         """Call all the registered ClassValidators"""

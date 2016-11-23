@@ -19,14 +19,12 @@ GettableProperty
     :members:
     :undoc-members:
 
-
 Instance
 --------
 
 .. autoclass:: properties.base.Instance
     :members:
     :undoc-members:
-
 
 List
 ----
@@ -35,14 +33,12 @@ List
     :members:
     :undoc-members:
 
-
 Union
 -----
 
 .. autoclass:: properties.base.Union
     :members:
     :undoc-members:
-
 
 Bool
 ----
@@ -51,14 +47,12 @@ Bool
     :members:
     :undoc-members:
 
-
 Integer
 -------
 
 .. autoclass:: properties.basic.Integer
     :members:
     :undoc-members:
-
 
 Float
 -----
@@ -67,14 +61,12 @@ Float
     :members:
     :undoc-members:
 
-
 Complex
 -------
 
 .. autoclass:: properties.basic.Complex
     :members:
     :undoc-members:
-
 
 String
 ------
@@ -83,14 +75,12 @@ String
     :members:
     :undoc-members:
 
-
 StringChoice
 ------------
 
 .. autoclass:: properties.basic.StringChoice
     :members:
     :undoc-members:
-
 
 Color
 -----
@@ -131,7 +121,6 @@ Vector3
     :members:
     :undoc-members:
 
-
 Vector2
 -------
 
@@ -145,7 +134,6 @@ Vector3Array
 .. autoclass:: properties.math.Vector3Array
     :members:
     :undoc-members:
-
 
 Vector2Array
 ------------
