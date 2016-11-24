@@ -138,20 +138,20 @@ class Array(Property):
             )
         )
 
-    def deserialize(self, value, trusted=False):
+    def deserialize(self, value, trusted=False, **kwargs):
         """De-serialize the property value from JSON
 
         If no deserializer has been registered, this converts the value
         to the wrapper class with given dtype.
         """
         if self.deserializer is not None:
-            return self.deserializer(value)
+            return self.deserializer(value, **kwargs)
         if value is None:
             return None
         return self.wrapper(value).astype(self.dtype[0])
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         """Convert array to JSON list
 
         nan values are converted to string 'nan', inf values to 'inf'.
@@ -163,7 +163,7 @@ class Array(Property):
         return _recurse_list(value.tolist())
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return np.array(value).astype(float)
 
 
@@ -245,7 +245,7 @@ class Vector3(BaseVector):
         return super(Vector3, self).validate(instance, value)
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return vmath.Vector3(value)
 
 
@@ -282,7 +282,7 @@ class Vector2(BaseVector):
         return super(Vector2, self).validate(instance, value)
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return vmath.Vector2(value)
 
 
@@ -322,7 +322,7 @@ class Vector3Array(BaseVector):
         return super(Vector3Array, self).validate(instance, value)
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return vmath.Vector3Array(value)
 
 
@@ -365,7 +365,7 @@ class Vector2Array(BaseVector):
         return super(Vector2Array, self).validate(instance, value)
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return vmath.Vector2Array(value)
 
 

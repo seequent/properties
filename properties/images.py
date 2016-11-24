@@ -77,7 +77,7 @@ class ImagePNG(Property):
         return output
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         """Convert a PNG Image to base64-encoded JSON
 
         to_json assumes that value has passed validation.
@@ -91,7 +91,7 @@ class ImagePNG(Property):
         return jsonrep
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         """Convert a PNG Image from base64-encoded JSON"""
         if not value.startswith(PNG_PREAMBLE):
             raise ValueError('Not a valid base64-encoded PNG image')

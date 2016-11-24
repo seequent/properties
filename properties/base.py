@@ -275,9 +275,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._validating = False
         return True
 
-    def serialize(self, include_class=True):
+    def serialize(self, include_class=True, **kwargs):
         """Serializes a HasProperties instance to JSON"""
-        data = ((k, v.serialize(self._get(v.name), include_class))
+        data = ((k, v.serialize(self._get(v.name), include_class, **kwargs))
                 for k, v in iteritems(self._props))
         json_dict = {k: v for k, v in data if v is not None}
         if include_class:
@@ -285,28 +285,30 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return json_dict
 
     @classmethod
-    def deserialize(cls, json_dict, trusted=False):
+    def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
         """Creates new HasProperties instance from JSON dictionary"""
-        if trusted and '__class__' in json_dict:
-            if json_dict['__class__'] in cls._REGISTRY:
-                cls = cls._REGISTRY[json_dict['__class__']]
-            else:
+        if not isinstance(value, dict):
+            raise ValueError('HasProperties must deserialize from dictionary')
+        if trusted and '__class__' in value:
+            if value['__class__'] in cls._REGISTRY:
+                cls = cls._REGISTRY[value['__class__']]
+            elif verbose:
                 warn(
                     'Class name {rcl} not found in _REGISTRY. Using class '
                     '{cl} for deserialize.'.format(
-                        rcl=json_dict['__class__'], cl=cls.__name__
+                        rcl=value['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
         newinst = cls()
-        newstate, unused = utils.filter_props(cls, json_dict)
+        newstate, unused = utils.filter_props(cls, value, False)
         unused.pop('__class__', None)
-        if len(unused) > 0:
+        if len(unused) > 0 and verbose:
             warn('Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
             ), RuntimeWarning)
         for key, val in iteritems(newstate):
             setattr(newinst, key,
-                    newinst._props[key].deserialize(val, trusted))
+                    newinst._props[key].deserialize(val, trusted, **kwargs))
         return newinst
 
     def __setstate__(self, newstate):
@@ -391,7 +393,7 @@ class Instance(basic.Property):
             value.validate()
         return True
 
-    def serialize(self, value, include_class=True):
+    def serialize(self, value, include_class=True, **kwargs):
         """Serialize instance to JSON
 
         If the value is a HasProperties instance, it is serialized with
@@ -399,14 +401,14 @@ class Instance(basic.Property):
         called.
         """
         if self.serializer is not None:
-            return self.serializer(value)
+            return self.serializer(value, **kwargs)
         if value is None:
             return None
         if isinstance(value, HasProperties):
-            return value.serialize(include_class)
-        return self.to_json(value)
+            return value.serialize(include_class, **kwargs)
+        return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, trusted=False):
+    def deserialize(self, value, trusted=False, **kwargs):
         """Deserialize instance from JSON value
 
         If a deserializer is registered, that is used. Otherwise, if the
@@ -414,18 +416,18 @@ class Instance(basic.Property):
         deserialized from a dictionary.
         """
         if self.deserializer is not None:
-            return self.deserializer(value)
+            return self.deserializer(value, **kwargs)
         if value is None:
             return None
         if issubclass(self.instance_class, HasProperties):
-            return self.instance_class.deserialize(value, trusted)
-        return self.from_json(value)
+            return self.instance_class.deserialize(value, trusted, **kwargs)
+        return self.from_json(value, **kwargs)
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         """Convert instance to JSON"""
         if isinstance(value, HasProperties):
-            return value.serialize()
+            return value.serialize(**kwargs)
         try:
             return json.loads(json.dumps(value))
         except TypeError:
@@ -436,7 +438,7 @@ class Instance(basic.Property):
             )
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         """Instance properties cannot statically convert from JSON"""
         raise TypeError("Instance properties cannot statically convert "
                         "values from JSON. 'eserialize' must be used on an "
@@ -569,34 +571,36 @@ class List(basic.Property):
             self.prop.assert_valid(instance, val)
         return True
 
-    def serialize(self, value, include_class=True):
+    def serialize(self, value, include_class=True, **kwargs):
         """Return a serialized copy of the list"""
         if self.serializer is not None:
-            return self.serializer(value)
+            return self.serializer(value, **kwargs)
         if value is None:
             return None
-        return [self.prop.serialize(val, include_class) for val in value]
+        serial_list = [self.prop.serialize(val, include_class, **kwargs)
+                       for val in value]
+        return serial_list
 
-    def deserialize(self, value, trusted=False):
+    def deserialize(self, value, trusted=False, **kwargs):
         """Return a deserialized copy of the list"""
         if self.deserializer is not None:
-            return self.deserializer(value)
+            return self.deserializer(value, **kwargs)
         if value is None:
             return None
-        return [self.prop.deserialize(val, trusted) for val in value]
+        return [self.prop.deserialize(val, trusted, **kwargs) for val in value]
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         """Return a copy of the list
 
         If the list contains HasProperties instances, they are serialized.
         """
-        serial_list = [val.serialize() if isinstance(val, HasProperties)
+        serial_list = [val.serialize(**kwargs) if isinstance(val, HasProperties)
                        else val for val in value]
         return serial_list
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         """Return a copy of the json list
 
         Individual list elements cannot be converted statically since the
@@ -720,14 +724,14 @@ class Union(basic.Property):
             )
         )
 
-    def serialize(self, value, include_class=True):
+    def serialize(self, value, include_class=True, **kwargs):
         """Return a serialized value
 
         If no serializer is provided, it uses the serialize method of the
         prop corresponding to the value
         """
         if self.serializer is not None:
-            return self.serializer(value)
+            return self.serializer(value, **kwargs)
         if value is None:
             return None
         for prop in self.props:
@@ -735,31 +739,31 @@ class Union(basic.Property):
                 prop.validate(None, value)
             except (ValueError, KeyError, TypeError):
                 continue
-            return prop.serialize(value, include_class)
-        return self.to_json(value)
+            return prop.serialize(value, include_class, **kwargs)
+        return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, trusted=False):
+    def deserialize(self, value, trusted=False, **kwargs):
         """Return a deserialized value
 
         If no deserializer is provided, it uses the deserialize method of the
         prop corresponding to the value
         """
         if self.deserializer is not None:
-            return self.deserializer(value)
+            return self.deserializer(value, **kwargs)
         if value is None:
             return None
         for prop in self.props:
             try:
-                return prop.deserialize(value, trusted)
+                return prop.deserialize(value, trusted, **kwargs)
             except (ValueError, KeyError, TypeError):
                 continue
-        return self.from_json(value)
+        return self.from_json(value, **kwargs)
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         """Return value, serialized if value is a HasProperties instance"""
         if isinstance(value, HasProperties):
-            return value.serialize()
+            return value.serialize(**kwargs)
         return value
 
     def sphinx_class(self):
