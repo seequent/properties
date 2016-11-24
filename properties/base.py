@@ -285,22 +285,24 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return json_dict
 
     @classmethod
-    def deserialize(cls, json_dict, trusted=False, **kwargs):
+    def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
         """Creates new HasProperties instance from JSON dictionary"""
-        if trusted and '__class__' in json_dict:
-            if json_dict['__class__'] in cls._REGISTRY:
-                cls = cls._REGISTRY[json_dict['__class__']]
-            else:
+        if not isinstance(value, dict):
+            raise ValueError('HasProperties must deserialize from dictionary')
+        if trusted and '__class__' in value:
+            if value['__class__'] in cls._REGISTRY:
+                cls = cls._REGISTRY[value['__class__']]
+            elif verbose:
                 warn(
                     'Class name {rcl} not found in _REGISTRY. Using class '
                     '{cl} for deserialize.'.format(
-                        rcl=json_dict['__class__'], cl=cls.__name__
+                        rcl=value['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
         newinst = cls()
-        newstate, unused = utils.filter_props(cls, json_dict)
+        newstate, unused = utils.filter_props(cls, value, False)
         unused.pop('__class__', None)
-        if len(unused) > 0:
+        if len(unused) > 0 and verbose:
             warn('Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
             ), RuntimeWarning)
@@ -598,7 +600,7 @@ class List(basic.Property):
         return serial_list
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         """Return a copy of the json list
 
         Individual list elements cannot be converted statically since the
