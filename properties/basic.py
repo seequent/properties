@@ -198,7 +198,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return self.from_json(value, **kwargs)
 
     @staticmethod
-    def to_json(value, **kwargs):
+    def to_json(value, **kwargs):                                              #pylint: disable=unused-argument
         """Convert a value to JSON
 
         to_json assumes that value has passed validation.
@@ -206,7 +206,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return value
 
     @staticmethod
-    def from_json(value, **kwargs):
+    def from_json(value, **kwargs):                                            #pylint: disable=unused-argument
         """Load a value from JSON
 
         to_json assumes that value read from JSON is valid
