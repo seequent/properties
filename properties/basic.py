@@ -175,30 +175,30 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
         return property(fget=fget, doc=scope.doc)
 
-    def serialize(self, value, include_class=True):                            #pylint: disable=unused-argument
+    def serialize(self, value, include_class=True, **kwargs):                  #pylint: disable=unused-argument
         """Serialize the property value to JSON
 
         If no serializer has been registered, this uses to_json
         """
         if self.serializer is not None:
-            return self.serializer(value)
+            return self.serializer(value, **kwargs)
         if value is None:
             return None
-        return self.to_json(value)
+        return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, trusted=False):                               #pylint: disable=unused-argument
+    def deserialize(self, value, trusted=False, **kwargs):                     #pylint: disable=unused-argument
         """De-serialize the property value from JSON
 
         If no deserializer has been registered, this uses from_json
         """
         if self.deserializer is not None:
-            return self.deserializer(value)
+            return self.deserializer(value, **kwargs)
         if value is None:
             return None
-        return self.from_json(value)
+        return self.from_json(value, **kwargs)
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         """Convert a value to JSON
 
         to_json assumes that value has passed validation.
@@ -206,7 +206,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return value
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         """Load a value from JSON
 
         to_json assumes that value read from JSON is valid
@@ -358,7 +358,7 @@ class Bool(Property):
         return value
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         """Coerces JSON string to boolean"""
         if isinstance(value, string_types):
             value = value.upper()
@@ -434,7 +434,7 @@ class Integer(Property):
         )
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return int(value)
 
 
@@ -458,13 +458,13 @@ class Float(Integer):
         return floatval
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         if math.isnan(value) or math.isinf(value):
             return str(value)
         return value
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return float(value)
 
 
@@ -490,11 +490,11 @@ class Complex(Property):
         return compval
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         return str(value)
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return complex(value)
 
 
@@ -687,11 +687,11 @@ class Color(Property):
         return tuple(value)
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         return list(value)
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return tuple(value)
 
 
@@ -717,11 +717,11 @@ class DateTime(Property):
             self.error(instance, value)
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         return value.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         if len(value) == 10:
             return datetime.datetime.strptime(value.replace('-', '/'),
                                               '%Y/%m/%d')
@@ -752,11 +752,11 @@ class Uuid(GettableProperty):
         return True
 
     @staticmethod
-    def to_json(value):
+    def to_json(value, **kwargs):
         return text_type(value)
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         return uuid.UUID(text_type(value))
 
 
