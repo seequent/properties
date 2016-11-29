@@ -64,7 +64,7 @@ except ImportError:
 from .utils import everything, undefined, filter_props
 from .handlers import observer, validator
 
-__version__ = '0.3.0b1'
+__version__ = '0.3.0'
 __author__ = '3point Science'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2016 3point Science,'
