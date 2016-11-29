@@ -835,9 +835,9 @@ class File(Property):
                 value = open(value, self.mode)
             except (IOError, TypeError):
                 self.error(instance, value)
-        if not all([hasattr(value, att) for att in ('read', 'mode', 'seek')]):
+        if not all([hasattr(value, att) for att in ('read', 'seek')]):
             self.error(instance, value)
-        if value.mode not in self.valid_modes:
+        if hasattr(value, 'mode') and value.mode not in self.valid_modes:
             self.error(instance, value)
         return value
 
