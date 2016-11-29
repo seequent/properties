@@ -5,28 +5,29 @@ from __future__ import unicode_literals
 
 import unittest
 
-import properties as props
+import properties
 
 
 class TestUtils(unittest.TestCase):
 
     def test_utils(self):
 
-        assert props.undefined is props.undefined
+        assert properties.undefined is properties.undefined
 
-        class HasInts(props.HasProperties):
-            int_a = props.Integer('int a')
-            int_b = props.Integer('int b')
+        class HasInts(properties.HasProperties):
+            int_a = properties.Integer('int a')
+            int_b = properties.Integer('int b')
 
         test_dict = {'int_a': 10, 'int_b': 9, 'int_c': 8, 'int_d': 7}
 
         for hint in (HasInts, HasInts()):
-            (props_dict, others_dict) = props.filter_props(hint, test_dict)
+            (properties_dict, others_dict) = properties.filter_props(hint,
+                                                                     test_dict)
 
-            assert 'int_a' in props_dict
-            assert 'int_b' in props_dict
-            assert 'int_c' not in props_dict
-            assert 'int_d' not in props_dict
+            assert 'int_a' in properties_dict
+            assert 'int_b' in properties_dict
+            assert 'int_c' not in properties_dict
+            assert 'int_d' not in properties_dict
 
             assert 'int_a' not in others_dict
             assert 'int_b' not in others_dict

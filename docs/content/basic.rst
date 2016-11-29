@@ -19,14 +19,12 @@ GettableProperty
     :members:
     :undoc-members:
 
-
 Instance
 --------
 
 .. autoclass:: properties.base.Instance
     :members:
     :undoc-members:
-
 
 List
 ----
@@ -35,14 +33,12 @@ List
     :members:
     :undoc-members:
 
-
 Union
 -----
 
 .. autoclass:: properties.base.Union
     :members:
     :undoc-members:
-
 
 Bool
 ----
@@ -51,14 +47,12 @@ Bool
     :members:
     :undoc-members:
 
-
 Integer
 -------
 
 .. autoclass:: properties.basic.Integer
     :members:
     :undoc-members:
-
 
 Float
 -----
@@ -67,14 +61,12 @@ Float
     :members:
     :undoc-members:
 
-
 Complex
 -------
 
 .. autoclass:: properties.basic.Complex
     :members:
     :undoc-members:
-
 
 String
 ------
@@ -83,19 +75,10 @@ String
     :members:
     :undoc-members:
 
-
 StringChoice
 ------------
 
 .. autoclass:: properties.basic.StringChoice
-    :members:
-    :undoc-members:
-
-
-Array
------
-
-.. autoclass:: properties.basic.Array
     :members:
     :undoc-members:
 
@@ -124,13 +107,19 @@ UUID
 Math Properties
 ===============
 
+Array
+-----
+
+.. autoclass:: properties.math.Array
+    :members:
+    :undoc-members:
+
 Vector3
 -------
 
 .. autoclass:: properties.math.Vector3
     :members:
     :undoc-members:
-
 
 Vector2
 -------
@@ -146,7 +135,6 @@ Vector3Array
     :members:
     :undoc-members:
 
-
 Vector2Array
 ------------
 
@@ -154,3 +142,13 @@ Vector2Array
     :members:
     :undoc-members:
 
+
+Image Properties
+================
+
+ImagePNG
+--------
+
+.. autoclass:: properties.images.ImagePNG
+    :members:
+    :undoc-members:

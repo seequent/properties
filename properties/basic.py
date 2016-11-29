@@ -1,25 +1,43 @@
-"""basic.py defines base Property and basic Property types"""
+"""basic.py: defines base Property and basic Property types"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import collections
 import datetime
+import math
+import random
 import uuid
 
-import numpy as np
-from six import integer_types
-from six import string_types
+from six import integer_types, string_types, text_type, with_metaclass
 
 from .utils import undefined
 
+TOL = 1e-9
 
-class GettableProperty(object):
+PropertyTerms = collections.namedtuple(
+    'PropertyTerms',
+    ('name', 'cls', 'args', 'kwargs', 'meta'),
+)
+
+
+class ArgumentWrangler(type):
+    """Stores arguments to property initialization for later use"""
+
+    def __call__(cls, *args, **kwargs):
+        """Wrap __init__ call in GettableProperty subclasses"""
+        instance = super(ArgumentWrangler, cls).__call__(*args, **kwargs)
+        instance.terms = {'args': args, 'kwargs': kwargs}
+        return instance
+
+
+class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #pylint: disable=too-many-instance-attributes
     """Base property class that establishes gettable property behavior
 
     Available keywords:
 
-    * **help** - property's custom help string
+    * **doc** - property's custom doc string
     * **default** - property's default value
     """
 
@@ -27,8 +45,9 @@ class GettableProperty(object):
     name = ''
     _class_default = undefined
 
-    def __init__(self, helpdoc, **kwargs):
-        self._base_help = helpdoc
+    def __init__(self, doc, **kwargs):
+        self._base_doc = doc
+        self._meta = {}
         for key in kwargs:
             if key[0] == '_':
                 raise AttributeError(
@@ -46,6 +65,30 @@ class GettableProperty(object):
                 )
 
     @property
+    def terms(self):
+        """Initialization terms & options for property"""
+        terms = PropertyTerms(
+            self.name,
+            self.__class__,
+            self._args,
+            self._kwargs,
+            self.meta
+        )
+        return terms
+
+    @terms.setter
+    def terms(self, value):
+        if not isinstance(value, dict) or len(value) != 2:
+            raise TypeError("terms must be set with a dictionary of 'args' "
+                            "and 'kwargs'")
+        if 'args' not in value or not isinstance(value['args'], tuple):
+            raise TypeError("terms must have a tuple 'args'")
+        if 'kwargs' not in value or not isinstance(value['kwargs'], dict):
+            raise TypeError("terms must have a dictionary 'kwargs'")
+        self._args = value['args']
+        self._kwargs = value['kwargs']
+
+    @property
     def default(self):
         """Default value of the property"""
         return getattr(self, '_default', self._class_default)
@@ -59,14 +102,53 @@ class GettableProperty(object):
         self._default = value
 
     @property
-    def help(self):
-        """Get the help documentation of a Property instance"""
-        if getattr(self, '_help', None) is None:
-            self._help = self._base_help
-        return self._help
+    def serializer(self):
+        """Callable to serialize the property"""
+        return getattr(self, '_serializer', None)
+
+    @serializer.setter
+    def serializer(self, value):
+        if not callable(value):
+            raise TypeError('serializer must be a callable')
+        self._serializer = value
+
+    @property
+    def deserializer(self):
+        """Callable to serialize the property"""
+        return getattr(self, '_deserializer', None)
+
+    @deserializer.setter
+    def deserializer(self, value):
+        if not callable(value):
+            raise TypeError('deserializer must be a callable')
+        self._deserializer = value
+
+    @property
+    def doc(self):
+        """Get the doc documentation of a Property instance"""
+        if getattr(self, '_doc', None) is None:
+            self._doc = self._base_doc
+        return self._doc
+
+    @property
+    def meta(self):
+        """Get the tagged metadata of a Property instance"""
+        return self._meta
+
+    def tag(self, *tag, **kwtags):
+        """Tag a Property instance with arbitrary metadata"""
+        if len(tag) == 0:
+            pass
+        elif len(tag) == 1 and isinstance(tag[0], dict):
+            self._meta.update(tag[0])
+        else:
+            raise TypeError('Tags must be provided as key-word arguments or '
+                            'a dictionary')
+        self._meta.update(kwtags)
+        return self
 
     def info(self):
-        """Description of the property, supplemental to the help doc"""
+        """Description of the property, supplemental to the base doc"""
         return self.info_text
 
     def validate(self, instance, value):                                       #pylint: disable=unused-argument,no-self-use
@@ -91,15 +173,54 @@ class GettableProperty(object):
             """Call the HasProperties _get method"""
             return self._get(scope.name)
 
-        return property(fget=fget, doc=scope.help)
+        return property(fget=fget, doc=scope.doc)
+
+    def serialize(self, value, include_class=True, **kwargs):                  #pylint: disable=unused-argument
+        """Serialize the property value to JSON
+
+        If no serializer has been registered, this uses to_json
+        """
+        if self.serializer is not None:
+            return self.serializer(value, **kwargs)
+        if value is None:
+            return None
+        return self.to_json(value, **kwargs)
+
+    def deserialize(self, value, trusted=False, **kwargs):                     #pylint: disable=unused-argument
+        """De-serialize the property value from JSON
+
+        If no deserializer has been registered, this uses from_json
+        """
+        if self.deserializer is not None:
+            return self.deserializer(value, **kwargs)
+        if value is None:
+            return None
+        return self.from_json(value, **kwargs)
+
+    @staticmethod
+    def to_json(value, **kwargs):                                              #pylint: disable=unused-argument
+        """Convert a value to JSON
+
+        to_json assumes that value has passed validation.
+        """
+        return value
+
+    @staticmethod
+    def from_json(value, **kwargs):                                            #pylint: disable=unused-argument
+        """Load a value from JSON
+
+        to_json assumes that value read from JSON is valid
+        """
+        return value
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
         return (
-            ':attribute {name}: {help}{info}'.format(
+            ':attribute {name}: ({cls}) - {doc}{info}'.format(
                 name=self.name,
-                help=self.help,
-                info='' if self.info() == 'corrected' else ', ' + self.info()
+                doc=self.doc,
+                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                cls=self.sphinx_class(),
             )
         )
 
@@ -120,10 +241,10 @@ class Property(GettableProperty):
       HasProperties instance to be valid
     """
 
-    def __init__(self, helpdoc, **kwargs):
+    def __init__(self, doc, **kwargs):
         if 'required' in kwargs:
             self.required = kwargs.pop('required')
-        super(Property, self).__init__(helpdoc, **kwargs)
+        super(Property, self).__init__(doc, **kwargs)
 
     @property
     def required(self):
@@ -132,7 +253,8 @@ class Property(GettableProperty):
 
     @required.setter
     def required(self, value):
-        assert isinstance(value, bool), "Required must be a boolean."
+        if not isinstance(value, bool):
+            raise TypeError('Required must be a boolean')
         self._required = value
 
     def assert_valid(self, instance, value=None):
@@ -141,8 +263,8 @@ class Property(GettableProperty):
             value = getattr(instance, self.name, None)
         if value is None and self.required:
             raise ValueError(
-                'The \'{name}\' property of a {cls} instance is required '
-                'and has not been set.'.format(
+                "The '{name}' property of a {cls} instance is required "
+                "and has not been set.".format(
                     name=self.name,
                     cls=instance.__class__.__name__
                 )
@@ -158,44 +280,32 @@ class Property(GettableProperty):
     def get_property(self):
         """Establishes access of Property values"""
 
-        # scope is the containing HasProperties instance
+        # scope is the Property instance
         scope = self
 
+        # in the following functions self is the HasProperties instance
         def fget(self):
             """Call the HasProperties _get method"""
             return self._get(scope.name)
 
         def fset(self, value):
             """Validate value and call the HasProperties _set method"""
-            value = scope.validate(self, value)
+            if value is not undefined:
+                value = scope.validate(self, value)
             self._set(scope.name, value)
 
         def fdel(self):
             """Set value to utils.undefined on delete"""
             self._set(scope.name, undefined)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.help)
-
-    @staticmethod
-    def as_json(value):
-        """Serialize value of property to JSON"""
-        return value
-
-    def as_pickle(self, instance):
-        """Serialize the property value on an instance to JSON"""
-        return self.as_json(instance._get(self.name))
-
-    @staticmethod
-    def from_json(value):
-        """Load property value from JSON"""
-        return value
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
 
     def error(self, instance, value, error=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
         error = error if error is not None else ValueError
         raise error(
-            'The \'{name}\' property of a {cls} instance must be {info}. '
-            'A value of {val!r} {vtype!r} was specified. {extra}'.format(
+            "The '{name}' property of a {cls} instance must be {info}. "
+            "A value of {val!r} {vtype!r} was specified. {extra}".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
                 info=self.info(),
@@ -226,20 +336,13 @@ class Property(GettableProperty):
             default_str = ', Default: {}'.format(default_str)
 
         return (
-            ':param {name}: {help}{info}{default}\n:type {name}: {cls}'.format(
+            ':param {name}: {doc}{info}{default}\n:type {name}: {cls}'.format(
                 name=self.name,
-                help=self.help,
+                doc=self.doc,
                 info='' if self.info() == 'corrected' else ', ' + self.info(),
                 default=default_str,
-                cls=self.sphinx_class()
+                cls=self.sphinx_class(),
             )
-        )
-
-    def sphinx_class(self):
-        """Property class name formatted for Sphinx doc linking"""
-        return ':class:`{cls} <{pref}.{cls}>`'.format(
-            cls=self.__class__.__name__,
-            pref=self.__module__
         )
 
 
@@ -255,7 +358,7 @@ class Bool(Property):
         return value
 
     @staticmethod
-    def from_json(value):
+    def from_json(value, **kwargs):
         """Coerces JSON string to boolean"""
         if isinstance(value, string_types):
             value = value.upper()
@@ -265,7 +368,7 @@ class Bool(Property):
                 return False
         if isinstance(value, int):
             return value
-        raise ValueError('Could not load boolean form JSON: {}'.format(value))
+        raise ValueError('Could not load boolean from JSON: {}'.format(value))
 
 
 def _in_bounds(prop, instance, value):
@@ -294,6 +397,8 @@ class Integer(Property):
 
     @min.setter
     def min(self, value):
+        if self.max is not None and value > self.max:
+            raise TypeError('min must be <= max')
         self._min = value
 
     @property
@@ -303,16 +408,20 @@ class Integer(Property):
 
     @max.setter
     def max(self, value):
+        if self.min is not None and value < self.min:
+            raise TypeError('max must be >= min')
         self._max = value
 
     def validate(self, instance, value):
         """Checks that value is an integer and in min/max bounds"""
-        if isinstance(value, float) and np.isclose(value, int(value)):
-            value = int(value)
-        if not isinstance(value, integer_types):
+        try:
+            intval = int(value)
+            if abs(value - intval) > TOL:
+                raise ValueError()
+        except (TypeError, ValueError):
             self.error(instance, value)
-        _in_bounds(self, instance, value)
-        return int(value)
+        _in_bounds(self, instance, intval)
+        return intval
 
     def info(self):
         if (getattr(self, 'min', None) is None and
@@ -325,14 +434,8 @@ class Integer(Property):
         )
 
     @staticmethod
-    def as_json(value):
-        if value is None or np.isnan(value):
-            return None
-        return int(np.round(value))
-
-    @staticmethod
-    def from_json(value):
-        return int(str(value))
+    def from_json(value, **kwargs):
+        return int(value)
 
 
 class Float(Integer):
@@ -343,22 +446,26 @@ class Float(Integer):
     def validate(self, instance, value):
         """Checks that value is a float and in min/max bounds
 
-        Integers are coerced to floats
+        Non-float numbers are coerced to floats
         """
-        if isinstance(value, (float, integer_types)):
-            value = float(value)
-        _in_bounds(self, instance, value)
+        try:
+            floatval = float(value)
+            if abs(value - floatval) > TOL:
+                raise ValueError()
+        except (TypeError, ValueError):
+            self.error(instance, value)
+        _in_bounds(self, instance, floatval)
+        return floatval
+
+    @staticmethod
+    def to_json(value, **kwargs):
+        if math.isnan(value) or math.isinf(value):
+            return str(value)
         return value
 
     @staticmethod
-    def as_json(value):
-        if value is None or np.isnan(value):
-            return None
-        return value
-
-    @staticmethod
-    def from_json(value):
-        return float(str(value))
+    def from_json(value, **kwargs):
+        return float(value)
 
 
 class Complex(Property):
@@ -371,21 +478,24 @@ class Complex(Property):
 
         Floats and Integers are coerced to complex numbers
         """
-        if isinstance(value, (integer_types, float)):
-            value = complex(value)
-        if not isinstance(value, complex):
-            raise ValueError('{} must be complex'.format(self.name))
-        return value
+        try:
+            compval = complex(value)
+            if (
+                    abs(value.real - compval.real) > TOL or
+                    abs(value.imag - compval.imag) > TOL
+            ):
+                raise ValueError()
+        except (TypeError, ValueError, AttributeError):
+            self.error(instance, value)
+        return compval
 
     @staticmethod
-    def as_json(value):
-        if value is None or np.isnan(value):
-            return None
-        return value
+    def to_json(value, **kwargs):
+        return str(value)
 
     @staticmethod
-    def from_json(value):
-        return complex(str(value))
+    def from_json(value, **kwargs):
+        return complex(value)
 
 
 class String(Property):
@@ -396,6 +506,9 @@ class String(Property):
     * **strip** - substring to strip off input
 
     * **change_case** - forces 'lower', 'upper', or None
+
+    * **unicode** - if True, coerce strings to unicode. Default is True
+      to ensure consistent behaviour across Python 2/3.
     """
 
     info_text = 'a string'
@@ -407,9 +520,8 @@ class String(Property):
 
     @strip.setter
     def strip(self, value):
-        assert isinstance(value, string_types), (
-            '\'strip\' property must be the string to strip'
-        )
+        if not isinstance(value, string_types):
+            raise TypeError("'strip' property must be the string to strip")
         self._strip = value
 
     @property
@@ -423,21 +535,36 @@ class String(Property):
 
     @change_case.setter
     def change_case(self, value):
-        assert value in (None, 'upper', 'lower'), (
-            "`change_case` property must be 'upper', 'lower' or None"
-        )
+        if value not in (None, 'upper', 'lower'):
+            raise TypeError("'change_case' property must be 'upper', "
+                            "'lower' or None")
         self._change_case = value
+
+    @property
+    def unicode(self):
+        """Coerces string value to unicode"""
+        return getattr(self, '_unicode', True)
+
+    @unicode.setter
+    def unicode(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'unicode' property must be a boolean")
+        self._unicode = value
 
     def validate(self, instance, value):
         """Check if value is a string, and strips it and changes case"""
+        value_type = type(value)
         if not isinstance(value, string_types):
             self.error(instance, value)
-        value = str(value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
             value = value.upper()
         elif self.change_case == 'lower':
             value = value.lower()
+        if self.unicode:
+            value = text_type(value)
+        else:
+            value = value_type(value)
         return value
 
 
@@ -451,16 +578,16 @@ class StringChoice(Property):
       where any string in the value list is coerced into the key string.
     """
 
-    def __init__(self, helpdoc, choices, **kwargs):
+    def __init__(self, doc, choices, **kwargs):
         self.choices = choices
-        super(StringChoice, self).__init__(helpdoc, **kwargs)
+        super(StringChoice, self).__init__(doc, **kwargs)
 
     @property
     def info_text(self):
         """Formatted string to display the available choices"""
         if len(self.choices) == 2:
-            return 'either {} or {}'.format(list(self.choices)[0],
-                                            list(self.choices)[1])
+            return 'either "{}" or "{}"'.format(list(self.choices)[0],
+                                                list(self.choices)[1])
         return 'any of "{}"'.format('", "'.join(self.choices))
 
     @property
@@ -475,19 +602,27 @@ class StringChoice(Property):
 
     @choices.setter
     def choices(self, value):
-        if not isinstance(value, (list, tuple, dict)):
-            raise ValueError('value must be a list, tuple, or dict')
-        if isinstance(value, (list, tuple)):
-            value = {v: v for v in value}
+        if isinstance(value, (set, list, tuple)):
+            if len(value) != len(set(value)):
+                raise TypeError("'choices' must contain no duplicate strings")
+            value = {v: [] for v in value}
+        if not isinstance(value, dict):
+            raise TypeError("'choices' must be a set, list, tuple, or dict")
         for key, val in value.items():
-            if not isinstance(val, (list, tuple)):
+            if isinstance(val, (set, list, tuple)):
+                value[key] = list(val)
+            else:
                 value[key] = [val]
+        all_items = []
         for key, val in value.items():
             if not isinstance(key, string_types):
-                raise ValueError('value must be strings')
+                raise TypeError("'choices' must be strings")
             for sub_val in val:
                 if not isinstance(sub_val, string_types):
-                    raise ValueError('value must be strings')
+                    raise TypeError("'choices' must be strings")
+            all_items += [key] + val
+        if len(all_items) != len(set(all_items)):
+            raise TypeError("'choices' must contain no duplicate strings")
         self._choices = value
 
     def validate(self, instance, value):
@@ -501,127 +636,6 @@ class StringChoice(Property):
             ):
                 return key
         self.error(instance, value)
-
-
-class Array(Property):
-    """Serializable float or int array property
-
-    Available keywords:
-
-    * **shape** - tuple with integer or '*' entries corresponding to valid
-      array shapes. '*' means the dimension can be any length.
-      array dimension shapes. '*' means the dimension can be any length.
-      For example, an n x 3 array would be shape ('*', 3)
-    * **dtype** - float, int, or (float, int) if both are allowed
-    """
-
-    info_text = 'a list or numpy array'
-
-    @property
-    def wrapper(self):
-        """Class used to wrap the value in the validation call.
-
-        This is usually a :func:`numpy.array` but could also be a
-        :class:`tuple`, :class:`list` or :class:`vectormath.vector.Vector3`
-        """
-        return np.array
-
-    @property
-    def shape(self):
-        """Valid array shape.
-
-        Must be a tuple with integer or '*' engries corresponding to valid
-        array shapes. '*' means the dimension can be any length.
-        """
-        return getattr(self, '_shape', ('*',))
-
-    @shape.setter
-    def shape(self, value):
-        if not isinstance(value, tuple):
-            raise TypeError("{}: Invalid shape - must be a tuple "
-                            "(e.g. ('*',3) for an array of length-3 "
-                            "arrays)".format(value))
-        for shp in value:
-            if shp != '*' and not isinstance(shp, integer_types):
-                raise TypeError("{}: Invalid shape - values "
-                                "must be '*' or int".format(value))
-        self._shape = value
-
-    @property
-    def dtype(self):
-        """Valid type of the array
-
-        May be float, int, or (float, int)
-        """
-        return getattr(self, '_dtype', (float, int))
-
-    @dtype.setter
-    def dtype(self, value):
-        if not isinstance(value, (list, tuple)):
-            value = (value,)
-        if (float not in value and
-                len(set(value).intersection(integer_types)) == 0):
-            raise TypeError("{}: Invalid dtype - must be int "
-                            "and/or float".format(value))
-        self._dtype = value
-
-    def info(self):
-        return '{info} of {type} with shape {shp}'.format(
-            info=self.info_text,
-            type=', '.join([str(t) for t in self.dtype]),
-            shp='(' + ', '.join(['\*' if s == '*' else str(s)                  #pylint: disable=anomalous-backslash-in-string
-                                 for s in self.shape]) + ')',
-        )
-
-    def validate(self, instance, value):
-        """Determine if array is valid based on shape and dtype"""
-        if not isinstance(value, (tuple, list, np.ndarray)):
-            self.error(instance, value)
-        value = self.wrapper(value)
-        if isinstance(value, np.ndarray):
-            if (value.dtype.kind == 'i' and
-                    len(set(self.dtype).intersection(integer_types)) == 0):
-                self.error(instance, value)
-            if value.dtype.kind == 'f' and float not in self.dtype:
-                self.error(instance, value)
-            if len(self.shape) != value.ndim:
-                self.error(instance, value)
-            for i, shp in enumerate(self.shape):
-                if shp != '*' and value.shape[i] != shp:
-                    self.error(instance, value)
-        else:
-            raise NotImplementedError(
-                'Array validation is only implmented for wrappers that are '
-                'subclasses of numpy.ndarray'
-            )
-
-        return value
-
-    def error(self, instance, value, error=None, extra=''):
-        """Generates a ValueError on setting property to an invalid value"""
-        error = error if error is not None else ValueError
-        if not isinstance(value, (list, tuple, np.ndarray)):
-            super(Array, self).error(instance, value, error, extra)
-        if isinstance(value, (list, tuple)):
-            val_description = 'A {typ} of length {len}'.format(
-                typ=value.__class__.__name__,
-                len=len(value)
-            )
-        else:
-            val_description = 'An array of shape {shp} and dtype {typ}'.format(
-                shp=value.shape,
-                typ=value.dtype
-            )
-        raise error(
-            'The \'{name}\' property of a {cls} instance must be {info}. '
-            '{desc} was specified. {extra}'.format(
-                name=self.name,
-                cls=instance.__class__.__name__,
-                info=self.info(),
-                desc=val_description,
-                extra=extra,
-            )
-        )
 
 
 class Color(Property):
@@ -644,7 +658,7 @@ class Color(Property):
             if value in COLORS_NAMED:
                 value = COLORS_NAMED[value]
             if value.upper() == 'RANDOM':
-                value = COLORS_20[np.random.randint(0, 20)]                    #pylint: disable=no-member
+                value = random.choice(COLORS_20)
             value = value.upper().lstrip('#')
             if len(value) == 3:
                 value = ''.join(v*2 for v in value)
@@ -659,11 +673,6 @@ class Color(Property):
             except ValueError:
                 raise ValueError(
                     '{}: Hex color must be base 16 (0-F)'.format(value))
-
-        if isinstance(value, np.ndarray):
-            # convert numpy arrays to lists
-            value = value.tolist()                                             #pylint: disable=no-member
-
         if not isinstance(value, (list, tuple)):
             raise ValueError(
                 '{}: Color must be a list or tuple of length 3'.format(value)
@@ -675,6 +684,14 @@ class Color(Property):
                 raise ValueError(
                     '{}: Color values must be ints 0-255.'.format(value)
                 )
+        return tuple(value)
+
+    @staticmethod
+    def to_json(value, **kwargs):
+        return list(value)
+
+    @staticmethod
+    def from_json(value, **kwargs):
         return tuple(value)
 
 
@@ -693,34 +710,28 @@ class DateTime(Property):
         if isinstance(value, datetime.datetime):
             return value
         if not isinstance(value, string_types):
-            self.error(value, instance)
+            self.error(instance, value)
         try:
             return self.from_json(value)
         except ValueError:
-            self.error(value, instance)
+            self.error(instance, value)
 
     @staticmethod
-    def as_json(value):
-        if value is None:
-            return
-        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+    def to_json(value, **kwargs):
+        return value.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
-    def from_json(value):
-        if value is None or value == 'None':
-            return None
+    def from_json(value, **kwargs):
         if len(value) == 10:
-            return datetime.datetime.strptime(
-                value.replace('-', '/'),
-                "%Y/%m/%d"
-            )
-        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+            return datetime.datetime.strptime(value.replace('-', '/'),
+                                              '%Y/%m/%d')
+        return datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
 
 
 class Uuid(GettableProperty):
     """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
 
-    info_text = 'an auto-generated :class:`UUID <properties.basic.Uuid>`'
+    info_text = 'an auto-generated UUID'
 
     @property
     def default(self):
@@ -732,7 +743,7 @@ class Uuid(GettableProperty):
             value = getattr(instance, self.name, None)
         if not isinstance(value, uuid.UUID) or not value.version == 4:
             raise ValueError(
-                "The `{name}` property of a {cls} instance must be a unique "
+                "The '{name}' property of a {cls} instance must be a unique "
                 "ID generated with uuid.uuid4().".format(
                     name=self.name,
                     cls=instance.__class__.__name__
@@ -741,9 +752,12 @@ class Uuid(GettableProperty):
         return True
 
     @staticmethod
-    def as_json(value):
-        """Serialize UUID to JSON"""
-        return str(value)
+    def to_json(value, **kwargs):
+        return text_type(value)
+
+    @staticmethod
+    def from_json(value, **kwargs):
+        return uuid.UUID(text_type(value))
 
 
 COLORS_20 = [
