@@ -763,13 +763,15 @@ class Uuid(GettableProperty):
 class File(Property):
     """File property
 
-    Allowed inputs are open files or filenames, which are opened on validate.
-    Note: closed files of the correct mode will still pass validation.
+    This may be a file or file-like object. If mode is provided, filenames
+    are also allowed; these will be opened on validate.
+    Note: closed files may still pass validation.
 
     Available Keywords:
 
     * **mode**: Opens the file in this mode. If 'r' or 'rb', the file must
-      exist, otherwise the file will be created.
+      exist, otherwise the file will be created. If None, string filenames
+      will not be open (and therefore be invalid).
     * **valid_modes**: Tuple of valid modes for open files. This must
       include **mode**. If nothing is specified, **valid_mode** is set
       to **mode**.
@@ -777,7 +779,7 @@ class File(Property):
 
     info_text = 'an open file or filename'
 
-    def __init__(self, doc, mode, **kwargs):
+    def __init__(self, doc, mode=None, **kwargs):
         self.mode = mode
         super(File, self).__init__(doc, **kwargs)
 
@@ -788,14 +790,15 @@ class File(Property):
 
     @mode.setter
     def mode(self, value):
-        if value not in FILE_MODES:
+        if value is not None and value not in FILE_MODES:
             raise TypeError('Invalid file mode: {}'.format(value))
         self._mode = value
 
     @property
     def valid_modes(self):
         """Valid modes of an open file"""
-        return getattr(self, '_valid_mode', (self.mode,))
+        default_mode = (self.mode,) if self.mode is not None else None
+        return getattr(self, '_valid_mode', default_mode)
 
     @valid_modes.setter
     def valid_modes(self, value):
@@ -830,14 +833,16 @@ class File(Property):
 
         If value is a string, it attempts to open it with the given mode.
         """
-        if isinstance(value, string_types):
+        if isinstance(value, string_types) and self.mode is not None:
             try:
                 value = open(value, self.mode)
             except (IOError, TypeError):
                 self.error(instance, value)
         if not all([hasattr(value, att) for att in ('read', 'seek')]):
             self.error(instance, value)
-        if hasattr(value, 'mode') and value.mode not in self.valid_modes:
+        if not hasattr(value, 'mode') or self.valid_mode is None:
+            continue
+        elif value.mode not in self.valid_modes:
             self.error(instance, value)
         return value
 
