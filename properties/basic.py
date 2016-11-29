@@ -837,13 +837,17 @@ class File(Property):
             try:
                 value = open(value, self.mode)
             except (IOError, TypeError):
-                self.error(instance, value)
+                self.error(instance, value,
+                           extra='Cannot open file: {}'.format(value))
         if not all([hasattr(value, att) for att in ('read', 'seek')]):
-            self.error(instance, value)
+            self.error(instance, value, extra='Not a file-like object')
         if not hasattr(value, 'mode') or self.valid_modes is None:
             pass
         elif value.mode not in self.valid_modes:
-            self.error(instance, value)
+            self.error(instance, value,
+                       extra='Invalid mode: {}'.format(value.mode))
+        if getattr(value, 'closed', False):
+            self.error(instance, value, extra='File is closed.')
         return value
 
     def info(self):
