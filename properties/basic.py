@@ -815,7 +815,7 @@ class File(Property):
     def get_property(self):
         """Establishes access of Property values"""
 
-        prp = super(File, self).get_property()
+        prop = super(File, self).get_property()
 
         # scope is the Property instance
         scope = self
@@ -826,7 +826,9 @@ class File(Property):
                 self._get(scope.name).close()
             self._set(scope.name, undefined)
 
-        return property(fget=prp.fget, fset=prp.fset, fdel=fdel, doc=scope.doc)
+        new_prop = property(fget=prop.fget, fset=prop.fset,
+                            fdel=fdel, doc=scope.doc)
+        return new_prop
 
     def validate(self, instance, value):
         """Checks that the value is a valid file open in the correct mode
@@ -839,7 +841,7 @@ class File(Property):
             except (IOError, TypeError):
                 self.error(instance, value,
                            extra='Cannot open file: {}'.format(value))
-        if not all([hasattr(value, att) for att in ('read', 'seek')]):
+        if not all([hasattr(value, attr) for attr in ('read', 'seek')]):
             self.error(instance, value, extra='Not a file-like object')
         if not hasattr(value, 'mode') or self.valid_modes is None:
             pass
