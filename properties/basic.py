@@ -840,8 +840,8 @@ class File(Property):
                 self.error(instance, value)
         if not all([hasattr(value, att) for att in ('read', 'seek')]):
             self.error(instance, value)
-        if not hasattr(value, 'mode') or self.valid_mode is None:
-            continue
+        if not hasattr(value, 'mode') or self.valid_modes is None:
+            pass
         elif value.mode not in self.valid_modes:
             self.error(instance, value)
         return value
