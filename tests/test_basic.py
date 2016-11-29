@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import io
 import os
 import unittest
 import uuid
@@ -411,18 +412,27 @@ class TestBasic(unittest.TestCase):
                 valid_modes=('w', 'w+', 'r+', 'a', 'a+')
             )
             myfile_writebin = properties.File('a write-only binary file', 'wb')
+            myfile_nomode = properties.File('file with no mode')
 
         fopt = FileOpt()
 
         dirname, _ = os.path.split(os.path.abspath(__file__))
         fname = os.path.sep.join(dirname.split(os.path.sep) + ['temp.dat'])
 
+        if os.path.isfile(fname):
+            os.remove(fname)
+
         with self.assertRaises(ValueError):
             fopt.myfile_read = fname
+        with self.assertRaises(ValueError):
+            fopt.myfile_read = 5
 
         fopt.myfile_write = fname
         fopt.myfile_write.write('hello')
-        fopt.myfile_write.close()
+
+        file_pointer = fopt.myfile_write
+        del fopt.myfile_write
+        assert file_pointer.closed
 
         fopt.myfile_read = fname
         assert fopt.myfile_read.read() == 'hello'
@@ -438,6 +448,15 @@ class TestBasic(unittest.TestCase):
         fopt.myfile_writebin = fopen
         fopt.myfile_writebin.write(b' oh hi')
         fopt.myfile_writebin.close()
+
+        with self.assertRaises(ValueError):
+            fopt.myfile_nomode = fname
+
+        fopt.myfile_nomode = io.BytesIO()
+        fopt.myfile_nomode.close()
+
+        with self.assertRaises(ValueError):
+            fopt.myfile_read = fopt.myfile_nomode
 
         os.remove(fname)
 
