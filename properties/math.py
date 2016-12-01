@@ -14,6 +14,7 @@ TYPE_MAPPINGS = {
     int: 'i',
     float: 'f',
     bool: 'b',
+    object: 'O',
 }
 
 
