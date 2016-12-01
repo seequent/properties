@@ -14,7 +14,6 @@ TYPE_MAPPINGS = {
     int: 'i',
     float: 'f',
     bool: 'b',
-    object: 'O',
 }
 
 
@@ -103,9 +102,8 @@ class Array(Property):
                 'Array validation is only implmented for wrappers that are '
                 'subclasses of numpy.ndarray'
             )
-        for typ, kind in TYPE_MAPPINGS.items():
-            if value.dtype.kind == kind and typ not in self.dtype:
-                self.error(instance, value)
+        if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
+            self.error(instance, value)
         if len(self.shape) != value.ndim:
             self.error(instance, value)
         for i, shp in enumerate(self.shape):
