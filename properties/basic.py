@@ -760,6 +760,111 @@ class Uuid(GettableProperty):
         return uuid.UUID(text_type(value))
 
 
+class File(Property):
+    """File property
+
+    This may be a file or file-like object. If mode is provided, filenames
+    are also allowed; these will be opened on validate.
+    Note: closed files may still pass validation.
+
+    Available Keywords:
+
+    * **mode**: Opens the file in this mode. If 'r' or 'rb', the file must
+      exist, otherwise the file will be created. If None, string filenames
+      will not be open (and therefore be invalid).
+    * **valid_modes**: Tuple of valid modes for open files. This must
+      include **mode**. If nothing is specified, **valid_mode** is set
+      to **mode**.
+    """
+
+    info_text = 'an open file or filename'
+
+    def __init__(self, doc, mode=None, **kwargs):
+        self.mode = mode
+        super(File, self).__init__(doc, **kwargs)
+
+    @property
+    def mode(self):
+        """Mode to use when opening the file"""
+        return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        if value is not None and value not in FILE_MODES:
+            raise TypeError('Invalid file mode: {}'.format(value))
+        self._mode = value
+
+    @property
+    def valid_modes(self):
+        """Valid modes of an open file"""
+        default_mode = (self.mode,) if self.mode is not None else None
+        return getattr(self, '_valid_mode', default_mode)
+
+    @valid_modes.setter
+    def valid_modes(self, value):
+        if not isinstance(value, (set, list, tuple)):
+            value = (value,)
+        if self.mode not in value:
+            raise TypeError('mode {} must be included in '
+                            'valid_modes'.format(self.mode))
+        for val in value:
+            if val not in FILE_MODES:
+                raise TypeError('Invalid file mode: {}'.format(val))
+        self._valid_mode = tuple(value)
+
+    def get_property(self):
+        """Establishes access of Property values"""
+
+        prop = super(File, self).get_property()
+
+        # scope is the Property instance
+        scope = self
+
+        def fdel(self):
+            """Set value to utils.undefined on delete"""
+            if self._get(scope.name) is not None:
+                self._get(scope.name).close()
+            self._set(scope.name, undefined)
+
+        new_prop = property(fget=prop.fget, fset=prop.fset,
+                            fdel=fdel, doc=scope.doc)
+        return new_prop
+
+    def validate(self, instance, value):
+        """Checks that the value is a valid file open in the correct mode
+
+        If value is a string, it attempts to open it with the given mode.
+        """
+        if isinstance(value, string_types) and self.mode is not None:
+            try:
+                value = open(value, self.mode)
+            except (IOError, TypeError):
+                self.error(instance, value,
+                           extra='Cannot open file: {}'.format(value))
+        if not all([hasattr(value, attr) for attr in ('read', 'seek')]):
+            self.error(instance, value, extra='Not a file-like object')
+        if not hasattr(value, 'mode') or self.valid_modes is None:
+            pass
+        elif value.mode not in self.valid_modes:
+            self.error(instance, value,
+                       extra='Invalid mode: {}'.format(value.mode))
+        if getattr(value, 'closed', False):
+            self.error(instance, value, extra='File is closed.')
+        return value
+
+    def info(self):
+        """Help text for the File property, including valid modes"""
+        info = '{}, valid modes include {}'.format(self.info_text,
+                                                   self.valid_modes)
+        return info
+
+
+FILE_MODES = [
+    'r', 'r+', 'rb', 'rb+',
+    'w', 'w+', 'wb', 'wb+',
+    'a', 'a+', 'ab', 'ab+'
+]
+
 COLORS_20 = [
     '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
     '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',

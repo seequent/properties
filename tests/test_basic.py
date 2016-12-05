@@ -5,6 +5,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import io
+import os
 import unittest
 import uuid
 
@@ -391,6 +393,72 @@ class TestBasic(unittest.TestCase):
 
         assert properties.Uuid.to_json(json_uuid) == json_uuid_str
         assert str(properties.Uuid.from_json(json_uuid_str)) == json_uuid_str
+
+    def test_file(self):
+
+        with self.assertRaises(TypeError):
+            myfile = properties.File('a file', 5)
+        with self.assertRaises(TypeError):
+            myfile = properties.File('a file', 'q')
+        with self.assertRaises(TypeError):
+            myfile = properties.File('a file', 'r', valid_modes='w')
+        with self.assertRaises(TypeError):
+            myfile = properties.File('a file', 'r', valid_modes=('r', 'k'))
+
+        class FileOpt(properties.HasProperties):
+            myfile_read = properties.File('a readonly file', 'r')
+            myfile_write = properties.File(
+                'a writable file', 'w',
+                valid_modes=('w', 'w+', 'r+', 'a', 'a+')
+            )
+            myfile_writebin = properties.File('a write-only binary file', 'wb')
+            myfile_nomode = properties.File('file with no mode')
+
+        fopt = FileOpt()
+
+        dirname, _ = os.path.split(os.path.abspath(__file__))
+        fname = os.path.sep.join(dirname.split(os.path.sep) + ['temp.dat'])
+
+        if os.path.isfile(fname):
+            os.remove(fname)
+
+        with self.assertRaises(ValueError):
+            fopt.myfile_read = fname
+        with self.assertRaises(ValueError):
+            fopt.myfile_read = 5
+
+        fopt.myfile_write = fname
+        fopt.myfile_write.write('hello')
+
+        file_pointer = fopt.myfile_write
+        del fopt.myfile_write
+        assert file_pointer.closed
+
+        fopt.myfile_read = fname
+        assert fopt.myfile_read.read() == 'hello'
+        fopt.myfile_read.close()
+
+        fopen = open(fname, 'rb')
+        with self.assertRaises(ValueError):
+            fopt.myfile_writebin = fopen
+        with self.assertRaises(ValueError):
+            fopt.myfile_read = fopen
+        fopen.close()
+        fopen = open(fname, 'wb')
+        fopt.myfile_writebin = fopen
+        fopt.myfile_writebin.write(b' oh hi')
+        fopt.myfile_writebin.close()
+
+        with self.assertRaises(ValueError):
+            fopt.myfile_nomode = fname
+
+        fopt.myfile_nomode = io.BytesIO()
+        fopt.myfile_nomode.close()
+
+        with self.assertRaises(ValueError):
+            fopt.myfile_read = fopt.myfile_nomode
+
+        os.remove(fname)
 
     def test_tagging(self):
 

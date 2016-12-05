@@ -103,6 +103,13 @@ UUID
     :members:
     :undoc-members:
 
+File
+----
+
+.. autoclass:: properties.basic.File
+    :members:
+    :undoc-members:
+
 
 Math Properties
 ===============

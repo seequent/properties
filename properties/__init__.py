@@ -26,6 +26,7 @@ from .basic import (
     Color,
     Complex,
     DateTime,
+    File,
     Float,
     GettableProperty,
     Integer,
