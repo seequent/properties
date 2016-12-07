@@ -264,10 +264,11 @@ class DynamicProperty(GettableProperty):
         self.prop = prop
         self.name = func.__name__
         super(DynamicProperty, self).__init__(doc, **kwargs)
+        self.tag(prop.meta)
 
     @property
     def func(self):
-        """func is used do calculate the dynamic value"""
+        """func is used to calculate the dynamic value"""
         return self._func
 
     @func.setter
@@ -289,10 +290,36 @@ class DynamicProperty(GettableProperty):
             raise TypeError('prop must be a Property instance')
         self._prop = value
 
+    @property
+    def name(self):
+        """The name of the property on a HasProperties class
+
+        This is set in the metaclass. For DynamicProperties, prop inherits
+        the name
+        """
+        return getattr(self, '_name', '')
+
+    @name.setter
+    def name(self, value):
+        self.prop.name = value
+        self._name = value
+
     def validate(self, instance, value):
         """Validate using self.prop"""
 
         return self.prop.validate(instance, value)
+
+    def setter(self, func):
+        if not callable(func):
+            raise TypeError('setter must be callable function')
+        if not hasattr(func, '__code__') or func.__code__.co_argcount != 2:
+            raise TypeError('setter must be a function with two arguments')
+        self._set_func = func
+        return self
+
+    @property
+    def set_func(self):
+        return getattr(self, '_set_func', None)
 
     def get_property(self):
         """Establishes the dynamic behaviour of Property values"""
@@ -302,7 +329,13 @@ class DynamicProperty(GettableProperty):
             """Call dynamic function then validate output"""
             return scope.validate(self, scope.func(self))
 
-        return property(fget=fget, doc=scope.doc)
+        def fset(self, value):
+            """Validate and call setter"""
+            if scope.set_func is None:
+                raise AttributeError('cannot set attribute')
+            scope.set_func(self, scope.validate(self, value))
+
+        return property(fget=fget, fset=fset, doc=scope.doc)
 
 
 class Property(GettableProperty):
