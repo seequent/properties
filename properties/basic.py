@@ -238,7 +238,9 @@ class DynamicProperty(GettableProperty):
     """DynamicProperties are GettableProperties calculated dynamically
 
     These allow for a similar behaviour to @property with additional
-    documentation and validation built in.
+    documentation and validation built in. DynamicProperties are not
+    saved to the backend (and therefore are not serialized), do not fire
+    change notifications, and don't allow default values.
 
     These are created when properties are used like @property:
     .. code::
@@ -247,9 +249,9 @@ class DynamicProperty(GettableProperty):
         def location(self):
             return [self.x, self.y, self.z]
 
-    Dynamic properties do not have setters; if a setter is required then
-    most likely the best solution is to define a new Property class.
-    Also, dynamic property values are not saved to the backend.
+        @location.setter
+        def location(self, value):
+            self.x, self.y, self.z = value
 
     Available keywords:
 
@@ -287,7 +289,9 @@ class DynamicProperty(GettableProperty):
     @prop.setter
     def prop(self, value):
         if not isinstance(value, GettableProperty):
-            raise TypeError('prop must be a Property instance')
+            raise TypeError('DynamicProperty prop must be a Property instance')
+        if value.default is not undefined:
+            raise TypeError('DynamicProperties cannot have a default value')
         self._prop = value
 
     @property
@@ -304,9 +308,27 @@ class DynamicProperty(GettableProperty):
         self.prop.name = value
         self._name = value
 
+    @property
+    def serializer(self):
+        """DynamicProperty serializers pass through to prop serializer
+
+        By default, the serializer will be called on None (and return None)
+        since no value is stored in the backend. If an alternative
+        serializer is registered, it must account for None.
+        """
+        return self.prop.serializer
+
+    @property
+    def deserializer(self):
+        """DynamicProperty deserializers pass through to prop deserializer
+
+        By default, values will not be serialized, so the deserializer is
+        unnecessary.
+        """
+        return self.prop.deserializer
+
     def validate(self, instance, value):
         """Validate using self.prop"""
-
         return self.prop.validate(instance, value)
 
     def setter(self, func):
@@ -314,6 +336,8 @@ class DynamicProperty(GettableProperty):
             raise TypeError('setter must be callable function')
         if not hasattr(func, '__code__') or func.__code__.co_argcount != 2:
             raise TypeError('setter must be a function with two arguments')
+        if func.__name__ != self.name:
+            raise TypeError('setter function must have same name as getter')
         self._set_func = func
         return self
 
@@ -323,7 +347,6 @@ class DynamicProperty(GettableProperty):
 
     def get_property(self):
         """Establishes the dynamic behaviour of Property values"""
-
         scope = self
         def fget(self):
             """Call dynamic function then validate output"""
@@ -336,6 +359,12 @@ class DynamicProperty(GettableProperty):
             scope.set_func(self, scope.validate(self, value))
 
         return property(fget=fget, fset=fset, doc=scope.doc)
+
+    def sphinx_class(self):
+        """Property class name formatted for Sphinx doc linking"""
+        return 'dynamic {}'.format(
+            cls=self.prop.sphinx_class
+        )
 
 
 class Property(GettableProperty):
