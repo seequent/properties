@@ -63,6 +63,14 @@ class TestDynamic(unittest.TestCase):
         hdp.my_doubled_int = 10
         assert hdp.my_float == 5.
 
+        serialized = hdp.serialize()
+        assert 'my_float' in serialized
+        assert 'my_doubled_int' not in serialized
+
+        hdp2 = HasDynamicProperty.deserialize(serialized)
+        assert hdp2.my_float == 5.
+        assert hdp2.my_doubled_int == 10
+
     def test_dynamic_errors(self):
 
         with self.assertRaises(TypeError):
@@ -89,6 +97,39 @@ class TestDynamic(unittest.TestCase):
                     'my dynamic prop', 5, properties.Integer('an int')
                 )
 
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+                @my_doubled_int.setter
+                def mdi_setter(self, value):
+                    self.my_float = value/2.
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+                my_doubled_int.setter(5)
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+                @my_doubled_int.setter
+                def my_doubled_int(self, value, extra):
+                    self.my_float = value/2.
 
 
 if __name__ == '__main__':
