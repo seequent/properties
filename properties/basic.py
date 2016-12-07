@@ -231,6 +231,78 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             pref=self.__module__
         )
 
+    def __call__(self, func):
+        return DynamicProperty(self.doc, func=func, prop=self)
+
+
+class DynamicProperty(GettableProperty):
+    """DynamicProperties are GettableProperties calculated dynamically
+
+    These allow for a similar behaviour to @property with additional
+    documentation and validation built in.
+
+    These are created when properties are used like @property:
+    .. code::
+
+        @properties.Vector3('my dynamic vector')
+        def location(self):
+            return [self.x, self.y, self.z]
+
+    Dynamic properties do not have setters; if a setter is required then
+    most likely the best solution is to define a new Property class.
+    Also, dynamic property values are not saved to the backend.
+
+    Available keywords:
+
+    * **func** - the function used to calculate the dynamic value. The
+      output of this function is then passed through property validation.
+    * **prop** - the Property used to validate and document the dynamic
+      value
+    """
+
+    def __init__(self, doc, func, prop, **kwargs):
+        self.func = func
+        self.prop = prop
+        self.name = func.__name__
+        super(DynamicProperty, self).__init__(doc, **kwargs)
+
+    @property
+    def func(self):
+        return self._func
+
+    @func.setter
+    def func(self, value):
+        if not callable(value):
+            raise TypeError('func must be callable function')
+        if not hasattr(value, '__code__') or value.__code__.co_argcount != 1:
+            raise TypeError('func must be a function with one argument')
+        self._func = value
+
+    @property
+    def prop(self):
+        return self._prop
+
+    @prop.setter
+    def prop(self, value):
+        if not isinstance(value, GettableProperty):
+            raise TypeError('prop must be a Property instance')
+        self._prop = value
+
+    def validate(self, instance, value):
+        """Validate using self.prop"""
+
+        return self.prop.validate(instance, value)
+
+    def get_property(self):
+        """Establishes the dynamic behaviour of Property values"""
+
+        scope = self
+        def fget(self):
+            """Call dynamic function then validate output"""
+            return scope.validate(self, scope.func(self))
+
+        return property(fget=fget, doc=scope.doc)
+
 
 class Property(GettableProperty):
     """Property class that establishes set and get property behavior
