@@ -362,9 +362,7 @@ class DynamicProperty(GettableProperty):
 
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
-        return 'dynamic {}'.format(
-            cls=self.prop.sphinx_class
-        )
+        return 'dynamic {}'.format(self.prop.sphinx_class())
 
 
 class Property(GettableProperty):
