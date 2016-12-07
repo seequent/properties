@@ -40,7 +40,6 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     * **doc** - property's custom doc string
     * **default** - property's default value
     """
-
     info_text = 'corrected'
     name = ''
     _class_default = undefined
@@ -268,6 +267,7 @@ class DynamicProperty(GettableProperty):
 
     @property
     def func(self):
+        """func is used do calculate the dynamic value"""
         return self._func
 
     @func.setter
@@ -280,6 +280,7 @@ class DynamicProperty(GettableProperty):
 
     @property
     def prop(self):
+        """prop is used to document and validate the dynamic value"""
         return self._prop
 
     @prop.setter
