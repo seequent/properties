@@ -14,27 +14,13 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from .base import (
-    HasProperties,
-    Instance,
-    List,
-    Union,
-)
-
-from .basic import (
-    Bool,
-    Color,
-    Complex,
-    DateTime,
-    File,
-    Float,
-    GettableProperty,
-    Integer,
-    Property,
-    String,
-    StringChoice,
-    Uuid,
-)
+from .basic import Color, DateTime, File, StringChoice, Uuid
+from .handlers import observer, validator
+from .hasproperties import HasProperties
+from .nested import Instance, List, Union
+from .primitive import Bool, Complex, Float, Integer, String
+from .properties import GettableProperty, Property
+from .utils import everything, undefined, filter_props
 
 # Attempt to import image classes. Requires:
 # >> pip install properties[image]
@@ -61,9 +47,6 @@ try:
     )
 except ImportError:
     pass
-
-from .utils import everything, undefined, filter_props
-from .handlers import observer, validator
 
 __version__ = '0.3.0'
 __author__ = '3point Science'

@@ -10,7 +10,7 @@ from io import BytesIO
 import png
 from six import string_types
 
-from .basic import Property
+from .properties import Property
 
 
 PNG_PREAMBLE = 'data:image/png;base64,'
