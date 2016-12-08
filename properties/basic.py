@@ -277,7 +277,7 @@ class DynamicProperty(GettableProperty):
     def func(self, value):
         if not callable(value):
             raise TypeError('func must be callable function')
-        if not hasattr(value, '__code__') or value.__code__.co_argcount != 1:
+        if hasattr(value, '__code__') and value.__code__.co_argcount != 1:
             raise TypeError('func must be a function with one argument')
         self._func = value
 
@@ -334,7 +334,7 @@ class DynamicProperty(GettableProperty):
     def setter(self, func):
         if not callable(func):
             raise TypeError('setter must be callable function')
-        if not hasattr(func, '__code__') or func.__code__.co_argcount != 2:
+        if hasattr(func, '__code__') and func.__code__.co_argcount != 2:
             raise TypeError('setter must be a function with two arguments')
         if func.__name__ != self.name:
             raise TypeError('setter function must have same name as getter')
