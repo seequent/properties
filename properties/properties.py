@@ -479,8 +479,3 @@ class Property(GettableProperty):
                 cls=self.sphinx_class(),
             )
         )
-
-
-
-
-
