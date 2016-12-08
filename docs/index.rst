@@ -16,7 +16,7 @@
     content/basic
     content/nested
     content/math
-    content/images
+    content/image
 
 
 Indices and tables

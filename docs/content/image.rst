@@ -1,4 +1,4 @@
-.. _images:
+.. _image:
 
 Image Properties
 ================
@@ -6,6 +6,6 @@ Image Properties
 ImagePNG
 --------
 
-.. autoclass:: properties.images.ImagePNG
+.. autoclass:: properties.image.ImagePNG
     :members:
     :undoc-members:

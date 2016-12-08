@@ -27,7 +27,7 @@ from .utils import everything, undefined, filter_props
 # or
 # >> pip install properties[full]
 try:
-    from .images import (
+    from .image import (
         ImagePNG
     )
 except ImportError:
