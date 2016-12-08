@@ -10,7 +10,13 @@
     :maxdepth: 2
 
     content/examples
+    content/hasproperties
+    content/properties
+    content/primitive
     content/basic
+    content/nested
+    content/math
+    content/images
 
 
 Indices and tables
