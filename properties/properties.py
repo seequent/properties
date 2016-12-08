@@ -328,6 +328,11 @@ class DynamicProperty(GettableProperty):
         return self.prop.validate(instance, value)
 
     def setter(self, func):
+        """Give dynamic properties a setter function
+
+        Input to the function is validated with prop validation prior to
+        execution.
+        """
         if not callable(func):
             raise TypeError('setter must be callable function')
         if hasattr(func, '__code__') and func.__code__.co_argcount != 2:
@@ -339,6 +344,7 @@ class DynamicProperty(GettableProperty):
 
     @property
     def set_func(self):
+        """set_func is called when a DynamicProperty is set"""
         return getattr(self, '_set_func', None)
 
     def get_property(self):
