@@ -84,7 +84,7 @@ class TestDynamic(unittest.TestCase):
 
                 def calc_int(self):
                     return 5
-                my_int = properties.basic.DynamicProperty(
+                my_int = properties.properties.DynamicProperty(
                     'my dynamic prop', calc_int, 5
                 )
 
@@ -93,7 +93,7 @@ class TestDynamic(unittest.TestCase):
 
                 def calc_int(self):
                     return 5
-                my_int = properties.basic.DynamicProperty(
+                my_int = properties.properties.DynamicProperty(
                     'my dynamic prop', 5, properties.Integer('an int')
                 )
 
