@@ -44,7 +44,7 @@ DynamicProperty
 ---------------
 
 .. autoclass:: properties.basic.DynamicProperty
-    :memebers:
+    :members:
     :undoc-members:
 
 Bool
