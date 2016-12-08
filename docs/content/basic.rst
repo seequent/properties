@@ -40,6 +40,13 @@ Union
     :members:
     :undoc-members:
 
+DynamicProperty
+---------------
+
+.. autoclass:: properties.basic.DynamicProperty
+    :memebers:
+    :undoc-members:
+
 Bool
 ----
 
