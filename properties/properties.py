@@ -347,6 +347,21 @@ class DynamicProperty(GettableProperty):
         """set_func is called when a DynamicProperty is set"""
         return getattr(self, '_set_func', None)
 
+    def deleter(self, func):
+        """Give dynamic properties a deleter function"""
+        if not callable(func):
+            raise TypeError('deleter must be callable function')
+        if hasattr(func, '__code__') and func.__code__.co_argcount != 1:
+            raise TypeError('deleter must be a function with two arguments')
+        if func.__name__ != self.name:
+            raise TypeError('deleter function must have same name as getter')
+        self._del_func = func
+        return self
+
+    @property
+    def del_func(self):
+        return getattr(self, '_del_func', None)
+
     def get_property(self):
         """Establishes the dynamic behaviour of Property values"""
         scope = self
@@ -360,7 +375,13 @@ class DynamicProperty(GettableProperty):
                 raise AttributeError('cannot set attribute')
             scope.set_func(self, scope.validate(self, value))
 
-        return property(fget=fget, fset=fset, doc=scope.doc)
+        def fdel(self):
+            """call deleter"""
+            if scope.del_func is None:
+                raise AttributeError('cannot delete attribute')
+            scope.del_func(self)
+
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
 
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
