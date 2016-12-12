@@ -40,6 +40,9 @@ class TestDynamic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             hdp.my_doubled_int = 50
 
+        with self.assertRaises(AttributeError):
+            del hdp.my_doubled_int
+
     def test_dynamic_setter(self):
 
         class HasDynamicProperty(properties.HasProperties):
@@ -70,6 +73,32 @@ class TestDynamic(unittest.TestCase):
         hdp2 = HasDynamicProperty.deserialize(serialized)
         assert hdp2.my_float == 5.
         assert hdp2.my_doubled_int == 10
+
+    def test_dynamic_deleter(self):
+
+        class HasDynamicProperty(properties.HasProperties):
+            my_float = properties.Float('a float')
+
+            @properties.Integer('a dynamic int')
+            def my_doubled_int(self):
+                if self.my_float is None:
+                    raise ValueError('my_doubled_int depends on my_int')
+                return self.my_float*2
+
+            @my_doubled_int.setter
+            def my_doubled_int(self, value):
+                self.my_float = value/2.
+
+            @my_doubled_int.deleter
+            def my_doubled_int(self):
+                del self.my_float
+
+        hdp = HasDynamicProperty()
+
+        hdp.my_float = 5.
+
+        del hdp.my_doubled_int
+        assert hdp.my_float is None
 
     def test_dynamic_errors(self):
 
@@ -130,6 +159,40 @@ class TestDynamic(unittest.TestCase):
                 @my_doubled_int.setter
                 def my_doubled_int(self, value, extra):
                     self.my_float = value/2.
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+                @my_doubled_int.deleter
+                def mdi_deleter(self):
+                    del self.my_float
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+                my_doubled_int.deleter(5)
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+                @my_doubled_int.deleter
+                def my_doubled_int(self, extra):
+                    del self.my_float
 
 
 if __name__ == '__main__':
