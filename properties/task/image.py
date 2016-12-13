@@ -10,9 +10,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from .base import Task, BaseResult
-from ..base import Union
-from ..basic import Bool, Float, Integer, String, StringChoice
-from ..images import ImagePNG
+from ..basic import StringChoice
+from ..image import ImagePNG
+from ..nested import Union
+from ..primitive import Bool, Float, Integer, String
 
 
 class PlotImagePNG(Task):                                                      #pylint: disable=abstract-method
