@@ -230,7 +230,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return DynamicProperty(self.doc, func=func, prop=self)
 
 
-class DynamicProperty(GettableProperty):
+class DynamicProperty(GettableProperty):                                       #pylint: disable=too-many-instance-attributes
     """DynamicProperties are GettableProperties calculated dynamically
 
     These allow for a similar behaviour to @property with additional
@@ -327,6 +327,17 @@ class DynamicProperty(GettableProperty):
         """Validate using self.prop"""
         return self.prop.validate(instance, value)
 
+    def assert_valid(self, instance, value=None):
+        """Always True for dynamic properties
+
+        This does not generate the dynamic value; it always returns True
+        unless a value is specified. Since getters and setters are defined
+        in the class only, an invalid value will never be reached.
+        """
+        if value is not None:
+            self.validate(instance, value)
+        return True
+
     def setter(self, func):
         """Give dynamic properties a setter function
 
@@ -360,6 +371,7 @@ class DynamicProperty(GettableProperty):
 
     @property
     def del_func(self):
+        """del_func is called when a DynamicProperty is deleted"""
         return getattr(self, '_del_func', None)
 
     def get_property(self):

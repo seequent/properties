@@ -24,6 +24,7 @@ class TestDynamic(unittest.TestCase):
 
             @properties.Vector3('a vector')
             def my_vector(self):
+                self.validate()
                 if self.my_int is None:
                     raise ValueError('my_vector depends on my_int')
                 val = [float(val) for val in [self.my_int, self.my_int,
@@ -36,6 +37,7 @@ class TestDynamic(unittest.TestCase):
         hdp.my_int = 10
         assert hdp.my_doubled_int == 20
         assert isinstance(hdp.my_vector, vectormath.Vector3)
+        assert hdp.validate()
 
         with self.assertRaises(AttributeError):
             hdp.my_doubled_int = 50
