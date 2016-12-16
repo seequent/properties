@@ -16,6 +16,9 @@ install:
 
 script:
   - make tests
+  - if ! [ $TRAVIS_PYTHON_VERSION == "3.3" ]; then
+      make test-docs;
+    fi
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
