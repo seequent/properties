@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import json
 import pickle
+from types import ClassType
 from warnings import warn
 
 from six import integer_types
@@ -337,8 +338,6 @@ class Instance(basic.Property):
     info_text = 'an instance'
 
     def __init__(self, doc, instance_class, **kwargs):
-        if not isinstance(instance_class, type):
-            raise TypeError('instance_class must be class')
         self.instance_class = instance_class
         super(Instance, self).__init__(doc, **kwargs)
 
@@ -348,6 +347,17 @@ class Instance(basic.Property):
         if self.auto_create:
             return self.instance_class
         return utils.undefined
+
+    @property
+    def instance_class(self):
+        """Allowed class for the Instance property"""
+        return self._instance_class
+
+    @instance_class.setter
+    def instance_class(self, value):
+        if not isinstance(instance_class, (type, ClassType)):
+            raise TypeError('instance_class must be a class')
+        self._instance_class = value
 
     @property
     def auto_create(self):
@@ -468,13 +478,23 @@ class List(basic.Property):
     _class_default = list
 
     def __init__(self, doc, prop, **kwargs):
-        if isinstance(prop, type) and issubclass(prop, HasProperties):
-            prop = Instance(doc, prop)
-        if not isinstance(prop, basic.Property):
-            raise TypeError('prop must be a Property or HasProperties class')
         self.prop = prop
         super(List, self).__init__(doc, **kwargs)
         self._unused_default_warning()
+
+    @property
+    def prop(self):
+        """Property instance or HasProperties class allowed in the list"""
+        return self._prop
+
+    @prop.setter
+    def prop(self, value):
+        if isinstance(value, type) and issubclass(value, HasProperties):
+            prop = Instance(doc, value)
+        if not isinstance(value, basic.Property):
+            raise TypeError('prop must be a Property or HasProperties class')
+        self._prop = value
+
 
     @property
     def name(self):
@@ -625,19 +645,29 @@ class Union(basic.Property):
     info_text = 'a union of multiple property types'
 
     def __init__(self, doc, props, **kwargs):
-        if not isinstance(props, (tuple, list)):
-            raise TypeError('props must be a list')
-        new_props = tuple()
-        for prop in props:
-            if isinstance(prop, type) and issubclass(prop, HasProperties):
-                prop = Instance(doc, prop)
-            if not isinstance(prop, basic.Property):
-                raise TypeError('all props must be Property instance or '
-                                'HasProperties class')
-            new_props += (prop,)
-        self.props = new_props
+        self.props = props
         super(Union, self).__init__(doc, **kwargs)
         self._unused_default_warning()
+
+    @property
+    def props(self):
+        return self._props
+
+    @props.setter
+    def props(self, value):
+        if not isinstance(value, (tuple, list)):
+            raise TypeError('props must be a list')
+        new_props = tuple()
+        for prop in value:
+            if isinstance(prop, (type, ClassType)) and
+                    issubclass(prop, HasProperties):
+                prop = Instance(doc, prop)
+            if not isinstance(prop, basic.Property):
+                raise TypeError('props must be Property instances or '
+                                'HasProperties classes')
+            new_props += (prop,)
+        self._props = new_props
+
 
     def info(self):
         """Description of the property, supplemental to the basic doc"""

@@ -45,7 +45,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     _class_default = undefined
 
     def __init__(self, doc, **kwargs):
-        self._base_doc = doc
+        self.doc = doc
         self._meta = {}
         for key in kwargs:
             if key[0] == '_':
@@ -62,6 +62,17 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 raise AttributeError(
                     'Cannot set property: "{}".'.format(key)
                 )
+
+    @property
+    def doc(self):
+        """Get the doc documentation of a Property instance"""
+        return self._doc
+
+    @doc.setter
+    def doc(self, value):
+        if not isinstance(value, string_types):
+            raise TypeError('doc must be a string')
+        self._doc = value
 
     @property
     def terms(self):
@@ -121,13 +132,6 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         if not callable(value):
             raise TypeError('deserializer must be a callable')
         self._deserializer = value
-
-    @property
-    def doc(self):
-        """Get the doc documentation of a Property instance"""
-        if getattr(self, '_doc', None) is None:
-            self._doc = self._base_doc
-        return self._doc
 
     @property
     def meta(self):
