@@ -355,7 +355,7 @@ class Instance(basic.Property):
 
     @instance_class.setter
     def instance_class(self, value):
-        if not isinstance(instance_class, (type, ClassType)):
+        if not isinstance(value, (type, ClassType)):
             raise TypeError('instance_class must be a class')
         self._instance_class = value
 
@@ -489,8 +489,9 @@ class List(basic.Property):
 
     @prop.setter
     def prop(self, value):
-        if isinstance(value, type) and issubclass(value, HasProperties):
-            prop = Instance(doc, value)
+        if (isinstance(value, (type, ClassType)) and
+                issubclass(value, HasProperties)):
+            value = Instance('', value)
         if not isinstance(value, basic.Property):
             raise TypeError('prop must be a Property or HasProperties class')
         self._prop = value
@@ -659,9 +660,9 @@ class Union(basic.Property):
             raise TypeError('props must be a list')
         new_props = tuple()
         for prop in value:
-            if isinstance(prop, (type, ClassType)) and
-                    issubclass(prop, HasProperties):
-                prop = Instance(doc, prop)
+            if (isinstance(prop, (type, ClassType)) and
+                    issubclass(prop, HasProperties)):
+                prop = Instance('', prop)
             if not isinstance(prop, basic.Property):
                 raise TypeError('props must be Property instances or '
                                 'HasProperties classes')
