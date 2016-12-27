@@ -127,11 +127,17 @@ class Array(Property):
                 shp=value.shape,
                 typ=value.dtype
             )
-        raise error(
-            "The '{name}' property of a {cls} instance must be {info}. "
-            "{desc} was specified. {extra}".format(
+
+        if instance is None:
+            prefix = '{} property'.format(self.__class__.__name__)
+        else:
+            prefix = "The '{name}' property of a {cls} instance".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
+            )
+        raise error(
+            '{prefix} must be {info}. {desc} was specified. {extra}'.format(
+                prefix=prefix,
                 info=self.info,
                 desc=val_description,
                 extra=extra,

@@ -499,11 +499,17 @@ class Property(GettableProperty):
     def error(self, instance, value, error=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
         error = error if error is not None else ValueError
-        raise error(
-            "The '{name}' property of a {cls} instance must be {info}. "
-            "A value of {val!r} {vtype!r} was specified. {extra}".format(
+        if instance is None:
+            prefix = '{} property'.format(self.__class__.__name__)
+        else:
+            prefix = "The '{name}' property of a {cls} instance".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
+            )
+        raise error(
+            '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
+            'specified. {extra}'.format(
+                prefix=prefix,
                 info=self.info,
                 val=value,
                 vtype=type(value),
