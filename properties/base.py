@@ -654,6 +654,7 @@ class Union(basic.Property):
 
     @property
     def props(self):
+        """List of valid property types or HasProperties classes"""
         return self._props
 
     @props.setter
