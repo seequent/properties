@@ -7,16 +7,19 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import json
 import pickle
-from types import ClassType
 from warnings import warn
 
-from six import integer_types
-from six import iteritems
-from six import with_metaclass
+from six import integer_types, iteritems, PY2, with_metaclass
 
 from . import basic
 from . import handlers
 from . import utils
+
+if PY2:
+    from types import ClassType
+    CLASS_TYPES = (type, ClassType)
+else:
+    CLASS_TYPES = (type,)
 
 
 class PropertyMetaclass(type):
@@ -355,7 +358,7 @@ class Instance(basic.Property):
 
     @instance_class.setter
     def instance_class(self, value):
-        if not isinstance(value, (type, ClassType)):
+        if not isinstance(value, CLASS_TYPES):
             raise TypeError('instance_class must be a class')
         self._instance_class = value
 
@@ -490,7 +493,7 @@ class List(basic.Property):
 
     @prop.setter
     def prop(self, value):
-        if (isinstance(value, (type, ClassType)) and
+        if (isinstance(value, CLASS_TYPES) and
                 issubclass(value, HasProperties)):
             value = Instance('', value)
         if not isinstance(value, basic.Property):
@@ -663,7 +666,7 @@ class Union(basic.Property):
             raise TypeError('props must be a list')
         new_props = tuple()
         for prop in value:
-            if (isinstance(prop, (type, ClassType)) and
+            if (isinstance(prop, CLASS_TYPES) and
                     issubclass(prop, HasProperties)):
                 prop = Instance('', prop)
             if not isinstance(prop, basic.Property):
