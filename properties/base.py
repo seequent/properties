@@ -16,7 +16,7 @@ from . import handlers
 from . import utils
 
 if PY2:
-    from types import ClassType
+    from types import ClassType                                                #pylint: disable=no-name-in-module
     CLASS_TYPES = (type, ClassType)
 else:
     CLASS_TYPES = (type,)
