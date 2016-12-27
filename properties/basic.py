@@ -9,6 +9,7 @@ import datetime
 import math
 import random
 import uuid
+from warnings import warn
 
 from six import integer_types, string_types, text_type, with_metaclass
 
@@ -25,6 +26,24 @@ PropertyTerms = collections.namedtuple(
 class ArgumentWrangler(type):
     """Stores arguments to property initialization for later use"""
 
+    def __new__(mcs, name, bases, classdict):
+
+        # Backward compatibility:
+        if 'info_text' in classdict:
+            warn('Deprecation warning: info_text has been renamed class_info. '
+                 'Consider updating class {} '.format(name), FutureWarning)
+            classdict['class_info'] = classdict['info_text']
+        if 'info' in classdict and callable(classdict['info']):
+            warn('Deprecation warning: info is now a @property, not a '
+                 'callable. Consider updating class {}'.format(name),
+                 FutureWarning)
+            classdict['info'] = property(fget=classdict['info'])
+
+        newcls = super(ArgumentWrangler, mcs).__new__(
+            mcs, name, bases, classdict
+        )
+        return newcls
+
     def __call__(cls, *args, **kwargs):
         """Wrap __init__ call in GettableProperty subclasses"""
         instance = super(ArgumentWrangler, cls).__call__(*args, **kwargs)
@@ -40,7 +59,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     * **doc** - property's custom doc string
     * **default** - property's default value
     """
-    info_text = 'corrected'
+    class_info = 'corrected'
     name = ''
     _class_default = undefined
 
@@ -150,9 +169,10 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         self._meta.update(kwtags)
         return self
 
+    @property
     def info(self):
         """Description of the property, supplemental to the base doc"""
-        return self.info_text
+        return self.class_info
 
     def validate(self, instance, value):                                       #pylint: disable=unused-argument,no-self-use
         """Check if value is valid and possibly coerce it to new value"""
@@ -222,7 +242,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             ':attribute {name}: ({cls}) - {doc}{info}'.format(
                 name=self.name,
                 doc=self.doc,
-                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                info='' if self.info == 'corrected' else ', ' + self.info,
                 cls=self.sphinx_class(),
             )
         )
@@ -484,7 +504,7 @@ class Property(GettableProperty):
             "A value of {val!r} {vtype!r} was specified. {extra}".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
-                info=self.info(),
+                info=self.info,
                 val=value,
                 vtype=type(value),
                 extra=extra,
@@ -515,7 +535,7 @@ class Property(GettableProperty):
             ':param {name}: {doc}{info}{default}\n:type {name}: {cls}'.format(
                 name=self.name,
                 doc=self.doc,
-                info='' if self.info() == 'corrected' else ', ' + self.info(),
+                info='' if self.info == 'corrected' else ', ' + self.info,
                 default=default_str,
                 cls=self.sphinx_class(),
             )
@@ -525,7 +545,7 @@ class Property(GettableProperty):
 class Bool(Property):
     """Boolean property"""
 
-    info_text = 'a boolean'
+    class_info = 'a boolean'
 
     def validate(self, instance, value):
         """Checks if value is a boolean"""
@@ -564,7 +584,7 @@ class Integer(Property):
     * **min**/**max** - set valid bounds of property
     """
 
-    info_text = 'an integer'
+    class_info = 'an integer'
 
     @property
     def min(self):
@@ -599,12 +619,13 @@ class Integer(Property):
         _in_bounds(self, instance, intval)
         return intval
 
+    @property
     def info(self):
         if (getattr(self, 'min', None) is None and
                 getattr(self, 'max', None) is None):
-            return self.info_text
+            return self.class_info
         return '{txt} in range [{mn}, {mx}]'.format(
-            txt=self.info_text,
+            txt=self.class_info,
             mn='-inf' if getattr(self, 'min', None) is None else self.min,
             mx='inf' if getattr(self, 'max', None) is None else self.max
         )
@@ -617,7 +638,7 @@ class Integer(Property):
 class Float(Integer):
     """Float property"""
 
-    info_text = 'a float'
+    class_info = 'a float'
 
     def validate(self, instance, value):
         """Checks that value is a float and in min/max bounds
@@ -647,7 +668,7 @@ class Float(Integer):
 class Complex(Property):
     """Complex number property"""
 
-    info_text = 'a complex number'
+    class_info = 'a complex number'
 
     def validate(self, instance, value):
         """Checks that value is a complex number
@@ -687,7 +708,7 @@ class String(Property):
       to ensure consistent behaviour across Python 2/3.
     """
 
-    info_text = 'a string'
+    class_info = 'a string'
 
     @property
     def strip(self):
@@ -754,12 +775,14 @@ class StringChoice(Property):
       where any string in the value list is coerced into the key string.
     """
 
+    class_info = 'a string choice'
+
     def __init__(self, doc, choices, **kwargs):
         self.choices = choices
         super(StringChoice, self).__init__(doc, **kwargs)
 
     @property
-    def info_text(self):
+    def info(self):
         """Formatted string to display the available choices"""
         if len(self.choices) == 2:
             return 'either "{}" or "{}"'.format(list(self.choices)[0],
@@ -826,7 +849,7 @@ class Color(Property):
     standard `web-colors <https://en.wikipedia.org/wiki/Web_colors>`_.
     """
 
-    info_text = 'a color'
+    class_info = 'a color'
 
     def validate(self, instance, value):
         """Check if input is valid color and converts to RGB"""
@@ -879,7 +902,7 @@ class DateTime(Property):
             1995/08/12 and 1995-08-12T18:00:00Z
     """
 
-    info_text = 'a datetime object'
+    class_info = 'a datetime object'
 
     def validate(self, instance, value):
         """Check if value is a valid datetime object or JSON datetime string"""
@@ -907,7 +930,7 @@ class DateTime(Property):
 class Uuid(GettableProperty):
     """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
 
-    info_text = 'an auto-generated UUID'
+    class_info = 'an auto-generated UUID'
 
     @property
     def default(self):
@@ -953,7 +976,7 @@ class File(Property):
       to **mode**.
     """
 
-    info_text = 'an open file or filename'
+    class_info = 'an open file or filename'
 
     def __init__(self, doc, mode=None, **kwargs):
         self.mode = mode
@@ -1028,9 +1051,10 @@ class File(Property):
             self.error(instance, value, extra='File is closed.')
         return value
 
+    @property
     def info(self):
         """Help text for the File property, including valid modes"""
-        info = '{}, valid modes include {}'.format(self.info_text,
+        info = '{}, valid modes include {}'.format(self.class_info,
                                                    self.valid_modes)
         return info
 

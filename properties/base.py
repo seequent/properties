@@ -335,7 +335,7 @@ class Instance(basic.Property):
       that requires arguments.
     """
 
-    info_text = 'an instance'
+    class_info = 'an instance'
 
     def __init__(self, doc, instance_class, **kwargs):
         self.instance_class = instance_class
@@ -370,6 +370,7 @@ class Instance(basic.Property):
             raise TypeError('auto_create must be a boolean')
         self._auto_create = value
 
+    @property
     def info(self):
         """Description of the property, supplemental to the basic doc"""
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
@@ -474,7 +475,7 @@ class List(basic.Property):
     * **min_length**/**max_length** - valid length limits of the list
     """
 
-    info_text = 'a list'
+    class_info = 'a list'
     _class_default = list
 
     def __init__(self, doc, prop, **kwargs):
@@ -536,9 +537,10 @@ class List(basic.Property):
             raise TypeError('max_length must be >= min_length')
         self._max_length = value
 
+    @property
     def info(self):
         """Supplemental description of the list, with length and type"""
-        itext = 'a list (each item is {info})'.format(info=self.prop.info())
+        itext = 'a list (each item is {info})'.format(info=self.prop.info)
         if self.max_length is None and self.min_length is None:
             return itext
         if self.max_length is None:
@@ -643,7 +645,7 @@ class Union(basic.Property):
       be HasProperties classes
     """
 
-    info_text = 'a union of multiple property types'
+    class_info = 'a union of multiple property types'
 
     def __init__(self, doc, props, **kwargs):
         self.props = props
@@ -669,10 +671,10 @@ class Union(basic.Property):
             new_props += (prop,)
         self._props = new_props
 
-
+    @property
     def info(self):
         """Description of the property, supplemental to the basic doc"""
-        return ' or '.join([p.info() for p in self.props])
+        return ' or '.join([p.info for p in self.props])
 
     @property
     def name(self):

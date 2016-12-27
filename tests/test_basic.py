@@ -9,6 +9,7 @@ import io
 import os
 import unittest
 import uuid
+import warnings
 
 import numpy as np
 import properties
@@ -473,6 +474,24 @@ class TestBasic(unittest.TestCase):
         assert myint.meta == {'first': 1, 'second': 2, 'third': 3}
 
         assert myint.terms.meta == myint.meta
+
+    def test_backwards_compat(self):
+
+        with warnings.catch_warnings(record=True) as w:
+
+            class NewProperty(properties.Property):
+                info_text = 'new property'
+
+                def info(self):
+                    return self.info_text
+
+            assert len(w) == 2
+            assert issubclass(w[0].category, FutureWarning)
+
+            np = NewProperty('')
+
+            assert getattr(np, 'class_info', None) == 'new property'
+            assert getattr(np, 'info', None) == 'new property'
 
 
 if __name__ == '__main__':

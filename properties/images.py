@@ -24,7 +24,7 @@ class ImagePNG(Property):
     * **filename** - name associated with open copy of PNG image
       (default is 'texture.png')
     """
-    info_text = 'a PNG image file'
+    class_info = 'a PNG image file'
 
     @property
     def filename(self):
