@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import datetime
 import io
 import os
+import re
 import unittest
 import uuid
 import warnings
@@ -265,12 +266,18 @@ class TestBasic(unittest.TestCase):
 
         class StringOpts(properties.HasProperties):
             mystring = properties.String('email', regex=r'.+\@.+\..+')
+            anotherstring = properties.String('one character',
+                                              regex=re.compile(r'^.$'))
 
         strings = StringOpts()
         strings.mystring = 'test@test.com'
+        strings.anotherstring = 'a'
 
         with self.assertRaises(ValueError):
             strings.mystring = 'not an email'
+
+        with self.assertRaises(ValueError):
+            strings.anotherstring = 'aa'
 
     def test_string_choice(self):
 
