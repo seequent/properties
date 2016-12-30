@@ -714,7 +714,7 @@ class String(Property):
     * **unicode** - if True, coerce strings to unicode. Default is True
       to ensure consistent behaviour across Python 2/3.
 
-
+    * **regexp** - regular expression input string must comply with.
     """
 
     class_info = 'a string'
