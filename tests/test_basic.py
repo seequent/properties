@@ -213,6 +213,8 @@ class TestBasic(unittest.TestCase):
             properties.String('bad case', change_case='mixed')
         with self.assertRaises(TypeError):
             properties.String('bad unicode', unicode='no')
+        with self.assertRaises(TypeError):
+            properties.String('bad regexp', regexp=5)
 
         class StringOpts(properties.HasProperties):
             mystring = properties.String('My string')
@@ -260,6 +262,15 @@ class TestBasic(unittest.TestCase):
         assert isinstance(strings.mystring, str)
         strings.mystring = u'hi'
         assert isinstance(strings.mystring, six.text_type)
+
+        class StringOpts(properties.HasProperties):
+            mystring = properties.String('email', regexp=r'.+\@.+\..+')
+
+        strings = StringOpts()
+        strings.mystring = 'test@test.com'
+
+        with self.assertRaises(ValueError):
+            strings.mystring = 'not an email'
 
     def test_string_choice(self):
 

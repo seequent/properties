@@ -8,6 +8,7 @@ import collections
 import datetime
 import math
 import random
+import re
 import uuid
 from warnings import warn
 
@@ -712,6 +713,8 @@ class String(Property):
 
     * **unicode** - if True, coerce strings to unicode. Default is True
       to ensure consistent behaviour across Python 2/3.
+
+
     """
 
     class_info = 'a string'
@@ -754,10 +757,25 @@ class String(Property):
             raise TypeError("'unicode' property must be a boolean")
         self._unicode = value
 
+    @property
+    def regexp(self):
+        """Regular expression the string must comply with"""
+        return getattr(self, '_regexp', None)
+
+    @regexp.setter
+    def regexp(self, value):
+        if not isinstance(value, string_types):
+            raise TypeError("'regexp' must be a string")
+        self._regexp = value
+
     def validate(self, instance, value):
         """Check if value is a string, and strips it and changes case"""
         value_type = type(value)
         if not isinstance(value, string_types):
+            self.error(instance, value)
+        if self.regexp is None:
+            pass
+        elif re.match(self.regexp, value) is None:
             self.error(instance, value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
