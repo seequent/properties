@@ -766,6 +766,10 @@ class String(Property):
     def regexp(self, value):
         if not isinstance(value, string_types):
             raise TypeError("'regexp' must be a string")
+        try:
+            self._regexp_compiled = re.compile(value)
+        except re.error:
+            raise ValueError("'regexp' is not valid")
         self._regexp = value
 
     def validate(self, instance, value):
@@ -773,9 +777,8 @@ class String(Property):
         value_type = type(value)
         if not isinstance(value, string_types):
             self.error(instance, value)
-        if self.regexp is None:
-            pass
-        elif re.match(self.regexp, value) is None:
+        if (self.regexp is not None and
+                self._regexp_compiled.match(value) is None):
             self.error(instance, value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
