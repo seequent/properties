@@ -714,7 +714,7 @@ class String(Property):
     * **unicode** - if True, coerce strings to unicode. Default is True
       to ensure consistent behaviour across Python 2/3.
 
-    * **regexp** - regular expression input string must comply with.
+    * **regex** - regular expression input string must comply with.
     """
 
     class_info = 'a string'
@@ -758,27 +758,27 @@ class String(Property):
         self._unicode = value
 
     @property
-    def regexp(self):
+    def regex(self):
         """Regular expression the string must comply with"""
-        return getattr(self, '_regexp', None)
+        return getattr(self, '_regex', None)
 
-    @regexp.setter
-    def regexp(self, value):
+    @regex.setter
+    def regex(self, value):
         if not isinstance(value, string_types):
-            raise TypeError("'regexp' must be a string")
+            raise TypeError("'regex' must be a string")
         try:
-            self._regexp_compiled = re.compile(value)
+            self._regex_compiled = re.compile(value)
         except re.error:
-            raise ValueError("'regexp' is not valid")
-        self._regexp = value
+            raise ValueError("'regex' is not valid")
+        self._regex = value
 
     def validate(self, instance, value):
         """Check if value is a string, and strips it and changes case"""
         value_type = type(value)
         if not isinstance(value, string_types):
             self.error(instance, value)
-        if (self.regexp is not None and
-                self._regexp_compiled.match(value) is None):
+        if (self.regex is not None and
+                self._regex_compiled.match(value) is None):
             self.error(instance, value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
