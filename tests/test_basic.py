@@ -214,7 +214,7 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.String('bad unicode', unicode='no')
         with self.assertRaises(TypeError):
-            properties.String('bad regexp', regexp=5)
+            properties.String('bad regex', regex=5)
 
         class StringOpts(properties.HasProperties):
             mystring = properties.String('My string')
@@ -264,7 +264,7 @@ class TestBasic(unittest.TestCase):
         assert isinstance(strings.mystring, six.text_type)
 
         class StringOpts(properties.HasProperties):
-            mystring = properties.String('email', regexp=r'.+\@.+\..+')
+            mystring = properties.String('email', regex=r'.+\@.+\..+')
 
         strings = StringOpts()
         strings.mystring = 'test@test.com'
