@@ -791,6 +791,13 @@ class String(Property):
             value = value_type(value)
         return value
 
+    @property
+    def info(self):
+        info = 'a unicode string' if self.unicode else 'a string'
+        if self.regex is not None and hasattr(self.regex, 'pattern'):
+            info += ' that matches pattern "{}"'.format(self.regex.pattern)    #pylint: disable=no-member
+        return info
+
 
 class StringChoice(Property):
     """String property where only certain choices are allowed
