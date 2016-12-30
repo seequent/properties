@@ -778,7 +778,7 @@ class String(Property):
         value_type = type(value)
         if not isinstance(value, string_types):
             self.error(instance, value)
-        if self.regex is not None and self.regex.match(value) is None:
+        if self.regex is not None and self.regex.match(value) is None:         #pylint: disable=no-member
             self.error(instance, value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
