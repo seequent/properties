@@ -766,7 +766,10 @@ class String(Property):
     @regex.setter
     def regex(self, value):
         if isinstance(value, string_types):
-            value = re.compile(value)
+            try:
+                value = re.compile(value)
+            except re.error:
+                raise TypeError('Invalid regex pattern: {}'.format(value))
         if hasattr(value, 'match') and callable(value.match):
             self._regex = value
         else:
