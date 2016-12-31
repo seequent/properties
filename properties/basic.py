@@ -715,7 +715,9 @@ class String(Property):
       to ensure consistent behaviour across Python 2/3.
 
     * **regex** - regular expression (pattern or compiled expression) the
-      input string must comply with.
+      input string must include. Note: `search` is used to determine if
+      string is valid; to match the entire string, ensure '^' and '$' are
+      contained in the regex pattern.
     """
 
     class_info = 'a string'
@@ -760,7 +762,7 @@ class String(Property):
 
     @property
     def regex(self):
-        """Regular expression the string must comply with"""
+        """Regular expression the string must include"""
         return getattr(self, '_regex', None)
 
     @regex.setter
@@ -770,7 +772,7 @@ class String(Property):
                 value = re.compile(value)
             except re.error:
                 raise TypeError('Invalid regex pattern: {}'.format(value))
-        if hasattr(value, 'match') and callable(value.match):
+        if hasattr(value, 'search') and callable(value.search):
             self._regex = value
         else:
             raise TypeError("'regex' must be a string pattern or a compiled"
@@ -781,7 +783,7 @@ class String(Property):
         value_type = type(value)
         if not isinstance(value, string_types):
             self.error(instance, value)
-        if self.regex is not None and self.regex.match(value) is None:         #pylint: disable=no-member
+        if self.regex is not None and self.regex.search(value) is None:        #pylint: disable=no-member
             self.error(instance, value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
@@ -797,8 +799,10 @@ class String(Property):
     @property
     def info(self):
         info = 'a unicode string' if self.unicode else 'a string'
-        if self.regex is not None and hasattr(self.regex, 'pattern'):
-            info += ' that matches pattern "{}"'.format(self.regex.pattern)    #pylint: disable=no-member
+        if self.regex is not None:
+            info += ' that contains pattern'
+        if hasattr(self.regex, 'pattern'):
+            info += ' "{}"'.format(self.regex.pattern)                         #pylint: disable=no-member
         return info
 
 
