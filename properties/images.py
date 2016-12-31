@@ -25,7 +25,7 @@ class ImagePNG(File):
     """
     class_info = 'a PNG image file'
 
-    file_modes = ['rb', 'rb+', 'wb+', 'ab+']
+    file_modes = {'rb', 'rb+', 'wb+', 'ab+'}
 
     def __init__(self, doc, mode='rb', **kwargs):
         super(ImagePNG, self).__init__(doc, mode, **kwargs)

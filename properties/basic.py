@@ -1019,11 +1019,11 @@ class File(Property):
 
     class_info = 'an open file or filename'
 
-    file_modes = [
+    file_modes = {
         'r', 'r+', 'rb', 'rb+',
         'w', 'w+', 'wb', 'wb+',
         'a', 'a+', 'ab', 'ab+'
-    ]
+    }
 
     def __init__(self, doc, mode=None, **kwargs):
         self.mode = mode
