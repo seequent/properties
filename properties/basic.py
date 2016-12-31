@@ -1019,6 +1019,12 @@ class File(Property):
 
     class_info = 'an open file or filename'
 
+    file_modes = [
+        'r', 'r+', 'rb', 'rb+',
+        'w', 'w+', 'wb', 'wb+',
+        'a', 'a+', 'ab', 'ab+'
+    ]
+
     def __init__(self, doc, mode=None, **kwargs):
         self.mode = mode
         super(File, self).__init__(doc, **kwargs)
@@ -1030,7 +1036,7 @@ class File(Property):
 
     @mode.setter
     def mode(self, value):
-        if value is not None and value not in FILE_MODES:
+        if value is not None and value not in self.file_modes:
             raise TypeError('Invalid file mode: {}'.format(value))
         self._mode = value
 
@@ -1048,7 +1054,7 @@ class File(Property):
             raise TypeError('mode {} must be included in '
                             'valid_modes'.format(self.mode))
         for val in value:
-            if val not in FILE_MODES:
+            if val not in self.file_modes:
                 raise TypeError('Invalid file mode: {}'.format(val))
         self._valid_mode = tuple(value)
 
@@ -1099,12 +1105,6 @@ class File(Property):
                                                    self.valid_modes)
         return info
 
-
-FILE_MODES = [
-    'r', 'r+', 'rb', 'rb+',
-    'w', 'w+', 'wb', 'wb+',
-    'a', 'a+', 'ab', 'ab+'
-]
 
 COLORS_20 = [
     '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
