@@ -814,6 +814,8 @@ class StringChoice(Property):
     * **choices** - either a list/tuple of allowed strings
       OR a dictionary of string key and list-of-string value pairs,
       where any string in the value list is coerced into the key string.
+    * **descriptions** - dictionary of choice/description key/value
+      pairs. Must contain all choices
     """
 
     class_info = 'a string choice'
@@ -864,6 +866,28 @@ class StringChoice(Property):
         if len(all_items) != len(set(all_items)):
             raise TypeError("'choices' must contain no duplicate strings")
         self._choices = value
+
+    @property
+    def descriptions(self):
+        """Dictionary of descriptions for available choices
+
+        Keys must correspond to all choices and values must be string
+        descriptions
+        """
+        return getattr(self, '_descriptions', None)
+
+    @descriptions.setter
+    def descriptions(self, value):
+        if not isinstance(value, dict):
+            raise TypeError("'descriptions' must be a dictionary")
+        if len(value) != len(self.choices):
+            raise TypeError("'descriptions' must contain all choices as keys")
+        for key, val in value.items():
+            if key not in self.choices:
+                raise TypeError("'descriptions' keys must be valid choices")
+            if not isinstance(val, string_types):
+                raise TypeError("'descriptions' values must be strings")
+        self._descriptions = value
 
     def validate(self, instance, value):
         """Check if input is a valid string based on the choices"""
