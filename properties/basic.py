@@ -827,10 +827,16 @@ class StringChoice(Property):
     @property
     def info(self):
         """Formatted string to display the available choices"""
+        if self.descriptions is None:
+            choice_list = ['"{}"'.format(choice) for choice in self.choices]
+        else:
+            choice_list = [
+                '"{}" ({})'.format(choice, self.descriptions[choice])
+                for choice in self.choices
+            ]
         if len(self.choices) == 2:
-            return 'either "{}" or "{}"'.format(list(self.choices)[0],
-                                                list(self.choices)[1])
-        return 'any of "{}"'.format('", "'.join(self.choices))
+            return 'either {} or {}'.format(choice_list[0], choice_list[1])
+        return 'any of {}'.format(', '.join(choice_list))
 
     @property
     def choices(self):
