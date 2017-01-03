@@ -815,7 +815,7 @@ class StringChoice(Property):
       OR a dictionary of string key and list-of-string value pairs,
       where any string in the value list is coerced into the key string.
     * **descriptions** - dictionary of choice/description key/value
-      pairs. Must contain all choices
+      pairs. Must contain all choices.
     """
 
     class_info = 'a string choice'
@@ -840,14 +840,14 @@ class StringChoice(Property):
         or (2) a dictionary of string key and list-of-string value pairs,
         where any string in the value list is coerced into the key string.
         """
-        return getattr(self, '_choices', {})
+        return self._choices
 
     @choices.setter
     def choices(self, value):
         if isinstance(value, (set, list, tuple)):
             if len(value) != len(set(value)):
                 raise TypeError("'choices' must contain no duplicate strings")
-            value = {v: [] for v in value}
+            value = collections.OrderedDict((v, []) for v in value)
         if not isinstance(value, dict):
             raise TypeError("'choices' must be a set, list, tuple, or dict")
         for key, val in value.items():
