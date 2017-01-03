@@ -58,7 +58,7 @@ class PlotImagePNG(Task):                                                      #
     )
     cmap = StringChoice(
         'Selected color map',
-        list(cm.cmap_d.keys()),
+        list({key.upper(): key for key in cm.cmap_d.keys()}.values()),
         default='jet',
     )
     aspect = Union(
