@@ -852,7 +852,7 @@ class StringChoice(Property):
         return self._choices
 
     @choices.setter
-    def choices(self, value):
+    def choices(self, value):                                                  #pylint: disable=too-many-branches
         if isinstance(value, (set, list, tuple)):
             if len(value) != len(set(value)):
                 raise TypeError("'choices' must contain no duplicate strings")
