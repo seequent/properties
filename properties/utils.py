@@ -4,6 +4,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from functools import wraps
+
 
 def filter_props(has_props_cls, input_dict, include_immutable=True):
     """Separate key/value pairs that correspond to existing properties
@@ -34,6 +36,27 @@ def filter_props(has_props_cls, input_dict, include_immutable=True):
     others_dict = {k: v for k, v in iter(input_dict.items())
                    if k not in props_dict}
     return (props_dict, others_dict)
+
+
+def stop_recursion_with(backup_return_value):
+    def wrapper(func):
+        placeholder = '_executing_' + func.__name__
+
+        @wraps(func)
+        def run_once(self, *args, **kwargs):
+            if getattr(self, placeholder, False):
+                return backup_return_value
+            else:
+                try:
+                    setattr(self, placeholder, True)
+                    first_return_value = func(self, *args, **kwargs)
+                finally:
+                    setattr(self, placeholder, False)
+                return first_return_value
+        # run_once.__name__ = func.__name__
+        # run_once.__doc__ = func.__doc__
+        return run_once
+    return wrapper
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods

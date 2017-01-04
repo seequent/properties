@@ -268,15 +268,12 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return True
 
     @handlers.validator
+    @utils.stop_recursion_with(True)
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
-        self._validating = True
-        try:
-            for k in self._props:
-                prop = self._props[k]
-                prop.assert_valid(self)
-        finally:
-            self._validating = False
+        for k in self._props:
+            prop = self._props[k]
+            prop.assert_valid(self)
         return True
 
     def serialize(self, include_class=True, **kwargs):
