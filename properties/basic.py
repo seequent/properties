@@ -182,7 +182,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def assert_valid(self, instance, value=None):
         """Check if the current state of a property is valid"""
         if value is None:
-            value = getattr(instance, self.name, None)
+            value = instance._get(self.name)
         if value is not None:
             self.validate(instance, value)
         return True
@@ -457,7 +457,7 @@ class Property(GettableProperty):
     def assert_valid(self, instance, value=None):
         """Check if required properties are set and ensure value is valid"""
         if value is None:
-            value = getattr(instance, self.name, None)
+            value = instance._get(self.name)
         if value is None and self.required:
             raise ValueError(
                 "The '{name}' property of a {cls} instance is required "
@@ -1033,7 +1033,7 @@ class Uuid(GettableProperty):
     def assert_valid(self, instance, value=None):
         """Ensure the value is a UUID instance"""
         if value is None:
-            value = getattr(instance, self.name, None)
+            value = instance._get(self.name)
         if not isinstance(value, uuid.UUID) or not value.version == 4:
             raise ValueError(
                 "The '{name}' property of a {cls} instance must be a unique "
