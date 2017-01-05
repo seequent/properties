@@ -39,12 +39,47 @@ def filter_props(has_props_cls, input_dict, include_immutable=True):
 
 
 def stop_recursion_with(backup_return_value):
+    """This wrapper is used to wrap methods that may call themselves
+
+    It prevents infinite recursion by running the original method the
+    first time it is encountered, then returning an alternative
+    backup_return_value if run again recursively.
+
+    Parameters:
+        backup_return_value - the value returned on subsequent recursive
+                              function calls. If callable, input parameters
+                              to the original function are passed through
+
+    Usage:
+
+        class HasInstance(properties.HasProperties):
+            my_instance = properties.Instance(
+                doc='An instance, may be another HasInstnace',
+                instance_class=properties.HasProperties
+            )
+
+            @utils.stop_recursion_with(True)
+            def validate_my_instance(self):
+                '''Validates my_instance property
+
+                Does not infinitely recurse if my_instance points to self.
+                '''
+                return self.my_instance.validate()
+    """
     def wrapper(func):
-        placeholder = '_executing_' + func.__name__
+        """Function wrapper returned by calling stop_recursion_with(...)"""
 
         @wraps(func)
         def run_once(self, *args, **kwargs):
+            """Run wrapped function once, return backup_return_value after
+
+            This function creates a placeholder from the wrapped function
+            name to store if the function is currently being executed.
+            """
+            placeholder = '_executing_' + func.__name__
             if getattr(self, placeholder, False):
+                if callable(backup_return_value):
+                    return backup_return_value(self, *args, **kwargs)
                 return backup_return_value
             else:
                 try:
