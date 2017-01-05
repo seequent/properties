@@ -276,6 +276,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             prop.assert_valid(self)
         return True
 
+    @utils.stop_recursion_with(
+        lambda self, *_, **__:
+        '(Already serialized instance of {})'.format(self.__class__.__name__)
+    )
     def serialize(self, include_class=True, **kwargs):
         """Serializes a HasProperties instance to JSON"""
         data = ((k, v.serialize(self._get(v.name), include_class, **kwargs))
@@ -404,7 +408,6 @@ class Instance(basic.Property):
             value.validate()
         return True
 
-    @utils.stop_recursion_with('Not serialized to prevent infinite recursion')
     def serialize(self, value, include_class=True, **kwargs):
         """Serialize instance to JSON
 
