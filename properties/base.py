@@ -404,6 +404,7 @@ class Instance(basic.Property):
             value.validate()
         return True
 
+    @utils.stop_recursion_with('Not serialized to prevent infinite recursion')
     def serialize(self, value, include_class=True, **kwargs):
         """Serialize instance to JSON
 
