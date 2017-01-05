@@ -38,17 +38,17 @@ def filter_props(has_props_cls, input_dict, include_immutable=True):
     return (props_dict, others_dict)
 
 
-def stop_recursion_with(backup_return_value):
-    """This wrapper is used to wrap methods that may call themselves
+class stop_recursion_with(object):                                             #pylint: disable=invalid-name, too-few-public-methods
+    """Decorator class used to wrap instance methods that may call themselves
 
     It prevents infinite recursion by running the original method the
     first time it is encountered, then returning an alternative
-    backup_return_value if run again recursively.
+    backup value if run again recursively.
 
     Parameters:
-        backup_return_value - the value returned on subsequent recursive
-                              function calls. If callable, input parameters
-                              to the original function are passed through
+        backup - the value returned on subsequent recursive
+                 function calls. If callable, input parameters
+                 to the original function are passed through
 
     Usage:
 
@@ -58,7 +58,8 @@ def stop_recursion_with(backup_return_value):
                 instance_class=properties.HasProperties
             )
 
-            @utils.stop_recursion_with(True)
+            @properties.validator
+            @stop_recursion_with(True)
             def validate_my_instance(self):
                 '''Validates my_instance property
 
@@ -66,31 +67,34 @@ def stop_recursion_with(backup_return_value):
                 '''
                 return self.my_instance.validate()
     """
-    def wrapper(func):
-        """Function wrapper returned by calling stop_recursion_with(...)"""
+
+    def __init__(self, backup):
+        self.backup = backup
+        self.held_objects = set()
+
+    def __call__(self, func):
+        decorator = self
 
         @wraps(func)
         def run_once(self, *args, **kwargs):
-            """Run wrapped function once, return backup_return_value after
+            """Run wrapped function once, return backup on recursive calls
 
-            This function creates a placeholder from the wrapped function
-            name to store if the function is currently being executed.
+            This function holds the source object in the decorator's
+            held_objects while the function is running.
             """
-            placeholder = '_executing_' + func.__name__
-            if getattr(self, placeholder, False):
-                if callable(backup_return_value):
-                    return backup_return_value(self, *args, **kwargs)
-                return backup_return_value
+            if self in decorator.held_objects:
+                if callable(decorator.backup):
+                    return decorator.backup(self, *args, **kwargs)
+                return decorator.backup
             else:
                 try:
-                    setattr(self, placeholder, True)
-                    first_return_value = func(self, *args, **kwargs)
+                    decorator.held_objects.add(self)
+                    func_output = func(self, *args, **kwargs)
                 finally:
-                    setattr(self, placeholder, False)
-                return first_return_value
+                    decorator.held_objects.remove(self)
+                return func_output
 
         return run_once
-    return wrapper
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
