@@ -53,8 +53,7 @@ def stop_recursion_with(backup_return_value):
                 finally:
                     setattr(self, placeholder, False)
                 return first_return_value
-        # run_once.__name__ = func.__name__
-        # run_once.__doc__ = func.__doc__
+
         return run_once
     return wrapper
 
