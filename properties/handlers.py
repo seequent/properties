@@ -11,7 +11,7 @@ from .utils import everything
 LISTENER_TYPES = {'validate', 'observe'}
 
 
-class listeners_disabled(object):                                              #pylint: disable=invalid-name
+class listeners_disabled(object):                                              #pylint: disable=invalid-name, too-few-public-methods
     """Context manager for disabling certain listener types
 
     Usage:
@@ -31,6 +31,10 @@ class listeners_disabled(object):                                              #
 
     @property
     def disable_type(self):
+        """Type of listener to disable
+
+        If None, all listeners are disabled
+        """
         return self._disable_type
 
     @disable_type.setter
