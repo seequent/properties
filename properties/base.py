@@ -9,7 +9,7 @@ import json
 import pickle
 from warnings import warn
 
-from six import integer_types, iteritems, PY2, with_metaclass
+from six import integer_types, iteritems, itervalues, PY2, with_metaclass
 
 from . import basic
 from . import handlers
@@ -260,7 +260,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def validate(self):
         """Call all the registered ClassValidators"""
-        for _, val in iteritems(self._class_validators):
+        for val in itervalues(self._class_validators):
             val.func(self)
         return True
 
@@ -268,8 +268,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     @utils.stop_recursion_with(True)
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
-        for k in self._props:
-            prop = self._props[k]
+        for prop in itervalues(self._props):
             prop.assert_valid(self)
         return True
 
@@ -310,14 +309,18 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, trusted, **kwargs)
+        mutable, immutable = utils.filter_props(cls, newstate, True)
         with handlers.listeners_disabled():
-            newinst = cls(**newstate)
+            newinst = cls(**mutable)
+        for key, val in iteritems(immutable):
+            valid_val = cls._props[key].validate(newinst, val)
+            newinst._backend[key] = valid_val                                  #pylint: disable=no-member
         return newinst
 
     def __setstate__(self, newstate):
-        with handlers.listeners_disabled():
-            for key, val in iteritems(newstate):
-                setattr(self, key, pickle.loads(val))
+        for key, val in iteritems(newstate):
+            valid_val = self._props[key].validate(self, pickle.loads(val))
+            self._backend[key] = valid_val                                     #pylint: disable=no-member
 
     def __reduce__(self):
         data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
