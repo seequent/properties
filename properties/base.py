@@ -268,7 +268,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     @utils.stop_recursion_with(True)
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
-        for prop in itervalues(self._props):
+        for key, prop in iteritems(self._props):
+            value = self._get(key)
+            if value is not None:
+                change = dict(name=key, value=self._get(key), mode='validate')
+                self._notify(change)
+                if not prop.equal(self._get(key), change['value']):
+                    raise ValueError(
+                        'Invalid value for property {}: {}'.format(
+                            key, self._get(key)
+                        )
+                    )
             prop.assert_valid(self)
         return True
 

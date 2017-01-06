@@ -183,9 +183,19 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         """Check if the current state of a property is valid"""
         if value is None:
             value = instance._get(self.name)
-        if value is not None:
-            self.validate(instance, value)
+        if (
+                value is not None and
+                not self.equal(value, self.validate(instance, value))
+        ):
+            raise ValueError('Invalid value for property {}: {}'.format(
+                self.name, value
+            ))
         return True
+
+    @classmethod
+    def equal(cls, value_a, value_b):
+        """Test if two property values are equal"""
+        return value_a == value_b
 
     def get_property(self):
         """Establishes access of GettableProperty values"""
@@ -236,6 +246,27 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         to_json assumes that value read from JSON is valid
         """
         return value
+
+    def error(self, instance, value, error=None, extra=''):
+        """Generates a ValueError on setting property to an invalid value"""
+        error = error if error is not None else ValueError
+        if instance is None:
+            prefix = '{} property'.format(self.__class__.__name__)
+        else:
+            prefix = "The '{name}' property of a {cls} instance".format(
+                name=self.name,
+                cls=instance.__class__.__name__,
+            )
+        raise error(
+            '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
+            'specified. {extra}'.format(
+                prefix=prefix,
+                info=self.info,
+                val=value,
+                vtype=type(value),
+                extra=extra,
+            )
+        )
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -356,17 +387,6 @@ class DynamicProperty(GettableProperty):                                       #
         """Validate using self.prop"""
         return self.prop.validate(instance, value)
 
-    def assert_valid(self, instance, value=None):
-        """Always True for dynamic properties
-
-        This does not generate the dynamic value; it always returns True
-        unless a value is specified. Since getters and setters are defined
-        in the class only, an invalid value will never be reached.
-        """
-        if value is not None:
-            self.validate(instance, value)
-        return True
-
     def setter(self, func):
         """Give dynamic properties a setter function
 
@@ -466,9 +486,8 @@ class Property(GettableProperty):
                     cls=instance.__class__.__name__
                 )
             )
-        if value is not None:
-            self.validate(instance, value)
-        return True
+        valid = super(Property, self).assert_valid(instance, value)
+        return valid
 
     def validate(self, instance, value):
         """Check if value is valid and possibly coerce it to new value"""
@@ -496,27 +515,6 @@ class Property(GettableProperty):
             self._set(scope.name, undefined)
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
-
-    def error(self, instance, value, error=None, extra=''):
-        """Generates a ValueError on setting property to an invalid value"""
-        error = error if error is not None else ValueError
-        if instance is None:
-            prefix = '{} property'.format(self.__class__.__name__)
-        else:
-            prefix = "The '{name}' property of a {cls} instance".format(
-                name=self.name,
-                cls=instance.__class__.__name__,
-            )
-        raise error(
-            '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
-            'specified. {extra}'.format(
-                prefix=prefix,
-                info=self.info,
-                val=value,
-                vtype=type(value),
-                extra=extra,
-            )
-        )
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -1024,25 +1022,17 @@ class DateTime(Property):
 class Uuid(GettableProperty):
     """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
 
-    class_info = 'an auto-generated UUID'
+    class_info = 'a unique ID auto-generated with uuid.uuid4()'
 
     @property
     def default(self):
         return getattr(self, '_default', uuid.uuid4)
 
-    def assert_valid(self, instance, value=None):
-        """Ensure the value is a UUID instance"""
-        if value is None:
-            value = instance._get(self.name)
-        if not isinstance(value, uuid.UUID) or not value.version == 4:
-            raise ValueError(
-                "The '{name}' property of a {cls} instance must be a unique "
-                "ID generated with uuid.uuid4().".format(
-                    name=self.name,
-                    cls=instance.__class__.__name__
-                )
-            )
-        return True
+    def validate(self, instance, value):
+        """Check that value is a valid UUID instance"""
+        if not isinstance(value, uuid.UUID):
+            self.error(instance, value)
+        return value
 
     @staticmethod
     def to_json(value, **kwargs):
