@@ -8,6 +8,8 @@ from six import string_types
 
 from .utils import everything
 
+LISTENER_TYPES = {'validate', 'observe'}
+
 
 def _set_listener(instance, obs):
     """Add listeners to a Properties class instance"""
@@ -17,7 +19,7 @@ def _set_listener(instance, obs):
         names = obs.names
     for name in names:
         if name not in instance._listeners:
-            instance._listeners[name] = {'validate': [], 'observe': []}
+            instance._listeners[name] = {typ: [] for typ in LISTENER_TYPES}
         instance._listeners[name][obs.mode] += [obs]
 
 
@@ -67,8 +69,10 @@ class Observer(object):
 
     @mode.setter
     def mode(self, value):
-        if value not in ['validate', 'observe']:
-            raise TypeError("Supported modes are 'validate' or 'observe'")
+        if value not in LISTENER_TYPES:
+            raise TypeError(
+                "Supported modes are '{}'".format("', '".join(LISTENER_TYPES))
+            )
         self._mode = value
 
 
