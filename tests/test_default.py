@@ -279,7 +279,8 @@ class TestDefault(unittest.TestCase):
         assert hi.b == 5
         hi._reset('b')
         assert hi.b == 10
-        hi._reset('a', silent=True)
+        with properties.listeners_disabled():
+            hi._reset('a')
         assert hi.a == 1
         assert hi.b == 10
 
