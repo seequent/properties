@@ -26,7 +26,7 @@ class TaskStatus(HasProperties):
 
     progress = Float(
         'Task progress to completion',
-        required=False
+        required=False,
         min=0,
         max=1,
     )
