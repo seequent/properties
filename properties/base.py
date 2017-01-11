@@ -337,6 +337,19 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
         return (self.__class__, (), pickle_dict)
 
+    @utils.stop_recursion_with(True)
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        for prop in itervalues(self._props):
+            if prop.equal(getattr(self, prop.name), getattr(other, prop.name)):
+                continue
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 class Instance(basic.Property):
     """Instance property
@@ -450,6 +463,11 @@ class Instance(basic.Property):
             return self.instance_class.deserialize(value, trusted, **kwargs)
         return self.from_json(value, **kwargs)
 
+    def equal(self, value_a, value_b):
+        if issubclass(self.instance_class, HasProperties):
+            return value_a == value_b
+        return value_a is value_b
+
     @staticmethod
     def to_json(value, **kwargs):
         """Convert instance to JSON"""
@@ -512,7 +530,6 @@ class List(basic.Property):
         if not isinstance(value, basic.Property):
             raise TypeError('prop must be a Property or HasProperties class')
         self._prop = value
-
 
     @property
     def name(self):
@@ -627,6 +644,16 @@ class List(basic.Property):
         if value is None:
             return None
         return [self.prop.deserialize(val, trusted, **kwargs) for val in value]
+
+    def equal(self, value_a, value_b):
+        try:
+            if len(value_a) == len(value_b):
+                equal_list = [self.prop.equal(a, b)
+                              for a, b in zip(value_a, value_b)]
+                return all(equal_list)
+        except TypeError:
+            pass
+        return False
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -808,6 +835,9 @@ class Union(basic.Property):
             except (ValueError, KeyError, TypeError):
                 continue
         return self.from_json(value, **kwargs)
+
+    def equal(self, value_a, value_b):
+        return any((prop.equal(value_a, value_b) for prop in self.props))
 
     @staticmethod
     def to_json(value, **kwargs):

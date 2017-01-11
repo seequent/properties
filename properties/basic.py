@@ -192,8 +192,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             ))
         return True
 
-    @classmethod
-    def equal(cls, value_a, value_b):
+    def equal(self, value_a, value_b):
         """Test if two property values are equal"""
         return value_a == value_b
 
@@ -558,6 +557,9 @@ class Bool(Property):
             self.error(instance, value)
         return value
 
+    def equal(self, value_a, value_b):
+        return value_a is value_b
+
     @staticmethod
     def from_json(value, **kwargs):
         """Coerces JSON string to boolean"""
@@ -618,7 +620,7 @@ class Integer(Property):
         try:
             intval = int(value)
             if abs(value - intval) > TOL:
-                raise ValueError()
+                self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
         _in_bounds(self, instance, intval)
@@ -653,11 +655,17 @@ class Float(Integer):
         try:
             floatval = float(value)
             if abs(value - floatval) > TOL:
-                raise ValueError()
+                self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
         _in_bounds(self, instance, floatval)
         return floatval
+
+    def equal(self, value_a, value_b):
+        try:
+            return abs(value_a - value_b) < TOL
+        except TypeError:
+            return False
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -686,10 +694,18 @@ class Complex(Property):
                     abs(value.real - compval.real) > TOL or
                     abs(value.imag - compval.imag) > TOL
             ):
-                raise ValueError()
+                self.error(instance, value)
         except (TypeError, ValueError, AttributeError):
             self.error(instance, value)
         return compval
+
+    def equal(self, value_a, value_b):
+        try:
+            real_equal = abs(value_a.real - value_b.real) > TOL
+            imag_equal = abs(value_a.imag - value_b.imag) > TOL
+            return real_equal and imag_equal
+        except (TypeError, AttributeError):
+            return False
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -1140,6 +1156,9 @@ class File(Property):
         if getattr(value, 'closed', False):
             self.error(instance, value, extra='File is closed.')
         return value
+
+    def equal(self, value_a, value_b):
+        return value_a is value_b
 
     @property
     def info(self):
