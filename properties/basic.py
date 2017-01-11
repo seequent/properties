@@ -192,7 +192,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             ))
         return True
 
-    def equal(self, value_a, value_b):
+    def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
         """Test if two property values are equal"""
         return value_a == value_b
 
