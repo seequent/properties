@@ -46,7 +46,7 @@ class Task(HasProperties):
         """Report the task status towards completion"""
         if not isinstance(status, TaskStatus):
             raise TypeError('Parameter \'status\' must a TaskStatus')
-        print('{taskname} | {percent:>3}\% | {message}'.format(
+        print(r'{taskname} | {percent:>3}% | {message}'.format(
             taskname=self.__class__.__name__,
             percent=round(100*status.progress),
             message=status.message if status.message else '',
