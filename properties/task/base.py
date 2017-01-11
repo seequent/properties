@@ -4,8 +4,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ..base import HasProperties
-from ..basic import String, Bool, Float
+from ..base import HasProperties, Instance
+from ..basic import Bool, Float, String
 
 
 class BaseResult(HasProperties):
@@ -44,8 +44,7 @@ class Task(HasProperties):
 
     def report_status(self, status):
         """Report the task status towards completion"""
-        if not isinstance(status, TaskStatus):
-            raise TypeError('Parameter \'status\' must a TaskStatus')
+        status = Instance('', TaskStatus).validate(None, status)
         print(r'{taskname} | {percent:>3}% | {message}'.format(
             taskname=self.__class__.__name__,
             percent=round(100*status.progress),

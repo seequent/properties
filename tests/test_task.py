@@ -8,7 +8,7 @@ import sys
 import unittest
 
 import properties
-from properties.task import BaseResult, Task, TaskStatus, PermanentTaskFailure
+from properties.task import BaseResult, Task, PermanentTaskFailure
 
 
 class TestTask(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestTask(unittest.TestCase):
                 value = properties.Float('Result of add operation')
 
             def __call__(self):
-                self.report_status(TaskStatus(progress=0, message='Starting'))
+                self.report_status({'progress': 0., 'message': 'Starting'})
                 if self.addend_a == self.addend_b:
                     raise PermanentTaskFailure()
                 return self.Result(value=self.addend_a + self.addend_b)
@@ -44,7 +44,7 @@ class TestTask(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             Task()()
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             Task().report_status(.5)
 
 
