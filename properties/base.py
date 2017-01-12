@@ -310,11 +310,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, trusted, **kwargs)
         mutable, immutable = utils.filter_props(cls, newstate, True)
-        with handlers.listeners_disabled():
-            newinst = cls(**mutable)
         for key, val in iteritems(immutable):
             valid_val = cls._props[key].validate(newinst, val)
             newinst._backend[key] = valid_val                                  #pylint: disable=no-member
+        with handlers.listeners_disabled():
+            newinst = cls(**mutable)
         return newinst
 
     def __setstate__(self, newstate):
