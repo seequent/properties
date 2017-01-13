@@ -283,7 +283,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return True
 
     @utils.stop_recursion_with(
-        utils.RecursionError('Object contains unserializable self reference')
+        utils.SelfReferenceError('Object contains unserializable self reference')
     )
     def serialize(self, include_class=True, **kwargs):
         """Serializes a HasProperties instance to JSON"""
@@ -332,7 +332,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._backend[key] = valid_val                                     #pylint: disable=no-member
 
     @utils.stop_recursion_with(
-        utils.RecursionError('Object contains unpicklable self reference')
+        utils.SelfReferenceError('Object contains unpicklable self reference')
     )
     def __reduce__(self):
         data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
