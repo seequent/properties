@@ -63,10 +63,10 @@ class TestRecursion(unittest.TestCase):
         with self.assertRaises(ValueError):
             hhpl.validate()
 
-        with self.assertRaises(properties.RecursionError):
+        with self.assertRaises(properties.SelfReferenceError):
             hhpl.serialize()
 
-        with self.assertRaises(properties.RecursionError):
+        with self.assertRaises(properties.SelfReferenceError):
             pickle.dumps(hhpl)
 
 
