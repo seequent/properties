@@ -339,8 +339,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
         return (self.__class__, (), pickle_dict)
 
-    @utils.stop_recursion_with(True)
+    @utils.stop_recursion_with(False)
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, self.__class__):
             return False
         for prop in itervalues(self._props):
