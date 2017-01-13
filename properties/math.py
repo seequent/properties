@@ -113,12 +113,14 @@ class Array(Property):
         return value
 
     def equal(self, value_a, value_b):
-        values_equal = (
-            isinstance(value_a, self.wrapper) and
-            isinstance(value_b, self.wrapper) and
-            np.allclose(value_a, value_b, atol=TOL, equal_nan=True)
-        )
-        return values_equal
+        if not isinstance(value_a, self.wrapper):
+            return False
+        if not isinstance(value_a, self.wrapper):
+            return False
+        nan_mask = ~np.isnan(value_a)
+        if not np.array_equal(nan_mask, ~np.isnan(value_b)):
+            return False
+        return np.allclose(value_a[nan_mask], value_b[nan_mask], atol=TOL)
 
 
     def error(self, instance, value, error=None, extra=''):
