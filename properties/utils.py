@@ -70,7 +70,7 @@ class stop_recursion_with(object):                                             #
 
     def __init__(self, backup):
         self.backup = backup
-        self.held_objects = set()
+        self.held_objects = []
 
     def __call__(self, func):
         decorator = self
@@ -91,7 +91,7 @@ class stop_recursion_with(object):                                             #
                 return output
             else:
                 try:
-                    decorator.held_objects.add(self)
+                    decorator.held_objects.append(self)
                     output = func(self, *args, **kwargs)
                 finally:
                     decorator.held_objects.remove(self)
