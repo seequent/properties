@@ -100,7 +100,7 @@ class stop_recursion_with(object):                                             #
         return run_once
 
 
-class RecursionError(Exception):
+class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
 
 
