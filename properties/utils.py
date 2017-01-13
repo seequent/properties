@@ -84,17 +84,24 @@ class stop_recursion_with(object):                                             #
             """
             if self in decorator.held_objects:
                 if callable(decorator.backup):
-                    return decorator.backup(self, *args, **kwargs)
-                return decorator.backup
+                    output = decorator.backup(self, *args, **kwargs)
+                output = decorator.backup
+                if isinstance(output, Exception):
+                    raise output
+                return output
             else:
                 try:
                     decorator.held_objects.add(self)
-                    func_output = func(self, *args, **kwargs)
+                    output = func(self, *args, **kwargs)
                 finally:
                     decorator.held_objects.remove(self)
-                return func_output
+                return output
 
         return run_once
+
+
+class RecursionError(Exception):
+    """Exception type to be raised with infinite recursion problems"""
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods

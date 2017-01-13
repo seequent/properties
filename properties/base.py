@@ -277,8 +277,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return True
 
     @utils.stop_recursion_with(
-        lambda self, *_, **__:
-        '(Already serialized instance of {})'.format(self.__class__.__name__)
+        utils.RecursionError('Object contains unserializable self reference')
     )
     def serialize(self, include_class=True, **kwargs):
         """Serializes a HasProperties instance to JSON"""
@@ -320,6 +319,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, val in iteritems(newstate):
             setattr(self, key, pickle.loads(val))
 
+    @utils.stop_recursion_with(
+        utils.RecursionError('Object contains unpicklable self reference')
+    )
     def __reduce__(self):
         data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
         pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
