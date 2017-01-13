@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import pickle
 import unittest
 
 import properties
@@ -62,7 +63,11 @@ class TestRecursion(unittest.TestCase):
         with self.assertRaises(ValueError):
             hhpl.validate()
 
-        hhpl.serialize()
+        with self.assertRaises(properties.RecursionError):
+            hhpl.serialize()
+
+        with self.assertRaises(properties.RecursionError):
+            pickle.dumps(hhpl)
 
 
 if __name__ == '__main__':

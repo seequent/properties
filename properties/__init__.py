@@ -62,8 +62,8 @@ try:
 except ImportError:
     pass
 
-from .utils import everything, undefined, filter_props
 from .handlers import listeners_disabled, observer, validator
+from .utils import everything, undefined, filter_props, RecursionError
 
 __version__ = '0.3.0'
 __author__ = '3point Science'
