@@ -84,6 +84,20 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 )
 
     @property
+    def name(self):
+        """The name of the property on a HasProperties class
+
+        This is set in the metaclass.
+        """
+        return getattr(self, '_name', '')
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, string_types):
+            raise TypeError('name must be a string')
+        self._name = value
+
+    @property
     def doc(self):
         """Get the doc documentation of a Property instance"""
         return self._doc
@@ -360,6 +374,8 @@ class DynamicProperty(GettableProperty):                                       #
 
     @name.setter
     def name(self, value):
+        if not isinstance(value, string_types):
+            raise TypeError('name must be a string')
         self.prop.name = value
         self._name = value
 
@@ -442,6 +458,9 @@ class DynamicProperty(GettableProperty):                                       #
             scope.del_func(self)
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+
+    def equal(self, value_a, value_b):
+        return self.prop.equal(value_a, value_b)
 
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
@@ -663,7 +682,7 @@ class Float(Integer):
 
     def equal(self, value_a, value_b):
         try:
-            return abs(value_a - value_b) < TOL
+            return abs(value_a - value_b) <= TOL
         except TypeError:
             return False
 
@@ -701,8 +720,8 @@ class Complex(Property):
 
     def equal(self, value_a, value_b):
         try:
-            real_equal = abs(value_a.real - value_b.real) > TOL
-            imag_equal = abs(value_a.imag - value_b.imag) > TOL
+            real_equal = abs(value_a.real - value_b.real) <= TOL
+            imag_equal = abs(value_a.imag - value_b.imag) <= TOL
             return real_equal and imag_equal
         except (TypeError, AttributeError):
             return False
