@@ -51,6 +51,8 @@ class TestMath(unittest.TestCase):
             arrays.myarrayint = np.array([0, 1, 0]).astype(bool)
         with self.assertRaises(ValueError):
             arrays.myarraybool = np.array(['a', 'b', 'c'])
+        with self.assertRaises(ValueError):
+            properties.Array('').validate(None, [[1., 2.]])
 
         arrays.myarraybool = np.array([0, 1, 0]).astype(bool)
 

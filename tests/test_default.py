@@ -204,6 +204,17 @@ class TestDefault(unittest.TestCase):
             assert len(w) > 0
             assert issubclass(w[0].category, RuntimeWarning)
 
+        def twelve():
+            return 12
+
+        HasUnionD._props['d'].default = twelve
+        hu = HasUnionD()
+        assert hu.d == 12
+        HasUnionD._props['d'].default = properties.undefined
+        hu = HasUnionD()
+        assert hu.d is None
+
+
     def test_instance_default(self):
         class HasInt(properties.HasProperties):
             a = properties.Integer('int a')

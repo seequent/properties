@@ -200,6 +200,25 @@ class TestDynamic(unittest.TestCase):
                 def my_doubled_int(self, extra):
                     del self.my_float
 
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int', default = 10)
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+            HasDynamicProperty._props['my_doubled_int'].name = 5
+
+
 
 if __name__ == '__main__':
     unittest.main()

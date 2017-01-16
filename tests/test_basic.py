@@ -34,6 +34,17 @@ class TestBasic(unittest.TestCase):
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
 
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].name = 5
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].doc = 5
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].terms = 5
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].terms = {'one': 1, 'two': 2}
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].doc = {'args': (1,), 'otherargs': 5}
+
         gpo = GettablePropOpt()
         with self.assertRaises(AttributeError):
             setattr(gpo, 'mygp', 5)
@@ -65,6 +76,9 @@ class TestBasic(unittest.TestCase):
             PropOpts().validate()
 
         assert PropOpts(myprop=5).validate()
+
+        assert PropOpts() == PropOpts()
+        assert PropOpts(myprop=5) != PropOpts()
 
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):
@@ -134,6 +148,14 @@ class TestBasic(unittest.TestCase):
         assert not properties.Bool('').equal(True, 1)
         assert not properties.Bool('').equal(True, 'true')
 
+        with self.assertRaises(ValueError):
+            BoolOpts._props['mybool'].assert_valid(opt, 'true')
+
+        opt.validate()
+        opt._backend['mybool'] = 'true'
+        with self.assertRaises(ValueError):
+            opt.validate()
+
     def test_numbers(self):
 
         with self.assertRaises(TypeError):
@@ -191,6 +213,7 @@ class TestBasic(unittest.TestCase):
         assert properties.Integer('').equal(5, 5)
         assert properties.Float('').equal(5, 5.)
         assert not properties.Float('').equal(5, 5.1)
+        assert not properties.Float('').equal('hi', 'hi')
 
     def test_complex(self):
 
@@ -220,6 +243,7 @@ class TestBasic(unittest.TestCase):
 
         assert properties.Complex('').equal((1+1j), (1+1j))
         assert not properties.Complex('').equal((1+1j), 1)
+        assert not properties.Complex('').equal('hi', 'hi')
 
     def test_string(self):
 
@@ -526,13 +550,21 @@ class TestBasic(unittest.TestCase):
         fopen = open(fname, 'wb')
         fopt.myfile_writebin = fopen
         fopt.myfile_writebin.write(b' oh hi')
-        fopt.myfile_writebin.close()
 
         with self.assertRaises(ValueError):
             fopt.myfile_nomode = fname
 
+        fopt.myfile_read = fname
+        fopt.myfile_write = fname
         fopt.myfile_nomode = io.BytesIO()
+        fopt.validate()
+
+        fopt.myfile_read.close()
+        fopt.myfile_write.close()
         fopt.myfile_nomode.close()
+        fopt.myfile_writebin.close()
+        with self.assertRaises(ValueError):
+            fopt.validate()
 
         with self.assertRaises(ValueError):
             fopt.myfile_read = fopt.myfile_nomode

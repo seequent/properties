@@ -127,6 +127,12 @@ class TestList(unittest.TestCase):
         assert isinstance(deser_list[1], HasIntA) and deser_list[1].a == 10
         assert isinstance(deser_list[2], HasIntA) and deser_list[2].a == 100
 
+        class HasOptionalList(properties.HasProperties):
+            mylist = properties.List('', properties.Bool(''), required=False)
+
+        hol = HasOptionalList()
+        hol.validate()
+
         assert HasIntAList._props['mylist'].deserialize(None) is None
 
         assert properties.List('', properties.Instance('', HasIntA)).equal(
@@ -139,6 +145,7 @@ class TestList(unittest.TestCase):
         assert not properties.List('', properties.Instance('', HasIntA)).equal(
             [HasIntA(a=1), HasIntA(a=2)], [HasIntA(a=1), HasIntA(a=3)]
         )
+        assert not properties.List('', properties.Integer('')).equal(5, 5)
 
 
 if __name__ == '__main__':
