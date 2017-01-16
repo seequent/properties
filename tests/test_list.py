@@ -129,6 +129,17 @@ class TestList(unittest.TestCase):
 
         assert HasIntAList._props['mylist'].deserialize(None) is None
 
+        assert properties.List('', properties.Instance('', HasIntA)).equal(
+            [HasIntA(a=1), HasIntA(a=2)], [HasIntA(a=1), HasIntA(a=2)]
+        )
+        assert not properties.List('', properties.Instance('', HasIntA)).equal(
+            [HasIntA(a=1), HasIntA(a=2)],
+            [HasIntA(a=1), HasIntA(a=2), HasIntA(a=3)]
+        )
+        assert not properties.List('', properties.Instance('', HasIntA)).equal(
+            [HasIntA(a=1), HasIntA(a=2)], [HasIntA(a=1), HasIntA(a=3)]
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

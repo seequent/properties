@@ -54,8 +54,6 @@ class TestMath(unittest.TestCase):
 
         arrays.myarraybool = np.array([0, 1, 0]).astype(bool)
 
-
-
         assert properties.Array.to_json(
             np.array([[0., 1., np.nan, np.inf]])
         ) == [[0., 1., 'nan', 'inf']]
@@ -78,6 +76,11 @@ class TestMath(unittest.TestCase):
         ).myarrayint == np.array([0, 1, 2]))
 
         assert ArrayOpts._props['myarrayint'].deserialize(None) is None
+
+        assert properties.Array('').equal(np.array([1., 2., 3.]),
+                                          np.array([1., 2., 3.]))
+        assert not properties.Array('').equal(np.array([1., 2., 3.]),
+                                              [1., 2., 3.])
 
     def test_vector2(self):
 
@@ -116,6 +119,11 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             hv2.vec2 = [0., 0.]
 
+        assert properties.Vector2('').equal(vmath.Vector2(1., 2.),
+                                            vmath.Vector2(1., 2.))
+        assert not properties.Vector2('').equal(vmath.Vector2(1., 2.),
+                                                np.array([1., 2.]))
+
 
     def test_vector3(self):
 
@@ -144,6 +152,11 @@ class TestMath(unittest.TestCase):
         assert isinstance(properties.Vector3.from_json([5., 6., 7.]),
                           vmath.Vector3)
 
+        assert properties.Vector3('').equal(vmath.Vector3(1., 2., 3.),
+                                            vmath.Vector3(1., 2., 3.))
+        assert not properties.Vector3('').equal(vmath.Vector3(1., 2., 3.),
+                                                np.array([1., 2., 3.]))
+
     def test_vector2array(self):
 
         class HasVec2Arr(properties.HasProperties):
@@ -171,6 +184,14 @@ class TestMath(unittest.TestCase):
         assert isinstance(
             properties.Vector2Array.from_json([[5., 6.], [7., 8.]]),
             vmath.Vector2Array
+        )
+        assert properties.Vector2Array('').equal(
+            vmath.Vector2Array([[5., 6.], [7., 8.]]),
+            vmath.Vector2Array([[5., 6.], [7., 8.]])
+        )
+        assert not properties.Vector2Array('').equal(
+            vmath.Vector2Array([[5., 6.], [7., 8.]]),
+            np.array([[5., 6.], [7., 8.]])
         )
 
     def test_vector3array(self):
@@ -204,6 +225,19 @@ class TestMath(unittest.TestCase):
             properties.Vector3Array.from_json([[4., 5., 6.], [7., 8., 9.]]),
             vmath.Vector3Array
         )
+        assert properties.Vector3Array('').equal(
+            vmath.Vector3Array([[4., 5., 6.], [7., 8., 9.]]),
+            vmath.Vector3Array([[4., 5., 6.], [7., 8., 9.]])
+        )
+        assert not properties.Vector3Array('').equal(
+            vmath.Vector3Array([[4., 5., 6.], [7., 8., 9.]]),
+            vmath.Vector3Array([[4., 5., 6.]])
+        )
+        assert not properties.Vector3Array('').equal(
+            vmath.Vector3Array([[4., 5., 6.], [7., 8., 9.]]),
+            np.array([[4., 5., 6.], [7., 8., 9.]])
+        )
+        assert not properties.Vector3Array('').equal('hi', 'hi')
 
 
 if __name__ == '__main__':
