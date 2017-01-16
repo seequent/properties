@@ -61,7 +61,6 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     * **default** - property's default value
     """
     class_info = 'corrected'
-    name = ''
     _class_default = undefined
 
     def __init__(self, doc, **kwargs):
