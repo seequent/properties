@@ -802,7 +802,7 @@ class String(Property):
         if isinstance(value, string_types):
             try:
                 value = re.compile(value)
-            except re.error:
+            except (re.error, TypeError):
                 raise TypeError('Invalid regex pattern: {}'.format(value))
         if hasattr(value, 'search') and callable(value.search):
             self._regex = value

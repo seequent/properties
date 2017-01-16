@@ -309,7 +309,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         rcl=value['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
-        state, unused = utils.filter_props(cls, value, False)
+        state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if len(unused) > 0 and verbose:
             warn('Unused properties during deserialization: {}'.format(
@@ -318,7 +318,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, trusted, **kwargs)
-        mutable, immutable = utils.filter_props(cls, newstate, True)
+        mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
             newinst = cls(**mutable)
         for key, val in iteritems(immutable):

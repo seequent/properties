@@ -85,7 +85,8 @@ class stop_recursion_with(object):                                             #
             if self in decorator.held_objects:
                 if callable(decorator.backup):
                     output = decorator.backup(self, *args, **kwargs)
-                output = decorator.backup
+                else:
+                    output = decorator.backup
                 if isinstance(output, Exception):
                     raise output
                 return output
