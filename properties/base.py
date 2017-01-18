@@ -224,14 +224,16 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             listener.func(self, change)
 
     def _set(self, name, value):
-        change = dict(name=name, value=value, mode='validate')
+        prev = self._get(name)
+        change = dict(name=name, previous=prev, value=value, mode='validate')
         self._notify(change)
         if change['value'] is utils.undefined:
             self._backend.pop(name, None)                                      #pylint: disable=no-member
         else:
             self._backend[name] = change['value']                              #pylint: disable=no-member
-        change.update(name=name, mode='observe')
-        self._notify(change)
+        if not self._props[name].equal(prev, change['value']):
+            change.update(name=name, previous=prev, mode='observe')
+            self._notify(change)
 
     def _reset(self, name=None):
         """Revert specified property to default value
