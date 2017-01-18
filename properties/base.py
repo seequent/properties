@@ -577,6 +577,17 @@ class List(basic.Property):
         self._max_length = value
 
     @property
+    def coerce(self):
+        """Coerce sets/tuples to list or other inputs to length-1 list"""
+        return getattr(self, '_coerce', False)
+
+    @coerce.setter
+    def coerce(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('coerce must be a boolean')
+        self._coerce = value
+
+    @property
     def info(self):
         """Supplemental description of the list, with length and type"""
         itext = 'a list (each item is {info})'.format(info=self.prop.info)
@@ -605,8 +616,10 @@ class List(basic.Property):
         This returns a copy of the list to prevent unwanted sharing of
         list pointers.
         """
-        if not isinstance(value, (tuple, list)):
+        if not self.coerce and not isinstance(value, list):
             self.error(instance, value)
+        if self.coerce and not isinstance(value, (list, tuple, set)):
+            value = [value]
         out = []
         for val in value:
             try:
