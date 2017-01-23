@@ -55,7 +55,8 @@ class TestList(unittest.TestCase):
 
         li = HasIntList()
         li.aaa = [1, 2, 3]
-        li.aaa = (1, 2, 3)
+        with self.assertRaises(ValueError):
+            li.aaa = (1, 2, 3)
         li.aaa = [1., 2., 3.]
         with self.assertRaises(ValueError):
             li.aaa = 4
