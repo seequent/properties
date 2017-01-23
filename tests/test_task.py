@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import StringIO
+from io import StringIO
 import sys
 import unittest
 
@@ -31,10 +31,10 @@ class TestTask(unittest.TestCase):
 
         add = AddTask(addend_a=0., addend_b=10.)
 
-        sys.stdout = temp_out = StringIO.StringIO()
+        sys.stdout = temp_out = StringIO()
         result = add()
-        sys.stdoud = sys.__stdout__
-        assert temp_out.getvalue() == 'AddTask | 0.0% | Starting\n'
+        sys.stdout = sys.__stdout__
+        assert temp_out.getvalue() == 'AddTask |   0% | Starting\n'
         assert result.value == 10.
 
         add = AddTask(addend_a=5., addend_b=5.)
