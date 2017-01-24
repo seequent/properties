@@ -282,14 +282,16 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
-        return (
-            '**{name}** ({cls}): {doc}{info}'.format(
-                name=self.name,
-                doc=self.doc,
-                info='' if self.info == 'corrected' else ', ' + self.info,
-                cls=self.sphinx_class(),
-            )
+        scls = self.sphinx_class()
+        sphinx_class = ' ({})'.format(scls) if scls else ''
+
+        prop_doc = '**{name}**{cls}: {doc}{info}'.format(
+            name=self.name,
+            cls=sphinx_class,
+            doc=self.doc,
+            info='' if self.info == 'corrected' else ', ' + self.info,
         )
+        return prop_doc
 
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
@@ -1184,6 +1186,57 @@ class File(Property):
         info = '{}, valid modes include {}'.format(self.class_info,
                                                    self.valid_modes)
         return info
+
+
+class Renamed(GettableProperty):
+
+    def __init__(self, new_name):
+        self.new_name = new_name
+        super(Renamed, self).__init__(
+            "This property has been renamed '{}' and may be removed in the "
+            "future.".format(new_name)
+        )
+
+    @property
+    def new_name(self):
+        return self._new_name
+
+    @new_name.setter
+    def new_name(self, value):
+        if not isinstance(value, string_types):
+            raise TypeError('new_name must be name of another property')
+        self._new_name = value
+
+    def sphinx_class(self):
+        return ''
+
+    def warn(self):
+        warn(
+            "\nProperty '{}' is deprecated and may be removed in the future. "
+            "Please use '{}'.".format(self.name, self.new_name),
+            FutureWarning, stacklevel=3
+        )
+
+
+    def get_property(self):
+        """Establishes the dynamic behaviour of Property values"""
+        scope = self
+        def fget(self):
+            """Call dynamic function then validate output"""
+            scope.warn()
+            return getattr(self, scope.new_name)
+
+        def fset(self, value):
+            """Validate and call setter"""
+            scope.warn()
+            setattr(self, scope.new_name, value)
+
+        def fdel(self):
+            """call deleter"""
+            scope.warn()
+            delattr(self, scope.new_name)
+
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
 
 
 COLORS_20 = [

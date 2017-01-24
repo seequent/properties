@@ -610,6 +610,37 @@ class TestBasic(unittest.TestCase):
             assert getattr(np, 'class_info', None) == 'new property'
             assert getattr(np, 'info', None) == 'new property'
 
+    def test_renamed(self):
+
+        class MyHasProps(properties.HasProperties):
+            my_int = properties.Integer('My integer')
+
+            not_my_int = properties.Renamed('my_int')
+
+        myp = MyHasProps()
+
+        with warnings.catch_warnings(record=True) as w:
+
+            myp.not_my_int = 5
+            assert len(w) == 1
+            assert issubclass(w[0].category, FutureWarning)
+
+        assert myp.my_int == 5
+
+        with warnings.catch_warnings(record=True) as w:
+
+            assert myp.not_my_int == 5
+            assert len(w) == 1
+            assert issubclass(w[0].category, FutureWarning)
+
+        with warnings.catch_warnings(record=True) as w:
+
+            del myp.not_my_int
+            assert len(w) == 1
+            assert issubclass(w[0].category, FutureWarning)
+
+        assert myp.my_int is None
+
 
 if __name__ == '__main__':
     unittest.main()

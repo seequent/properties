@@ -33,6 +33,7 @@ from .basic import (
     GettableProperty,
     Integer,
     Property,
+    Renamed,
     String,
     StringChoice,
     Uuid,
