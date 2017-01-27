@@ -1189,6 +1189,12 @@ class File(Property):
 
 
 class Renamed(GettableProperty):
+    """Property to aid maintaining backwards compatibility
+
+    Simply assign the old name to a Renamed property that points to the
+    new name. Getting, setting, and deleting using the old name will warn
+    the user then redirect to the new name.
+    """
 
     def __init__(self, new_name):
         self.new_name = new_name
@@ -1199,6 +1205,7 @@ class Renamed(GettableProperty):
 
     @property
     def new_name(self):
+        """New name of the renamed property"""
         return self._new_name
 
     @new_name.setter
@@ -1211,6 +1218,7 @@ class Renamed(GettableProperty):
         return ''
 
     def warn(self):
+        """Display a FutureWarning about using a Renamed property"""
         warn(
             "\nProperty '{}' is deprecated and may be removed in the future. "
             "Please use '{}'.".format(self.name, self.new_name),

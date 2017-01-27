@@ -344,6 +344,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     @utils.stop_recursion_with(False)
     def equal(self, other):
+        """Determine if two HasProperties instances are equivalent"""
         if self is other:
             return True
         if not isinstance(other, self.__class__):
@@ -708,6 +709,7 @@ class List(basic.Property):
 
 
 class Tuple(List):
+    """Tuple property of other property types"""
 
     class_info = 'a tuple'
     _class_default = tuple
@@ -723,6 +725,7 @@ class Tuple(List):
 
 
 class Set(List):
+    """Set property of other property types"""
 
     class_info = 'a set'
     _class_default = set
