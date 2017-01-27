@@ -125,15 +125,15 @@ class PropertyMetaclass(type):
 
         # Build the documentation based on above sorting
         if req:
-            doc_str += '\n\n**Required Properties**\n\n' + '\n\n'.join(
+            doc_str += '\n\n**Required Properties:**\n\n' + '\n\n'.join(
                 ('* ' + _props[key].sphinx() for key in req)
             )
         if opt:
-            doc_str += '\n\n**Optional Properties**\n\n' + '\n'.join(
+            doc_str += '\n\n**Optional Properties:**\n\n' + '\n'.join(
                 ('* ' + _props[key].sphinx() for key in opt)
             )
         if imm:
-            doc_str += '\n\n**Immutable Attributes**\n\n' + '\n'.join(
+            doc_str += '\n\n**Immutable Attributes:**\n\n' + '\n'.join(
                 ('* ' + _props[key].sphinx() for key in imm)
             )
         classdict['__doc__'] = doc_str
