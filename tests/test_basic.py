@@ -96,7 +96,7 @@ class TestBasic(unittest.TestCase):
             myprop3 = properties.Property('empty property')
 
         assert WithDocOrder().__doc__ == (
-            '\n\n**Required Properties**\n\n'
+            '\n\n**Required Properties:**\n\n'
             '* **myprop1** (:class:`Property <properties.basic.Property>`): '
             'empty property\n\n'
             '* **myprop2** (:class:`Property <properties.basic.Property>`): '
