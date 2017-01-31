@@ -1,4 +1,4 @@
-"""containers.py: List/Tuple/Set properties"""
+"""containers.py: List/Set/Tuple properties"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,7 +20,7 @@ else:
     CLASS_TYPES = (type,)
 
 
-class List(basic.Property):
+class BasicList(basic.Property):
     """List property of other property types
 
     Allowed keywords:
@@ -36,7 +36,7 @@ class List(basic.Property):
 
     def __init__(self, doc, prop, **kwargs):
         self.prop = prop
-        super(List, self).__init__(doc, **kwargs)
+        super(BasicList, self).__init__(doc, **kwargs)
         self._unused_default_warning()
 
     @property
@@ -150,7 +150,7 @@ class List(basic.Property):
 
     def assert_valid(self, instance, value=None):
         """Check if list and contained properties are valid"""
-        valid = super(List, self).assert_valid(instance, value)
+        valid = super(BasicList, self).assert_valid(instance, value)
         if not valid:
             return False
         if value is None:
@@ -224,7 +224,7 @@ class List(basic.Property):
         return sphinx_class
 
 
-class Tuple(List):
+class BasicTuple(BasicList):
     """Tuple property of other property types"""
 
     class_info = 'a tuple'
@@ -240,7 +240,7 @@ class Tuple(List):
         return tuple(value)
 
 
-class Set(List):
+class BasicSet(BasicList):
     """Set property of other property types"""
 
     class_info = 'a set'
@@ -260,3 +260,112 @@ class Set(List):
         set's prop type is unknown.
         """
         return set(value)
+
+
+def add_properties_callbacks(cls):
+    for name in cls._mutators:
+        if not hasattr(cls, name):
+            continue
+        setattr(cls, name, properties_mutator(cls, name))
+    for name in cls._operators:
+        if not hasattr(cls, name):
+            continue
+        setattr(cls, name, properties_operator(cls, name))
+    for name in cls._ioperators:
+        if not hasattr(cls, name):
+            continue
+        setattr(cls, name, properties_mutator(cls, name, True))
+    return cls
+
+
+def properties_mutator(cls, name, ioper=False):
+    wrapped = getattr(cls, name)
+
+    def wrapper(self, *args, **kwargs):
+        if (
+                getattr(self, '_instance', None) is None or
+                getattr(self, '_name', '') == '' or
+                self is not getattr(self._instance, self._name)
+        ):
+            return getattr(super(cls, self), name)(*args, **kwargs)
+        else:
+            copy = cls(self)
+            val = getattr(copy, name)(*args, **kwargs)
+            if not ioper:
+                setattr(self._instance, self._name, copy)
+            self._instance = None
+            self._name = ''
+            return val
+
+    wrapper.__name__ = wrapped.__name__
+    wrapper.__doc__ = wrapped.__doc__
+    return wrapper
+
+
+def properties_operator(cls, name):
+    wrapped = getattr(cls, name)
+
+    def wrapper(self, *args, **kwargs):
+        output = getattr(super(cls, self), name)(*args, **kwargs)
+        return cls(output)
+
+    wrapper.__name__ = wrapped.__name__
+    wrapper.__doc__ = wrapped.__doc__
+    return wrapper
+
+
+@add_properties_callbacks
+class PropertiesList(list):
+
+    _mutators = ['append', 'extend', 'insert', 'pop', 'remove', 'clear',
+                 'sort', 'reverse', '__setitem__', '__delitem__',
+                 '__delslice__', '__setslice__']
+    _operators = ['__add__', '__mul__', '__rmul__']
+    _ioperators = ['__iadd__', '__imul__']
+
+
+@add_properties_callbacks
+class PropertiesSet(set):
+
+    _mutators = ['add', 'clear', 'difference_update', 'discard',
+                 'intersection_update', 'pop', 'remove',
+                 'symmetric_difference_update', 'update']
+    _operators = ['__and__', '__or__', '__sub__', '__xor__',
+                  '__rand__', '__ror__', '__rsub__', '__rxor__',
+                  'difference', 'intersection', 'symmetric_difference',
+                  'union']
+    _ioperators = ['__iand__', '__ior__', '__isub__', '__ixor__']
+
+
+@add_properties_callbacks
+class PropertiesTuple(tuple):
+
+    _mutators = []
+    _operators = ['__add__', '__mul__', '__rmul__']
+    _ioperators = []
+
+
+class List(BasicList):
+
+    _class_default = PropertiesList
+    _class_default_base = list
+
+    def validate(self, instance, value):
+        if isinstance(value, self._class_default_base):
+            value = self._class_default(value)
+        value = super(List, self).validate(instance, value)
+        value._name = self.name
+        value._instance = instance
+        return value
+
+
+class Set(List):
+
+    _class_default = PropertiesSet
+    _class_default_base = set
+
+
+class Tuple(List):
+
+    _class_default = PropertiesTuple
+    _class_default_base = tuple
