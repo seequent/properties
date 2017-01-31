@@ -216,7 +216,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             setattr(self, key, val)
 
     def _get(self, name):
-        return self._backend.get(name, None)                                   #pylint: disable=no-member
+        return self._backend.get(name, None)
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -227,9 +227,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         change = dict(name=name, value=value, mode='validate')
         self._notify(change)
         if change['value'] is utils.undefined:
-            self._backend.pop(name, None)                                      #pylint: disable=no-member
+            self._backend.pop(name, None)
         else:
-            self._backend[name] = change['value']                              #pylint: disable=no-member
+            self._backend[name] = change['value']
         change.update(name=name, mode='observe')
         self._notify(change)
 

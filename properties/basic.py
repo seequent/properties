@@ -715,7 +715,7 @@ class String(Property):
       to ensure consistent behaviour across Python 2/3.
 
     * **regex** - regular expression (pattern or compiled expression) the
-      input string must include. Note: `search` is used to determine if
+      input string must match. Note: `search` is used to determine if
       string is valid; to match the entire string, ensure '^' and '$' are
       contained in the regex pattern.
     """
@@ -762,7 +762,7 @@ class String(Property):
 
     @property
     def regex(self):
-        """Regular expression the string must include"""
+        """Regular expression the string must match"""
         return getattr(self, '_regex', None)
 
     @regex.setter
@@ -800,7 +800,7 @@ class String(Property):
     def info(self):
         info = 'a unicode string' if self.unicode else 'a string'
         if self.regex is not None:
-            info += ' that contains pattern'
+            info += ' that matches pattern'
         if hasattr(self.regex, 'pattern'):
             info += ' "{}"'.format(self.regex.pattern)                         #pylint: disable=no-member
         return info
