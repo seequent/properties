@@ -47,7 +47,7 @@ class Task(HasProperties):
         status = Instance('', TaskStatus).validate(None, status)
         print(r'{taskname} | {percent:>3}% | {message}'.format(
             taskname=self.__class__.__name__,
-            percent=round(100*status.progress),
+            percent=int(round(100*status.progress)),
             message=status.message if status.message else '',
         ))
 
