@@ -71,7 +71,7 @@ Defining new property types
 ---------------------------
 
 :code:`Property` can be subclassed to create new property types. First, define
-the new class and give it some basic :code:`info_text`; this is a string that
+the new class and give it some basic :code:`class_info`; this is a string that
 describes the property class. It is supplemental to the help doc provided on the
 property instance. Also, override :code:`validate` to ensure property values are
 coerced and validated correctly.
@@ -83,7 +83,7 @@ coerced and validated correctly.
     class UppercaseProp(properties.Property):
         """String property that is coerced to uppercase"""
 
-        info_text = 'a string, coerced to uppercase'
+        class_info = 'a string, coerced to uppercase'
 
         def validate(self, instance, value):
             """Check that input is a string and coerce to uppercase"""
@@ -105,7 +105,7 @@ Then use :code:`UppercaseProp` as a property of a :code:`HasProperties` class:
         """Megaphone class is used to tell speeches loudly"""
         import properties #hide
         class UppercaseProp(properties.Property): #hide
-            info_text = 'a string, coerced to uppercase' #hide
+            class_info = 'a string, coerced to uppercase' #hide
             def validate(self, instance, value): #hide
                 if not isinstance(value, str): #hide
                     raise ValueError( #hide
@@ -126,7 +126,7 @@ Then use :code:`UppercaseProp` as a property of a :code:`HasProperties` class:
         """Megaphone class is used to tell speeches loudly""" #hide
         import properties #hide
         class UppercaseProp(properties.Property): #hide
-            info_text = 'a string, coerced to uppercase' #hide
+            class_info = 'a string, coerced to uppercase' #hide
             def validate(self, instance, value): #hide
                 if not isinstance(value, str): #hide
                     raise ValueError( #hide
@@ -150,7 +150,7 @@ Then use :code:`UppercaseProp` as a property of a :code:`HasProperties` class:
         """Megaphone class is used to tell speeches loudly""" #hide
         import properties #hide
         class UppercaseProp(properties.Property): #hide
-            info_text = 'a string, coerced to uppercase' #hide
+            class_info = 'a string, coerced to uppercase' #hide
             def validate(self, instance, value): #hide
                 if not isinstance(value, str): #hide
                     raise ValueError( #hide
@@ -171,7 +171,7 @@ Then use :code:`UppercaseProp` as a property of a :code:`HasProperties` class:
         """Megaphone class is used to tell speeches loudly""" #hide
         import properties #hide
         class UppercaseProp(properties.Property): #hide
-            info_text = 'a string, coerced to uppercase' #hide
+            class_info = 'a string, coerced to uppercase' #hide
             def validate(self, instance, value): #hide
                 if not isinstance(value, str): #hide
                     raise ValueError( #hide
