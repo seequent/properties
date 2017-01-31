@@ -17,4 +17,6 @@ except ImportError:
 else:
     del png
 
-from .base import BaseResult, PermanentTaskFailure, TaskException, Task
+from .base import (
+    BaseResult, PermanentTaskFailure, Task, TaskException, TaskStatus
+)
