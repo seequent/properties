@@ -359,13 +359,13 @@ class List(BasicList):
         return value
 
 
-class Set(List):
+class Set(List, BasicSet):
 
     _class_default = PropertiesSet
     _class_default_base = set
 
 
-class Tuple(List):
+class Tuple(List, BasicTuple):
 
     _class_default = PropertiesTuple
     _class_default_base = tuple
