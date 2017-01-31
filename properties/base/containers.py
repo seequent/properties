@@ -21,7 +21,12 @@ else:
 
 
 class BasicList(basic.Property):
-    """List property of other property types
+    """Basic List property, where each entry is another property type
+
+    The list entry property type must be specified in the constructor.
+    Note: BasicList properties use the builtin :code:`list` as their
+    underlying structure. This means that mutations to the list will not
+    trigger notifications.
 
     Allowed keywords:
 
@@ -225,7 +230,7 @@ class BasicList(basic.Property):
 
 
 class BasicTuple(BasicList):
-    """Tuple property of other property types"""
+    """Basic Tuple property where each entry is another property type"""
 
     class_info = 'a tuple'
     _class_default = tuple
@@ -241,7 +246,7 @@ class BasicTuple(BasicList):
 
 
 class BasicSet(BasicList):
-    """Set property of other property types"""
+    """Basic Set property where each entry is another property type"""
 
     class_info = 'a set'
     _class_default = set
@@ -263,15 +268,16 @@ class BasicSet(BasicList):
 
 
 def add_properties_callbacks(cls):
-    for name in cls._mutators:
+    """Class decorator to add change notifications to builtin containers"""
+    for name in cls._mutators:                                                 #pylint: disable=protected-access
         if not hasattr(cls, name):
             continue
         setattr(cls, name, properties_mutator(cls, name))
-    for name in cls._operators:
+    for name in cls._operators:                                                #pylint: disable=protected-access
         if not hasattr(cls, name):
             continue
         setattr(cls, name, properties_operator(cls, name))
-    for name in cls._ioperators:
+    for name in cls._ioperators:                                               #pylint: disable=protected-access
         if not hasattr(cls, name):
             continue
         setattr(cls, name, properties_mutator(cls, name, True))
@@ -279,9 +285,16 @@ def add_properties_callbacks(cls):
 
 
 def properties_mutator(cls, name, ioper=False):
+    """Wraps a mutating container method to add HasProperties notifications
+
+    If the container is not part of a HasProperties instance, behavior
+    is unchanged. However, if it is part of a HasProperties instance
+    the new method calls set, triggering change notifications.
+    """
     wrapped = getattr(cls, name)
 
     def wrapper(self, *args, **kwargs):
+        """Mutate if not part of HasProperties; copy/modify/set otherwise"""
         if (
                 getattr(self, '_instance', None) is None or
                 getattr(self, '_name', '') == '' or
@@ -303,9 +316,11 @@ def properties_mutator(cls, name, ioper=False):
 
 
 def properties_operator(cls, name):
+    """Wraps a container operator to ensure container class is maintained"""
     wrapped = getattr(cls, name)
 
     def wrapper(self, *args, **kwargs):
+        """Perform operation and cast to container class"""
         output = getattr(super(cls, self), name)(*args, **kwargs)
         return cls(output)
 
@@ -316,6 +331,7 @@ def properties_operator(cls, name):
 
 @add_properties_callbacks
 class PropertiesList(list):
+    """Custom list used by List property with HasProperties notifications"""
 
     _mutators = ['append', 'extend', 'insert', 'pop', 'remove', 'clear',
                  'sort', 'reverse', '__setitem__', '__delitem__',
@@ -326,6 +342,7 @@ class PropertiesList(list):
 
 @add_properties_callbacks
 class PropertiesSet(set):
+    """Custom set used by Set property with HasProperties notifications"""
 
     _mutators = ['add', 'clear', 'difference_update', 'discard',
                  'intersection_update', 'pop', 'remove',
@@ -339,6 +356,7 @@ class PropertiesSet(set):
 
 @add_properties_callbacks
 class PropertiesTuple(tuple):
+    """Custom tuple used by Tuple property with HasProperties notifications"""
 
     _mutators = []
     _operators = ['__add__', '__mul__', '__rmul__']
@@ -346,6 +364,13 @@ class PropertiesTuple(tuple):
 
 
 class List(BasicList):
+    """List property, where each entry is another property type
+
+    The underlying structure for this property is a PropertiesList, not
+    a builtin list. This allows mutating methods, in-place operators,
+    setting by index, etc., to raise change notifications. Of course,
+    changes to the item in the list will not trigger notifications.
+    """
 
     _class_default = PropertiesList
     _class_default_base = list
@@ -360,12 +385,27 @@ class List(BasicList):
 
 
 class Set(List, BasicSet):
+    """Set property, where each entry is another property type
+
+    The underlying structure for this property is a PropertiesSet, not
+    a builtin set. This allows mutating methods, in-place operators, etc.,
+    to raise change notifications. Of course, changes to the item in the
+    set will not trigger notifications.
+    """
 
     _class_default = PropertiesSet
     _class_default_base = set
 
 
 class Tuple(List, BasicTuple):
+    """Tuple property, where each entry is another property type
+
+    The underlying structure for this property is a PropertiesTuple, not
+    a builtin tuple. Since builtin tuples are immutable, Tuple and BasicTuple
+    will have the same behavior. These two classes are maintained for
+    parallelism with other containers (eg BasicList and List); they may
+    diverge in the future.
+    """
 
     _class_default = PropertiesTuple
     _class_default_base = tuple
