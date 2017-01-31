@@ -215,7 +215,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             setattr(self, key, val)
 
     def _get(self, name):
-        return self._backend.get(name, None)                                   #pylint: disable=no-member
+        return self._backend.get(name, None)
 
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
@@ -227,9 +227,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         change = dict(name=name, previous=prev, value=value, mode='validate')
         self._notify(change)
         if change['value'] is utils.undefined:
-            self._backend.pop(name, None)                                      #pylint: disable=no-member
+            self._backend.pop(name, None)
         else:
-            self._backend[name] = change['value']                              #pylint: disable=no-member
+            self._backend[name] = change['value']
         if not self._props[name].equal(prev, change['value']):
             change.update(name=name, previous=prev, mode='observe_change')
             self._notify(change)
@@ -325,13 +325,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             newinst = cls(**mutable)
         for key, val in iteritems(immutable):
             valid_val = cls._props[key].validate(newinst, val)
-            newinst._backend[key] = valid_val                                  #pylint: disable=no-member
+            newinst._backend[key] = valid_val
         return newinst
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):
             valid_val = self._props[key].validate(self, pickle.loads(val))
-            self._backend[key] = valid_val                                     #pylint: disable=no-member
+            self._backend[key] = valid_val
 
     @utils.stop_recursion_with(
         utils.SelfReferenceError('Object contains unpicklable self reference')
