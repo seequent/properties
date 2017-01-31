@@ -4,8 +4,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ..base import HasProperties
-from ..basic import String, Bool
+from ..base import HasProperties, Instance
+from ..basic import Bool, Float, String
 
 
 class BaseResult(HasProperties):
@@ -21,11 +21,35 @@ class BaseResult(HasProperties):
     )
 
 
+class TaskStatus(HasProperties):
+    """The present status of the task"""
+
+    progress = Float(
+        'Task progress to completion',
+        required=False,
+        min=0,
+        max=1,
+    )
+    message = String(
+        'Task progress message',
+        required=False,
+    )
+
+
 class Task(HasProperties):
     """Computational task"""
 
     _REGISTRY = dict()
     Result = BaseResult
+
+    def report_status(self, status):
+        """Report the task status towards completion"""
+        status = Instance('', TaskStatus).validate(None, status)
+        print(r'{taskname} | {percent:>3}% | {message}'.format(
+            taskname=self.__class__.__name__,
+            percent=int(round(100*status.progress)),
+            message=status.message if status.message else '',
+        ))
 
     def __call__(self):
         """Execute the compute task"""
