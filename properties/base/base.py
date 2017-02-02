@@ -82,6 +82,9 @@ class PropertyMetaclass(type):
                 raise AttributeError(
                     'Property names cannot be private: {}'.format(key)
                 )
+            if isinstance(prop, basic.Renamed) and prop.new_name not in _props:
+                raise TypeError('Invalid new name for renamed property: '
+                                '{}'.format(prop.new_name))
             prop.name = key
             classdict[key] = prop.get_property()
 
@@ -132,7 +135,7 @@ class PropertyMetaclass(type):
                 ('* ' + _props[key].sphinx() for key in opt)
             )
         if imm:
-            doc_str += '\n\n**Immutable Attributes:**\n\n' + '\n'.join(
+            doc_str += '\n\n**Other Properties:**\n\n' + '\n'.join(
                 ('* ' + _props[key].sphinx() for key in imm)
             )
         classdict['__doc__'] = doc_str
