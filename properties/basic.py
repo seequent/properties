@@ -60,7 +60,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     * **doc** - property's custom doc string
     * **default** - property's default value
     """
-    class_info = 'corrected'
+    class_info = ''
     _class_default = undefined
 
     def __init__(self, doc, **kwargs):
@@ -273,7 +273,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
             'specified. {extra}'.format(
                 prefix=prefix,
-                info=self.info,
+                info=self.info or 'corrected',
                 val=value,
                 vtype=type(value),
                 extra=extra,
@@ -289,7 +289,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             name=self.name,
             cls=sphinx_class,
             doc=self.doc,
-            info='' if self.info == 'corrected' else ', ' + self.info,
+            info=', {}'.format(self.info) if self.info else '',
         )
         return prop_doc
 
@@ -559,7 +559,7 @@ class Property(GettableProperty):
             '**{name}** ({cls}): {doc}{info}{default}'.format(
                 name=self.name,
                 doc=self.doc,
-                info='' if self.info == 'corrected' else ', ' + self.info,
+                info=', {}'.format(self.info) if self.info else '',
                 default=default_str,
                 cls=self.sphinx_class(),
             )

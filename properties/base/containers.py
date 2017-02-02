@@ -198,10 +198,9 @@ class Tuple(basic.Property):
     @property
     def info(self):
         """Supplemental description of the list, with length and type"""
-        itext = '{class_info} (each item is {prop_info})'.format(
-            class_info=self.class_info,
-            prop_info=self.prop.info,
-        )
+        itext = self.class_info
+        if self.prop.info:
+            itext += ' (each item is {})'.format(self.prop.info)
         if self.max_length is None and self.min_length is None:
             return itext
         if self.max_length is None:

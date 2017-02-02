@@ -58,7 +58,7 @@ class Union(basic.Property):
     @property
     def info(self):
         """Description of the property, supplemental to the basic doc"""
-        return ' or '.join([p.info for p in self.props])
+        return ' or '.join([p.info or 'any value' for p in self.props])
 
     @property
     def name(self):
