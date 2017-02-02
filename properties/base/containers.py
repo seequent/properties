@@ -44,7 +44,6 @@ def properties_mutator(cls, name, ioper=False):
     is unchanged. However, if it is part of a HasProperties instance
     the new method calls set, triggering change notifications.
     """
-    wrapped = getattr(cls, name)
 
     def wrapper(self, *args, **kwargs):
         """Mutate if not part of HasProperties; copy/modify/set otherwise"""
@@ -63,6 +62,7 @@ def properties_mutator(cls, name, ioper=False):
             self._name = ''
             return val
 
+    wrapped = getattr(cls, name)
     wrapper.__name__ = wrapped.__name__
     wrapper.__doc__ = wrapped.__doc__
     return wrapper
@@ -70,13 +70,13 @@ def properties_mutator(cls, name, ioper=False):
 
 def properties_operator(cls, name):
     """Wraps a container operator to ensure container class is maintained"""
-    wrapped = getattr(cls, name)
 
     def wrapper(self, *args, **kwargs):
         """Perform operation and cast to container class"""
         output = getattr(super(cls, self), name)(*args, **kwargs)
         return cls(output)
 
+    wrapped = getattr(cls, name)
     wrapper.__name__ = wrapped.__name__
     wrapper.__doc__ = wrapped.__doc__
     return wrapper
