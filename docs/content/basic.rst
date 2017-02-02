@@ -33,27 +33,6 @@ Union
     :members:
     :undoc-members:
 
-BasicList
----------
-
-.. autoclass:: properties.base.BasicList
-    :members:
-    :undoc-members:
-
-BasicSet
---------
-
-.. autoclass:: properties.base.BasicSet
-    :members:
-    :undoc-members:
-
-BasicTuple
-----------
-
-.. autoclass:: properties.base.BasicTuple
-    :members:
-    :undoc-members:
-
 List
 ----
 
