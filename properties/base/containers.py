@@ -368,8 +368,16 @@ class Set(List):
 
     def equal(self, value_a, value_b):
         try:
-            return len(value_a) == len(value_a.union(value_b))
-        except AttributeError:
+            if len(value_a) != len(value_b):
+                return False
+            copy_b = value_b.copy()
+            for item_a in value_a:
+                for item_b in copy_b:
+                    if self.prop.equal(item_a, item_b):
+                        copy_b.remove(item_b)
+                        break
+            return len(copy_b) == 0
+        except TypeError, AttributeError:
             return False
 
     @staticmethod
@@ -380,4 +388,3 @@ class Set(List):
         set's prop type is unknown.
         """
         return set(value)
-
