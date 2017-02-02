@@ -377,7 +377,7 @@ class Set(List):
                         copy_b.remove(item_b)
                         break
             return len(copy_b) == 0
-        except TypeError, AttributeError:
+        except (TypeError, AttributeError):
             return False
 
     @staticmethod
