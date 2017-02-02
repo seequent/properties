@@ -8,7 +8,7 @@ import unittest
 import properties
 
 
-class TestList(unittest.TestCase):
+class TestContainer(unittest.TestCase):
 
     def test_tuple(self):
 
