@@ -11,51 +11,55 @@ import properties
 class TestList(unittest.TestCase):
 
     def test_list(self):
-        self._test_list(properties.BasicList)
-        self._test_list(properties.List)
+        self._test_list(True)
+        self._test_list(False)
 
-    def _test_list(self, list_class):
+    def _test_list(self, om):
 
         with self.assertRaises(TypeError):
-            list_class('bad string list', prop=str)
+            properties.List('bad string list', prop=str)
         with self.assertRaises(TypeError):
-            list_class('bad max', properties.Integer(''),
+            properties.List('bad max', properties.Integer(''),
                             max_length=-10)
         with self.assertRaises(TypeError):
-            list_class('bad max', properties.Integer(''),
+            properties.List('bad max', properties.Integer(''),
                             max_length='ten')
         with self.assertRaises(TypeError):
-            mylist = list_class('bad max', properties.Integer(''),
+            mylist = properties.List('bad max', properties.Integer(''),
                                      min_length=20)
             mylist.max_length = 10
         with self.assertRaises(TypeError):
-            list_class('bad min', properties.Integer(''),
+            properties.List('bad min', properties.Integer(''),
                             min_length=-10)
         with self.assertRaises(TypeError):
-            list_class('bad min', properties.Integer(''),
+            properties.List('bad min', properties.Integer(''),
                             min_length='ten')
         with self.assertRaises(TypeError):
-            mylist = list_class('bad min', properties.Integer(''),
+            mylist = properties.List('bad min', properties.Integer(''),
                                      max_length=10)
             mylist.min_length = 20
+        with self.assertRaises(TypeError):
+            properties.List('bad observe', properties.Integer(''),
+                            observe_mutations=5)
 
         class HasPropsDummy(properties.HasProperties):
             pass
 
-        mylist = list_class('dummy has properties list',
-                                 prop=HasPropsDummy)
+        mylist = properties.List('dummy has properties list',
+                                 prop=HasPropsDummy, observe_mutations=om)
         assert isinstance(mylist.prop, properties.Instance)
         assert mylist.prop.instance_class is HasPropsDummy
 
         class HasDummyList(properties.HasProperties):
-            mylist = list_class('dummy has properties list',
-                                     prop=HasPropsDummy)
+            mylist = properties.List('dummy has properties list',
+                                     prop=HasPropsDummy, observe_mutations=om)
 
         assert HasDummyList()._props['mylist'].name == 'mylist'
         assert HasDummyList()._props['mylist'].prop.name == 'mylist'
 
         class HasIntList(properties.HasProperties):
-            aaa = list_class('list of ints', properties.Integer(''))
+            aaa = properties.List('list of ints', properties.Integer(''),
+                                  observe_mutations=om)
 
         li = HasIntList()
         li.aaa = [1, 2, 3]
@@ -73,8 +77,8 @@ class TestList(unittest.TestCase):
         assert li1.aaa is not li2.aaa
 
         class HasConstrianedList(properties.HasProperties):
-            aaa = list_class('list of ints', properties.Integer(''),
-                                  min_length=2)
+            aaa = properties.List('list of ints', properties.Integer(''),
+                                  min_length=2, observe_mutations=om)
 
         li = HasConstrianedList()
         li.aaa = [1, 2, 3]
@@ -84,8 +88,8 @@ class TestList(unittest.TestCase):
             li.validate()
 
         class HasConstrianedList(properties.HasProperties):
-            aaa = list_class('list of ints', properties.Integer(''),
-                                  max_length=2)
+            aaa = properties.List('list of ints', properties.Integer(''),
+                                  max_length=2, observe_mutations=om)
 
         li = HasConstrianedList()
         li.aaa = [1, 2]
@@ -95,7 +99,8 @@ class TestList(unittest.TestCase):
             li.validate()
 
         class HasColorList(properties.HasProperties):
-            ccc = list_class('list of colors', properties.Color(''))
+            ccc = properties.List('list of colors', properties.Color(''),
+                                  observe_mutations=om)
 
         li = HasColorList()
         li.ccc = ['red', '#00FF00']
@@ -103,15 +108,15 @@ class TestList(unittest.TestCase):
         assert li.ccc[1] == (0, 255, 0)
 
         numlist = [1, 2, 3, 4]
-        assert list_class.to_json(numlist) == numlist
-        assert list_class.to_json(numlist) is not numlist
-        assert list_class.from_json(numlist) == numlist
-        assert list_class.from_json(numlist) is not numlist
+        assert properties.List.to_json(numlist) == numlist
+        assert properties.List.to_json(numlist) is not numlist
+        assert properties.List.from_json(numlist) == numlist
+        assert properties.List.from_json(numlist) is not numlist
 
         class HasIntA(properties.HasProperties):
             a = properties.Integer('int a', required=True)
 
-        assert list_class.to_json(
+        assert properties.List.to_json(
             [HasIntA(a=5), HasIntA(a=10)]
         ) == [{'__class__': 'HasIntA', 'a': 5},
               {'__class__': 'HasIntA', 'a': 10}]
@@ -121,7 +126,8 @@ class TestList(unittest.TestCase):
         }
 
         class HasIntAList(properties.HasProperties):
-            mylist = list_class('list of HasIntA', HasIntA)
+            mylist = properties.List('list of HasIntA', HasIntA,
+                                     observe_mutations=om)
 
         deser_list = HasIntAList.deserialize(
             {'mylist': [{'a': 0}, {'a': 10}, {'a': 100}]}
@@ -133,30 +139,39 @@ class TestList(unittest.TestCase):
         assert isinstance(deser_list[2], HasIntA) and deser_list[2].a == 100
 
         class HasOptionalList(properties.HasProperties):
-            mylist = list_class('', properties.Bool(''), required=False)
+            mylist = properties.List('', properties.Bool(''), required=False,
+                                     observe_mutations=om)
 
         hol = HasOptionalList()
         hol.validate()
 
         assert HasIntAList._props['mylist'].deserialize(None) is None
 
-        assert list_class('', properties.Instance('', HasIntA)).equal(
+        assert properties.List(
+            '', properties.Instance('', HasIntA), observe_mutations=om
+        ).equal(
             [HasIntA(a=1), HasIntA(a=2)], [HasIntA(a=1), HasIntA(a=2)]
         )
-        assert not list_class('', properties.Instance('', HasIntA)).equal(
+        assert not properties.List(
+            '', properties.Instance('', HasIntA), observe_mutations=om
+        ).equal(
             [HasIntA(a=1), HasIntA(a=2)],
             [HasIntA(a=1), HasIntA(a=2), HasIntA(a=3)]
         )
-        assert not list_class('', properties.Instance('', HasIntA)).equal(
+        assert not properties.List(
+            '', properties.Instance('', HasIntA), observe_mutations=om
+        ).equal(
             [HasIntA(a=1), HasIntA(a=2)], [HasIntA(a=1), HasIntA(a=3)]
         )
-        assert not list_class('', properties.Integer('')).equal(5, 5)
+        assert not properties.List('', properties.Integer(''),
+                                   observe_mutations=om).equal(5, 5)
 
     def test_basic_vs_advanced(self):
 
         class HasLists(properties.HasProperties):
-            basic = properties.BasicList('', properties.Integer(''))
-            advanced = properties.List('', properties.Integer(''))
+            basic = properties.List('', properties.Integer(''))
+            advanced = properties.List('', properties.Integer(''),
+                                       observe_mutations=True)
 
             def __init__(self, **kwargs):
                 self._basic_tic = 0
