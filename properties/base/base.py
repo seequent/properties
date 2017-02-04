@@ -127,7 +127,7 @@ class PropertyMetaclass(type):
 
         # Build the documentation based on above sorting
         if req:
-            doc_str += '\n\n**Required Properties:**\n\n' + '\n\n'.join(
+            doc_str += '\n\n**Required Properties:**\n\n' + '\n'.join(
                 ('* ' + _props[key].sphinx() for key in req)
             )
         if opt:
