@@ -50,7 +50,6 @@ Scope
 The :code:`properties` package allows you to create **strongly typed** objects in a
 consistent way. This allows you to hook into **notifications** and other libraries.
 
-
 Goals
 -----
 
@@ -73,7 +72,7 @@ Alternatives
 Connections
 -----------
 
-* `steno3d <https://github.com/3ptscience/steno3dpy>`_ for the client API
+* `SimPEG <https://github.com/simpeg/simpeg>`_ Simulation and Parameter Estimation in Geophysics
 
 Installation
 ------------
