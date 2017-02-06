@@ -10,7 +10,7 @@ properties
     :target: https://github.com/3ptscience/properties/blob/master/LICENSE
     :alt: MIT license
 
-.. image:: https://readthedocs.org/projects/propertiespy/badge
+.. image:: https://readthedocs.org/projects/propertiespy/badge/
     :target: http://propertiespy.readthedocs.io/en/latest/
     :alt: ReadTheDocs
 
