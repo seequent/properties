@@ -54,6 +54,11 @@ Goals
 * Prioritize documentation
 * Connect to other libraries for interactive visualizations
 
+Documentation
+-------------
+
+API Documentation is available at `ReadTheDocs <https://propertiespy.readthedocs.io/en/latest/>`_.
+
 Alternatives
 ------------
 
