@@ -571,7 +571,7 @@ class Property(GettableProperty):
       and possibly keyword arguments passed to :code:`deserialize`. By default,
       the deserializer writes to JSON.
     * **name** - Name of the Property. This is overwritten in the HasProperties
-      metaclass to correspond to the Property's variable name.
+      metaclass to correspond to the Property's assigned name.
     """
 
     @property
