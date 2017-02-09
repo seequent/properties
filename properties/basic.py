@@ -550,7 +550,7 @@ class Property(GettableProperty):
     :ref:`HasProperties <hasproperties>` documentation and documentation
     for specific :ref:`Property types <builtin>`.
 
-    **Available keywords:**
+    **Available keywords**:
 
     * **doc** - Docstring for the Property. Must be provided on instantiation.
     * **default** - Default value for the Property. This may be a callable that
@@ -662,12 +662,35 @@ class Property(GettableProperty):
 
 
 class Bool(Property):
-    """Boolean Property"""
+    """Property for True or False values
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **cast** - convert input value to boolean based on its truth value. By
+      default, cast is False.
+    """
 
     class_info = 'a boolean'
 
+    @property
+    def cast(self):
+        """Cast number to specified type"""
+        return getattr(self, '_cast', False)
+
+    @cast.setter
+    def cast(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'cast' property must be a boolean")
+        self._cast = value
+
     def validate(self, instance, value):
         """Checks if value is a boolean"""
+        if self.cast:
+            try:
+                value = bool(value)
+            except ValueError:
+                self.error(instance, value)
         if not isinstance(value, bool):
             self.error(instance, value)
         return value
@@ -698,12 +721,18 @@ def _in_bounds(prop, instance, value):
         prop.error(instance, value)
 
 
-class Integer(Property):
-    """Integer Property
+class Integer(Bool):
+    """Property for integer values
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **min**/**max** - set valid bounds of Property
+    * **min** - Minimum valid value, inclusive. If None (the default), there
+      is no minimum limit.
+    * **max** - Maximum valid value, inclusive. If None (the default), there
+      is no maximum limit.
+    * **cast** - Attempt to convert input value to integer. By default, cast
+      is False.
     """
 
     class_info = 'an integer'
@@ -734,12 +763,16 @@ class Integer(Property):
         """Checks that value is an integer and in min/max bounds"""
         try:
             intval = int(value)
-            if abs(value - intval) > TOL:
+            if not self.cast and abs(value - intval) > TOL:
                 self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
         _in_bounds(self, instance, intval)
         return intval
+
+    def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
+        """Check if two valid Property values are equal"""
+        return value_a == value_b
 
     @property
     def info(self):
@@ -758,7 +791,18 @@ class Integer(Property):
 
 
 class Float(Integer):
-    """Float Property"""
+    """Property for float values
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **min** - Minimum valid value, inclusive. If None (the default), there
+      is no minimum limit.
+    * **max** - Maximum valid value, inclusive. If None (the default), there
+      is no maximum limit.
+    * **cast** - Attempt to convert input value to integer. By default, cast
+      is False.
+    """
 
     class_info = 'a float'
 
@@ -769,7 +813,7 @@ class Float(Integer):
         """
         try:
             floatval = float(value)
-            if abs(value - floatval) > TOL:
+            if not self.cast and abs(value - floatval) > TOL:
                 self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
@@ -793,8 +837,15 @@ class Float(Integer):
         return float(value)
 
 
-class Complex(Property):
-    """Complex number Property"""
+class Complex(Bool):
+    """Property for complex numbers
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **cast** - Attempt to convert input value to integer. By default, cast
+      is False.
+    """
 
     class_info = 'a complex number'
 
@@ -805,7 +856,7 @@ class Complex(Property):
         """
         try:
             compval = complex(value)
-            if (
+            if not self.cast and (
                     abs(value.real - compval.real) > TOL or
                     abs(value.imag - compval.imag) > TOL
             ):
@@ -832,18 +883,19 @@ class Complex(Property):
 
 
 class String(Property):
-    """String Property
+    """Property for string values
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **strip** - substring to strip off input
-
-    * **change_case** - forces 'lower', 'upper', or None
-
-    * **unicode** - if True, coerce strings to unicode. Default is True
-      to ensure consistent behaviour across Python 2/3.
-
-    * **regex** - regular expression (pattern or compiled expression) the
+    * **strip** - Substring to strip off input. By default, nothing is
+      stripped
+    * **change_case** - If 'lower', coerces input to lowercase; if 'upper',
+      coerce input to uppercase. If None (the default), case is left
+      unchanged.
+    * **unicode** - If True, coerce strings to unicode. Default is True
+      to ensure consistent behavior across Python 2/3.
+    * **regex** - Regular expression (pattern or compiled expression) the
       input string must match. Note: `search` is used to determine if
       string is valid; to match the entire string, ensure '^' and '$' are
       contained in the regex pattern.
@@ -938,11 +990,12 @@ class String(Property):
 class StringChoice(Property):
     """String Property where only certain choices are allowed
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **choices** - either a list/tuple of allowed strings
+    * **choices** - Either a set/list/tuple of allowed strings
       OR a dictionary of string key and list-of-string value pairs,
-      where any string in the value list is coerced into the key string.
+      where any string in the value list is coerced to the key string.
     * **case_sensitive** - Determine if input must follow case in choices.
       Default: False
     * **descriptions** - dictionary of choice/description key/value
@@ -972,12 +1025,7 @@ class StringChoice(Property):
 
     @property
     def choices(self):
-        """Available choices
-
-        This is either (1) a list/tuple of allowed strings
-        or (2) a dictionary of string key and list-of-string value pairs,
-        where any string in the value list is coerced into the key string.
-        """
+        """Available string choices"""
         return self._choices
 
     @choices.setter
