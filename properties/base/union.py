@@ -141,12 +141,13 @@ class Union(basic.Property):
             )
         )
 
-    def serialize(self, value, include_class=True, **kwargs):
+    def serialize(self, value, **kwargs):
         """Return a serialized value
 
         If no serializer is provided, it uses the serialize method of the
         prop corresponding to the value
         """
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
         if self.serializer is not None:
             return self.serializer(value, **kwargs)
         if value is None:
@@ -156,22 +157,23 @@ class Union(basic.Property):
                 prop.validate(None, value)
             except (ValueError, KeyError, TypeError, AttributeError):
                 continue
-            return prop.serialize(value, include_class, **kwargs)
+            return prop.serialize(value, **kwargs)
         return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, trusted=False, **kwargs):
+    def deserialize(self, value, **kwargs):
         """Return a deserialized value
 
         If no deserializer is provided, it uses the deserialize method of the
         prop corresponding to the value
         """
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
         for prop in self.props:
             try:
-                return prop.deserialize(value, trusted, **kwargs)
+                return prop.deserialize(value, **kwargs)
             except (ValueError, KeyError, TypeError, AttributeError):
                 continue
         return self.from_json(value, **kwargs)

@@ -101,34 +101,36 @@ class Instance(basic.Property):
         return True
 
 
-    def serialize(self, value, include_class=True, **kwargs):
+    def serialize(self, value, **kwargs):
         """Serialize instance to JSON
 
         If the value is a HasProperties instance, it is serialized with
         the include_class argument passed along. Otherwise, to_json is
         called.
         """
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
         if self.serializer is not None:
             return self.serializer(value, **kwargs)
         if value is None:
             return None
         if isinstance(value, HasProperties):
-            return value.serialize(include_class, **kwargs)
+            return value.serialize(**kwargs)
         return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, trusted=False, **kwargs):
+    def deserialize(self, value, **kwargs):
         """Deserialize instance from JSON value
 
         If a deserializer is registered, that is used. Otherwise, if the
         instance_class is a HasProperties subclass, an instance can be
         deserialized from a dictionary.
         """
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
         if issubclass(self.instance_class, HasProperties):
-            return self.instance_class.deserialize(value, trusted, **kwargs)
+            return self.instance_class.deserialize(value, **kwargs)
         return self.from_json(value, **kwargs)
 
     def equal(self, value_a, value_b):

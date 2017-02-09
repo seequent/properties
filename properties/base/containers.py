@@ -256,23 +256,25 @@ class Tuple(basic.Property):
             self.prop.assert_valid(instance, val)
         return True
 
-    def serialize(self, value, include_class=True, **kwargs):
+    def serialize(self, value, **kwargs):
         """Return a serialized copy of the tuple"""
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
         if self.serializer is not None:
             return self.serializer(value, **kwargs)
         if value is None:
             return None
-        serial_list = [self.prop.serialize(val, include_class, **kwargs)
+        serial_list = [self.prop.serialize(val, **kwargs)
                        for val in value]
         return serial_list
 
-    def deserialize(self, value, trusted=False, **kwargs):
+    def deserialize(self, value, **kwargs):
         """Return a deserialized copy of the tuple"""
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
-        output_list = [self.prop.deserialize(val, trusted, **kwargs)
+        output_list = [self.prop.deserialize(val, **kwargs)
                        for val in value]
         return self._class_default(output_list)
 

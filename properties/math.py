@@ -124,11 +124,11 @@ class Array(Property):
             return False
 
 
-    def error(self, instance, value, error=None, extra=''):
+    def error(self, instance, value, error_class=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
-        error = error if error is not None else ValueError
+        error_class = error_class if error_class is not None else ValueError
         if not isinstance(value, (list, tuple, np.ndarray)):
-            super(Array, self).error(instance, value, error, extra)
+            super(Array, self).error(instance, value, error_class, extra)
         if isinstance(value, (list, tuple)):
             val_description = 'A {typ} of length {len}'.format(
                 typ=value.__class__.__name__,
@@ -147,7 +147,7 @@ class Array(Property):
                 name=self.name,
                 cls=instance.__class__.__name__,
             )
-        raise error(
+        raise error_class(
             '{prefix} must be {info}. {desc} was specified. {extra}'.format(
                 prefix=prefix,
                 info=self.info,
@@ -156,12 +156,13 @@ class Array(Property):
             )
         )
 
-    def deserialize(self, value, trusted=False, **kwargs):
+    def deserialize(self, value, **kwargs):
         """De-serialize the property value from JSON
 
         If no deserializer has been registered, this converts the value
         to the wrapper class with given dtype.
         """
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
@@ -227,7 +228,7 @@ class BaseVector(Array):
             except ZeroDivisionError:
                 self.error(
                     instance, value,
-                    error=ZeroDivisionError,
+                    error_class=ZeroDivisionError,
                     extra='The vector must have a length specified.'
                 )
         return value

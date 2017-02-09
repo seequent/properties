@@ -90,7 +90,7 @@ class TestBasic(unittest.TestCase):
                 myprop = properties.Property('empty property')
 
         class WithDocOrder(properties.HasProperties):
-            _doc_order = ['myprop1', 'myprop2', 'myprop3']
+            _doc_order = ['myprop1', 'myprop3', 'myprop2']
             myprop1 = properties.Property('empty property')
             myprop2 = properties.Property('empty property')
             myprop3 = properties.Property('empty property')
@@ -98,10 +98,10 @@ class TestBasic(unittest.TestCase):
         assert WithDocOrder().__doc__ == (
             '\n\n**Required Properties:**\n\n'
             '* **myprop1** (:class:`Property <properties.basic.Property>`): '
-            'empty property\n\n'
-            '* **myprop2** (:class:`Property <properties.basic.Property>`): '
-            'empty property\n\n'
+            'empty property\n'
             '* **myprop3** (:class:`Property <properties.basic.Property>`): '
+            'empty property\n'
+            '* **myprop2** (:class:`Property <properties.basic.Property>`): '
             'empty property'
         )
 

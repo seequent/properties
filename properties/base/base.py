@@ -292,8 +292,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     )
     def serialize(self, include_class=True, **kwargs):
         """Serializes a HasProperties instance to JSON"""
-        data = ((k, v.serialize(self._get(v.name), include_class, **kwargs))
-                for k, v in iteritems(self._props))
+        data = (
+            (k, v.serialize(
+                self._get(v.name), include_class=include_class, **kwargs
+            )) for k, v in iteritems(self._props)
+        )
         json_dict = {k: v for k, v in data if v is not None}
         if include_class:
             json_dict.update({'__class__': self.__class__.__name__})
@@ -322,7 +325,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             ), RuntimeWarning)
         newstate = {}
         for key, val in iteritems(state):
-            newstate[key] = cls._props[key].deserialize(val, trusted, **kwargs)
+            newstate[key] = cls._props[key].deserialize(
+                val, trusted=trusted, **kwargs
+            )
         mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
             newinst = cls(**mutable)
