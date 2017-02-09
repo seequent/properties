@@ -8,9 +8,11 @@
 
 .. toctree::
     :maxdepth: 2
+    :includehidden:
 
-    content/examples
-    content/basic
+    content/hasproperties
+    content/property
+    content/builtin
 
 
 Indices and tables
