@@ -3,6 +3,6 @@
 HasProperties
 =============
 
-.. autoclass:: properties.hasproperties.HasProperties
+.. autoclass:: properties.base.HasProperties
     :members:
     :undoc-members:
