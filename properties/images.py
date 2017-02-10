@@ -18,10 +18,16 @@ PNG_PREAMBLE = 'data:image/png;base64,'
 class ImagePNG(File):
     """Property for PNG images
 
-    Available keyword:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **filename** - name associated with open copy of PNG image
-      (default is 'texture.png')
+    * **mode**: Opens the file in this mode. Must be a binary mode that
+      supports file reading. Default value is 'rb'.
+    * **valid_modes**: Tuple of valid modes for open files. This must
+      include **mode**. If nothing is specified, **valid_mode** is set
+      to **mode**.
+    * **filename** - Name associated with open copy of PNG image.
+      Default is 'texture.png'.
     """
     class_info = 'a PNG image file'
 

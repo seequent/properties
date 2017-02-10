@@ -7,5 +7,3 @@ ImagePNG
 --------
 
 .. autoclass:: properties.images.ImagePNG
-    :members:
-    :undoc-members:

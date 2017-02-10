@@ -1246,7 +1246,7 @@ class File(Property):
 
     * **mode**: Opens the file in this mode. If 'r' or 'rb', the file must
       exist, otherwise the file will be created. If None, string filenames
-      will not be open (and therefore be invalid).
+      will not be open (and therefore be invalid). Default value is None.
     * **valid_modes**: Tuple of valid modes for open files. This must
       include **mode**. If nothing is specified, **valid_mode** is set
       to **mode**.
