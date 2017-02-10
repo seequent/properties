@@ -31,6 +31,8 @@ many built-in Property types.
 
 * :ref:`dynamic` - Property that is calculated dynamically and never saved
 
+* :ref:`renamed` - Used to maintain backwards compatibility when renaming Properties
+
 .. toctree::
     :maxdepth: 2
     :hidden:
@@ -44,3 +46,4 @@ many built-in Property types.
     ./union
     ./gettable
     ./dynamic
+    ./renamed

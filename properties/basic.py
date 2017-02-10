@@ -54,12 +54,13 @@ class ArgumentWrangler(type):
 
 
 class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #pylint: disable=too-many-instance-attributes
-    """Base Property class that establishes gettable Property behavior
+    """Property with immutable value
 
-    Available keywords:
+    GettableProperties are assigned their default values upon HasProperties
+    instance construction, and cannot be modified after that.
 
-    * **doc** - Property's custom doc string
-    * **default** - Property's default value
+    Keyword arguments match those available to :ref:`Property <property>`
+    with the exception of **required**.
     """
     class_info = ''
     _class_default = undefined
@@ -997,9 +998,10 @@ class StringChoice(Property):
       OR a dictionary of string key and list-of-string value pairs,
       where any string in the value list is coerced to the key string.
     * **case_sensitive** - Determine if input must follow case in choices.
-      Default: False
-    * **descriptions** - dictionary of choice/description key/value
-      pairs. Must contain all choices.
+      If False (the default), the input value will be coerced to the case
+      in choices.
+    * **descriptions** - Dictionary of choice/description key/value
+      pairs. If specified, it must contain all choices.
     """
 
     class_info = 'a string choice'
@@ -1109,15 +1111,14 @@ class StringChoice(Property):
 
 
 class Color(Property):
-    """Color Property for RGB colors.
+    """Property for RGB colors.
 
-    Allowed inputs are RGB, hex, named color, or 'random' for random
-    color. All inputs are coerced into an RGB :code:`tuple` of
-    :code:`int` values between 0 and 255.
+    Valid inputs are length-3 RGB tuple/list with integer values between 0 and
+    255, 3 or 6 digit hex color, color name from standard web colors, or
+    'random'. All of these are coerced to RGB tuple.
 
-    For example, :code:`'red'` or :code:`'#FF0000'` or :code:`'#F00'` gets
-    coerced into :code:`(255, 0, 0)`. Color names can be selected from
-    standard `web-colors <https://en.wikipedia.org/wiki/Web_colors>`_.
+    No additional keywords are avalaible besides those those inherited from
+    :ref:`Property <property>`.
     """
 
     class_info = 'a color'
@@ -1166,11 +1167,14 @@ class Color(Property):
 
 
 class DateTime(Property):
-    """DateTime Property using 'datetime.datetime'
+    """Property for DateTimes
 
-        Two string formats are available:
+    This property uses :code:`datetime.datetime`. The value may also be
+    specified as a string that uses either '1995/08/12' or
+    '1995-08-12T18:00:00Z' format; these are coerced to a datetime instance.
 
-            1995/08/12 and 1995-08-12T18:00:00Z
+    No additional keywords are avalaible besides those those inherited from
+    :ref:`Property <property>`.
     """
 
     class_info = 'a datetime object'
@@ -1199,7 +1203,14 @@ class DateTime(Property):
 
 
 class Uuid(GettableProperty):
-    """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
+    """Immutable property for unique identifiers
+
+    Default value is generated on HasProperties class instantiation
+    using :code:`uuid.uuid4()`
+
+    No additional keywords are avalaible besides those those inherited from
+    :ref:`GettableProperty <gettable>`.
+    """
 
     class_info = 'a unique ID auto-generated with uuid.uuid4()'
 
@@ -1223,13 +1234,15 @@ class Uuid(GettableProperty):
 
 
 class File(Property):
-    """File Property
+    """Property for files
 
     This may be a file or file-like object. If mode is provided, filenames
     are also allowed; these will be opened on validate.
-    Note: closed files may still pass validation.
+    Note: Validation rejects closed files, but nothing prevents the file
+    from being modified or closed once it is set.
 
-    Available Keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
     * **mode**: Opens the file in this mode. If 'r' or 'rb', the file must
       exist, otherwise the file will be created. If None, string filenames
@@ -1332,11 +1345,33 @@ class File(Property):
 
 
 class Renamed(GettableProperty):
-    """Property to aid maintaining backwards compatibility
+    """Property that allows renaming of other properties.
 
-    Simply assign the old name to a Renamed Property that points to the
+    Assign the old name to a Renamed Property that points to the
     new name. Getting, setting, and deleting using the old name will warn
     the user then redirect to the new name.
+
+    For example, when updating this code for PEP8
+
+    .. code::
+
+        class MyClass(properties.HasProperties):
+
+            myStringProp = properties.String('My string property')
+
+    backwards compatibility can be maintained with
+
+    .. code::
+
+        class MyClass(properties.HasProperties):
+
+            my_string_prop = properties.String('My string property')
+
+            myStringProp = properties.Renamed('my_string_prop')
+
+    **Argument** (other Property keyword arguments are not available):
+
+    * **new_name** - the new name of the property that was renamed.
     """
 
     def __init__(self, new_name):
@@ -1368,10 +1403,10 @@ class Renamed(GettableProperty):
             FutureWarning, stacklevel=3
         )
 
-
     def get_property(self):
-        """Establishes the dynamic behaviour of Property values"""
+        """Establishes the dynamic behavior of Property values"""
         scope = self
+
         def fget(self):
             """Call dynamic function then validate output"""
             scope.warn()
