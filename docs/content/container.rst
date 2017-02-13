@@ -3,23 +3,24 @@
 Container Properties
 ====================
 
+Tuple
+-----
+
+.. autoclass:: properties.base.Tuple
+
 List
 ----
 
 .. autoclass:: properties.base.List
-    :members:
-    :undoc-members:
 
 Set
 ---
 
 .. autoclass:: properties.base.Set
-    :members:
-    :undoc-members:
 
-Tuple
------
+Custom Containers
+-----------------
 
-.. autoclass:: properties.base.Tuple
-    :members:
-    :undoc-members:
+.. autoclass:: properties.base.containers.PropertiesList
+
+.. autoclass:: properties.base.containers.PropertiesSet
