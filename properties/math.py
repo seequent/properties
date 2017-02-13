@@ -18,17 +18,19 @@ TYPE_MAPPINGS = {
 
 
 class Array(Property):
-    """Serializable float or int array property using numpy.ndarray
+    """Property for numpy :class:`arrays <numpy.ndarray>`
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **shape** - tuple with integer or '*' entries corresponding to valid
-      array shapes. '*' means the dimension can be any length.
-      array dimension shapes. '*' means the dimension can be any length.
+    * **shape** - Tuple that describes the allowed shape of the array.
+      Length of shape tuple corresponds to number of dimensions; values
+      correspond to the allowed length for each dimension. These values
+      may be integers or '*' for any length.
       For example, an n x 3 array would be shape ('*', 3).
-      Default: ('*',)
-    * **dtype** - float, int, bool, or a tuple containing any of these.
-      Default: (float, int)
+      The default value is ('*',).
+    * **dtype** - Allowed data type for the array. May be float, int,
+      bool, or a tuple containing any of these. The default is (float, int).
     """
 
     class_info = 'a list or numpy array'
@@ -235,7 +237,18 @@ class BaseVector(Array):
 
 
 class Vector3(BaseVector):
-    """3D vector property"""
+    """Property for :class:`3D vectors<vectormath.vector.Vector3>`
+
+    These Vectors are of shape (3,) and dtype float. In addition to
+    length-3 arrays, these properties accept strings including: zero, x,
+    y, z, -x, -y, -z, east, west, north, south, up, and down.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
 
     class_info = 'a 3D Vector'
 
@@ -269,7 +282,18 @@ class Vector3(BaseVector):
 
 
 class Vector2(BaseVector):
-    """2D vector property"""
+    """Property for :class:`2D vectors<vectormath.vector.Vector2>`
+
+    These Vectors are of shape (2,) and dtype float. In addition to
+    length-2 arrays, these properties accept strings including: zero, x,
+    y, -x, -y, east, west, north, and south.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
 
     class_info = 'a 2D Vector'
 
@@ -306,7 +330,19 @@ class Vector2(BaseVector):
 
 
 class Vector3Array(BaseVector):
-    """3D vector array property"""
+    """Property for an :class:`array of 3D vectors<vectormath.vector.Vector3Array>`
+
+    This array of vectors are of shape ('*', 3) and dtype float. In addition
+    to an array of this shape, these properties accept a list of strings
+    including: zero, x, y, z, -x, -y, -z, east, west, north, south, up,
+    and down.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, all vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
 
     class_info = 'a list of Vector3'
 
@@ -346,7 +382,18 @@ class Vector3Array(BaseVector):
 
 
 class Vector2Array(BaseVector):
-    """2D vector array property"""
+    """Property for an :class:`array of 2D vectors<vectormath.vector.Vector2Array>`
+
+    This array of vectors are of shape ('*', 2) and dtype float. In addition
+    to an array of this shape, these properties accept a list of strings
+    including: zero, x, y, -x, -y, east, west, north, and south.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, all vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
 
     class_info = 'a list of Vector2'
 
@@ -357,7 +404,7 @@ class Vector2Array(BaseVector):
 
     @property
     def shape(self):
-        """Vector3Array is shape n x 2"""
+        """Vector2Array is shape n x 2"""
         return ('*', 2)
 
     def _length_array(self, value):
