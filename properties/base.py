@@ -9,13 +9,17 @@ import json
 import pickle
 from warnings import warn
 
-from six import integer_types
-from six import iteritems
-from six import with_metaclass
+from six import integer_types, iteritems, PY2, with_metaclass
 
 from . import basic
 from . import handlers
 from . import utils
+
+if PY2:
+    from types import ClassType                                                #pylint: disable=no-name-in-module
+    CLASS_TYPES = (type, ClassType)
+else:
+    CLASS_TYPES = (type,)
 
 
 class PropertyMetaclass(type):
@@ -334,11 +338,9 @@ class Instance(basic.Property):
       that requires arguments.
     """
 
-    info_text = 'an instance'
+    class_info = 'an instance'
 
     def __init__(self, doc, instance_class, **kwargs):
-        if not isinstance(instance_class, type):
-            raise TypeError('instance_class must be class')
         self.instance_class = instance_class
         super(Instance, self).__init__(doc, **kwargs)
 
@@ -348,6 +350,17 @@ class Instance(basic.Property):
         if self.auto_create:
             return self.instance_class
         return utils.undefined
+
+    @property
+    def instance_class(self):
+        """Allowed class for the Instance property"""
+        return self._instance_class
+
+    @instance_class.setter
+    def instance_class(self, value):
+        if not isinstance(value, CLASS_TYPES):
+            raise TypeError('instance_class must be a class')
+        self._instance_class = value
 
     @property
     def auto_create(self):
@@ -360,6 +373,7 @@ class Instance(basic.Property):
             raise TypeError('auto_create must be a boolean')
         self._auto_create = value
 
+    @property
     def info(self):
         """Description of the property, supplemental to the basic doc"""
         return 'an instance of {cls}'.format(cls=self.instance_class.__name__)
@@ -464,17 +478,28 @@ class List(basic.Property):
     * **min_length**/**max_length** - valid length limits of the list
     """
 
-    info_text = 'a list'
+    class_info = 'a list'
     _class_default = list
 
     def __init__(self, doc, prop, **kwargs):
-        if isinstance(prop, type) and issubclass(prop, HasProperties):
-            prop = Instance(doc, prop)
-        if not isinstance(prop, basic.Property):
-            raise TypeError('prop must be a Property or HasProperties class')
         self.prop = prop
         super(List, self).__init__(doc, **kwargs)
         self._unused_default_warning()
+
+    @property
+    def prop(self):
+        """Property instance or HasProperties class allowed in the list"""
+        return self._prop
+
+    @prop.setter
+    def prop(self, value):
+        if (isinstance(value, CLASS_TYPES) and
+                issubclass(value, HasProperties)):
+            value = Instance('', value)
+        if not isinstance(value, basic.Property):
+            raise TypeError('prop must be a Property or HasProperties class')
+        self._prop = value
+
 
     @property
     def name(self):
@@ -515,9 +540,10 @@ class List(basic.Property):
             raise TypeError('max_length must be >= min_length')
         self._max_length = value
 
+    @property
     def info(self):
         """Supplemental description of the list, with length and type"""
-        itext = 'a list (each item is {info})'.format(info=self.prop.info())
+        itext = 'a list (each item is {info})'.format(info=self.prop.info)
         if self.max_length is None and self.min_length is None:
             return itext
         if self.max_length is None:
@@ -622,26 +648,37 @@ class Union(basic.Property):
       be HasProperties classes
     """
 
-    info_text = 'a union of multiple property types'
+    class_info = 'a union of multiple property types'
 
     def __init__(self, doc, props, **kwargs):
-        if not isinstance(props, (tuple, list)):
-            raise TypeError('props must be a list')
-        new_props = tuple()
-        for prop in props:
-            if isinstance(prop, type) and issubclass(prop, HasProperties):
-                prop = Instance(doc, prop)
-            if not isinstance(prop, basic.Property):
-                raise TypeError('all props must be Property instance or '
-                                'HasProperties class')
-            new_props += (prop,)
-        self.props = new_props
+        self.props = props
         super(Union, self).__init__(doc, **kwargs)
         self._unused_default_warning()
 
+    @property
+    def props(self):
+        """List of valid property types or HasProperties classes"""
+        return self._props
+
+    @props.setter
+    def props(self, value):
+        if not isinstance(value, (tuple, list)):
+            raise TypeError('props must be a list')
+        new_props = tuple()
+        for prop in value:
+            if (isinstance(prop, CLASS_TYPES) and
+                    issubclass(prop, HasProperties)):
+                prop = Instance('', prop)
+            if not isinstance(prop, basic.Property):
+                raise TypeError('props must be Property instances or '
+                                'HasProperties classes')
+            new_props += (prop,)
+        self._props = new_props
+
+    @property
     def info(self):
         """Description of the property, supplemental to the basic doc"""
-        return ' or '.join([p.info() for p in self.props])
+        return ' or '.join([p.info for p in self.props])
 
     @property
     def name(self):
