@@ -126,7 +126,7 @@ class TestHandlers(unittest.TestCase):
     def test_overriding(self):
         class OverrideThings(ConsiderItHandled):
 
-            b = properties.Float('float a')
+            b = properties.Float('float b')
 
             @property
             def c(self):
@@ -155,6 +155,57 @@ class TestHandlers(unittest.TestCase):
         assert isinstance(ot._props['b'], properties.Float)
         assert len(ot._prop_observers) == 0
         assert len(ot._prop_observers) == 0
+
+    def test_disabler(self):
+
+        with self.assertRaises(TypeError):
+            properties.listeners_disabled('invalid')
+
+        class ValidateError(Exception): pass
+        class ObserveError(Exception): pass
+
+        class ErrorListeners(properties.HasProperties):
+            a = properties.Integer('int a')
+
+            @properties.observer('a')
+            def _obs(self, change):
+                raise ObserveError()
+
+            @properties.validator('a')
+            def _val(self, change):
+                raise ValidateError()
+
+        el = ErrorListeners()
+        with self.assertRaises(ValueError):
+            el.a = 'property validation error'
+
+        with self.assertRaises(ValidateError):
+            el.a = 5
+
+        with self.assertRaises(ObserveError):
+            with properties.listeners_disabled('validate'):
+                el.a = 5
+
+        with properties.listeners_disabled():
+            el.a = 5
+
+        with self.assertRaises(ValidateError):
+            with properties.listeners_disabled('observe'):
+                el.a = 5
+
+        with properties.listeners_disabled('validate'):
+            with properties.listeners_disabled('observe'):
+                with properties.listeners_disabled('observe'):
+                    with properties.listeners_disabled('validate'):
+                        with properties.listeners_disabled('observe'):
+                            el.a = 5
+                        el.a = 6
+                    el.a = 7
+                el.a = 8
+            with self.assertRaises(ObserveError):
+                el.a = 9
+        with self.assertRaises(ValidateError):
+            el.a = 10
 
 
 if __name__ == '__main__':

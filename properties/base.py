@@ -9,7 +9,7 @@ import json
 import pickle
 from warnings import warn
 
-from six import integer_types, iteritems, PY2, with_metaclass
+from six import integer_types, iteritems, itervalues, PY2, with_metaclass
 
 from . import basic
 from . import handlers
@@ -195,7 +195,8 @@ class PropertyMetaclass(type):
                 obj._backend[key] = prop.validate(obj, val)
 
         # Set the other defaults without triggering change notifications
-        obj._reset(silent=True)
+        with handlers.listeners_disabled():
+            obj._reset()
         obj.__init__(*args, **kwargs)
         return obj
 
@@ -232,7 +233,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         change.update(name=name, mode='observe')
         self._notify(change)
 
-    def _reset(self, name=None, silent=False):
+    def _reset(self, name=None):
         """Revert specified property to default value
 
         If no property is specified, all properties are returned to default.
@@ -241,7 +242,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         if name is None:
             for key in self._props:
                 if isinstance(self._props[key], basic.Property):
-                    self._reset(name=key, silent=silent)
+                    self._reset(key)
             return
         if name not in self._props:
             raise AttributeError("Input name '{}' is not a known "
@@ -255,15 +256,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             val = self._props[name].default
         if callable(val):
             val = val()
-        _listener_stash = self._listeners                                      #pylint: disable=access-member-before-definition
-        if silent:
-            self._listeners = dict()
         setattr(self, name, val)
-        self._listeners = _listener_stash
 
     def validate(self):
         """Call all the registered ClassValidators"""
-        for _, val in iteritems(self._class_validators):
+        for val in itervalues(self._class_validators):
             val.func(self)
         return True
 
@@ -271,8 +268,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     @utils.stop_recursion_with(True)
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
-        for k in self._props:
-            prop = self._props[k]
+        for prop in itervalues(self._props):
             prop.assert_valid(self)
         return True
 
@@ -303,21 +299,27 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         rcl=value['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
-        newinst = cls()
-        newstate, unused = utils.filter_props(cls, value, False)
+        state, unused = utils.filter_props(cls, value, False)
         unused.pop('__class__', None)
         if len(unused) > 0 and verbose:
             warn('Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
             ), RuntimeWarning)
-        for key, val in iteritems(newstate):
-            setattr(newinst, key,
-                    newinst._props[key].deserialize(val, trusted, **kwargs))
+        newstate = {}
+        for key, val in iteritems(state):
+            newstate[key] = cls._props[key].deserialize(val, trusted, **kwargs)
+        mutable, immutable = utils.filter_props(cls, newstate, True)
+        with handlers.listeners_disabled():
+            newinst = cls(**mutable)
+        for key, val in iteritems(immutable):
+            valid_val = cls._props[key].validate(newinst, val)
+            newinst._backend[key] = valid_val                                  #pylint: disable=no-member
         return newinst
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):
-            setattr(self, key, pickle.loads(val))
+            valid_val = self._props[key].validate(self, pickle.loads(val))
+            self._backend[key] = valid_val                                     #pylint: disable=no-member
 
     @utils.stop_recursion_with(
         utils.SelfReferenceError('Object contains unpicklable self reference')

@@ -8,6 +8,51 @@ from six import string_types
 
 from .utils import everything
 
+LISTENER_TYPES = {'validate', 'observe'}
+
+
+class listeners_disabled(object):                                              #pylint: disable=invalid-name, too-few-public-methods
+    """Context manager for disabling certain listener types
+
+    Usage:
+
+        with properties.listeners_disabled('observe'):
+            self.quietly_update()
+
+    If no input parameter is used, all listeners are disabled. Note: this
+    context manager only affects change notifications on a HasProperties
+    instance; it does not affect Property validation.
+    """
+
+    _quarantine = set()
+
+    def __init__(self, disable_type=None):
+        self.disable_type = disable_type
+
+    @property
+    def disable_type(self):
+        """Type of listener to disable
+
+        If None, all listeners are disabled
+        """
+        return self._disable_type
+
+    @disable_type.setter
+    def disable_type(self, value):
+        if value is not None and value not in LISTENER_TYPES:
+            raise TypeError('Invalid listener type: {}'.format(value))
+        self._disable_type = value
+
+    def __enter__(self):
+        self._previous_state = set(listeners_disabled._quarantine)
+        if self.disable_type is None:
+            listeners_disabled._quarantine = set(LISTENER_TYPES)
+        else:
+            listeners_disabled._quarantine.add(self.disable_type)
+
+    def __exit__(self, *exc):
+        listeners_disabled._quarantine = self._previous_state
+
 
 def _set_listener(instance, obs):
     """Add listeners to a Properties class instance"""
@@ -17,13 +62,16 @@ def _set_listener(instance, obs):
         names = obs.names
     for name in names:
         if name not in instance._listeners:
-            instance._listeners[name] = {'validate': [], 'observe': []}
+            instance._listeners[name] = {typ: [] for typ in LISTENER_TYPES}
         instance._listeners[name][obs.mode] += [obs]
 
 
 def _get_listeners(instance, change):
     """Gets listeners of changed property"""
-    if change['name'] in instance._listeners:
+    if (
+            change['mode'] not in listeners_disabled._quarantine and           #pylint: disable=protected-access
+            change['name'] in instance._listeners
+    ):
         return instance._listeners[change['name']][change['mode']]
     return []
 
@@ -67,8 +115,10 @@ class Observer(object):
 
     @mode.setter
     def mode(self, value):
-        if value not in ['validate', 'observe']:
-            raise TypeError("Supported modes are 'validate' or 'observe'")
+        if value not in LISTENER_TYPES:
+            raise TypeError(
+                "Supported modes are '{}'".format("', '".join(LISTENER_TYPES))
+            )
         self._mode = value
 
 
