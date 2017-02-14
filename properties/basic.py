@@ -8,6 +8,7 @@ import collections
 import datetime
 import math
 import random
+import re
 import uuid
 from warnings import warn
 
@@ -712,6 +713,11 @@ class String(Property):
 
     * **unicode** - if True, coerce strings to unicode. Default is True
       to ensure consistent behaviour across Python 2/3.
+
+    * **regex** - regular expression (pattern or compiled expression) the
+      input string must match. Note: `search` is used to determine if
+      string is valid; to match the entire string, ensure '^' and '$' are
+      contained in the regex pattern.
     """
 
     class_info = 'a string'
@@ -754,10 +760,30 @@ class String(Property):
             raise TypeError("'unicode' property must be a boolean")
         self._unicode = value
 
+    @property
+    def regex(self):
+        """Regular expression the string must match"""
+        return getattr(self, '_regex', None)
+
+    @regex.setter
+    def regex(self, value):
+        if isinstance(value, string_types):
+            try:
+                value = re.compile(value)
+            except re.error:
+                raise TypeError('Invalid regex pattern: {}'.format(value))
+        if hasattr(value, 'search') and callable(value.search):
+            self._regex = value
+        else:
+            raise TypeError("'regex' must be a string pattern or a compiled"
+                            "regular expression")
+
     def validate(self, instance, value):
         """Check if value is a string, and strips it and changes case"""
         value_type = type(value)
         if not isinstance(value, string_types):
+            self.error(instance, value)
+        if self.regex is not None and self.regex.search(value) is None:        #pylint: disable=no-member
             self.error(instance, value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
@@ -769,6 +795,15 @@ class String(Property):
         else:
             value = value_type(value)
         return value
+
+    @property
+    def info(self):
+        info = 'a unicode string' if self.unicode else 'a string'
+        if self.regex is not None:
+            info += ' that matches pattern'
+        if hasattr(self.regex, 'pattern'):
+            info += ' "{}"'.format(self.regex.pattern)                         #pylint: disable=no-member
+        return info
 
 
 class StringChoice(Property):
