@@ -294,6 +294,25 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.StringChoice('bad choices', [5, 6, 7])
 
+        choiceprop = properties.StringChoice('good choices', ['a', 'b', 'c'])
+        with self.assertRaises(TypeError):
+            choiceprop.descriptions = ['letter a', 'letter b', 'letter c']
+        with self.assertRaises(TypeError):
+            choiceprop.descriptions = {'a': 'letter a', 'b': 'letter b'}
+        with self.assertRaises(TypeError):
+            choiceprop.descriptions = {'a': 'letter a',
+                                       'b': 'letter b',
+                                       'd': 'letter d'}
+        with self.assertRaises(TypeError):
+            choiceprop.descriptions = {'a': 1, 'b': 2, 'c': 3}
+
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad case', ['a', 'b'], 5)
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad case', ['a', 'A'])
+        with self.assertRaises(TypeError):
+            properties.StringChoice('bad case', ['a', 'a'], True)
+
         class StrChoicesOpts(properties.HasProperties):
             mychoicelist = properties.StringChoice(
                 'list of choices', ['a', 'e', 'i', 'o', 'u']
@@ -306,7 +325,15 @@ class TestBasic(unittest.TestCase):
                 'tuple of choices', ('a', 'e', 'i', 'o', 'u')
             )
             mychoiceset = properties.StringChoice(
-                'set of choices', {'a', 'e', 'i', 'o', 'u'}
+                'set of choices', {'a', 'e', 'i', 'o', 'u'},
+                descriptions={'a': 'The first letter of the alphabet',
+                              'e': 'A really great vowel',
+                              'i': 'This letter is also a word!',
+                              'o': 'Another excellent vowel',
+                              'u': 'Less useful vowel'}
+            )
+            mysensitive = properties.StringChoice(
+                'bad case', ['a', 'A', 'b'], True
             )
 
         choices = StrChoicesOpts()
@@ -315,8 +342,10 @@ class TestBasic(unittest.TestCase):
             choices.mychoicelist = 'k'
         with self.assertRaises(ValueError):
             choices.mychoicelist = 5
+        with self.assertRaises(ValueError):
+            choices.mysensitive = 'B'
 
-        choices.mychoicelist = 'o'
+        choices.mychoicelist = 'O'
         choices.mychoicedict = 'e'
         assert choices.mychoicedict == 'vowel'
         choices.mychoicedict = 'maybe'

@@ -814,21 +814,32 @@ class StringChoice(Property):
     * **choices** - either a list/tuple of allowed strings
       OR a dictionary of string key and list-of-string value pairs,
       where any string in the value list is coerced into the key string.
+    * **case_sensitive** - Determine if input must follow case in choices.
+      Default: False
+    * **descriptions** - dictionary of choice/description key/value
+      pairs. Must contain all choices.
     """
 
     class_info = 'a string choice'
 
-    def __init__(self, doc, choices, **kwargs):
+    def __init__(self, doc, choices, case_sensitive=False, **kwargs):
+        self.case_sensitive = case_sensitive
         self.choices = choices
         super(StringChoice, self).__init__(doc, **kwargs)
 
     @property
     def info(self):
         """Formatted string to display the available choices"""
+        if self.descriptions is None:
+            choice_list = ['"{}"'.format(choice) for choice in self.choices]
+        else:
+            choice_list = [
+                '"{}" ({})'.format(choice, self.descriptions[choice])
+                for choice in self.choices
+            ]
         if len(self.choices) == 2:
-            return 'either "{}" or "{}"'.format(list(self.choices)[0],
-                                                list(self.choices)[1])
-        return 'any of "{}"'.format('", "'.join(self.choices))
+            return 'either {} or {}'.format(choice_list[0], choice_list[1])
+        return 'any of {}'.format(', '.join(choice_list))
 
     @property
     def choices(self):
@@ -838,14 +849,14 @@ class StringChoice(Property):
         or (2) a dictionary of string key and list-of-string value pairs,
         where any string in the value list is coerced into the key string.
         """
-        return getattr(self, '_choices', {})
+        return self._choices
 
     @choices.setter
-    def choices(self, value):
+    def choices(self, value):                                                  #pylint: disable=too-many-branches
         if isinstance(value, (set, list, tuple)):
             if len(value) != len(set(value)):
                 raise TypeError("'choices' must contain no duplicate strings")
-            value = {v: [] for v in value}
+            value = collections.OrderedDict((v, []) for v in value)
         if not isinstance(value, dict):
             raise TypeError("'choices' must be a set, list, tuple, or dict")
         for key, val in value.items():
@@ -861,19 +872,61 @@ class StringChoice(Property):
                 if not isinstance(sub_val, string_types):
                     raise TypeError("'choices' must be strings")
             all_items += [key] + val
-        if len(all_items) != len(set(all_items)):
+        if self.case_sensitive:
+            unique_length = len(set(all_items))
+        else:
+            unique_length = len(set(item.upper() for item in all_items))
+        if len(all_items) != unique_length:
             raise TypeError("'choices' must contain no duplicate strings")
         self._choices = value
+
+    @property
+    def case_sensitive(self):
+        """Determine if input must follow case in choices
+
+        If True, input must match choice exactly.
+        If False (default), input is coerced to choice's case. This also
+        disallows case-insensitive duplicates.
+        """
+        return getattr(self, '_case_sensitive', False)
+
+    @case_sensitive.setter
+    def case_sensitive(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'case_sensitive' must be True or False")
+        self._case_sensitive = value
+
+    @property
+    def descriptions(self):
+        """Dictionary of descriptions for available choices
+
+        Keys must correspond to all choices and values must be string
+        descriptions
+        """
+        return getattr(self, '_descriptions', None)
+
+    @descriptions.setter
+    def descriptions(self, value):
+        if not isinstance(value, dict):
+            raise TypeError("'descriptions' must be a dictionary")
+        if len(value) != len(self.choices):
+            raise TypeError("'descriptions' must contain all choices as keys")
+        for key, val in value.items():
+            if key not in self.choices:
+                raise TypeError("'descriptions' keys must be valid choices")
+            if not isinstance(val, string_types):
+                raise TypeError("'descriptions' values must be strings")
+        self._descriptions = value
 
     def validate(self, instance, value):
         """Check if input is a valid string based on the choices"""
         if not isinstance(value, string_types):
             self.error(instance, value)
         for key, val in self.choices.items():
-            if (
-                    value.upper() == key.upper() or
-                    value.upper() in [_.upper() for _ in val]
-            ):
+            test_value = value if self.case_sensitive else value.upper()
+            test_key = key if self.case_sensitive else key.upper()
+            test_val = val if self.case_sensitive else [_.upper() for _ in val]
+            if test_value == test_key or test_value in test_val:
                 return key
         self.error(instance, value)
 
