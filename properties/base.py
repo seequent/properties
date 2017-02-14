@@ -268,7 +268,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     @utils.stop_recursion_with(True)
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
-        for prop in itervalues(self._props):
+        for key, prop in iteritems(self._props):
+            value = self._get(key)
+            if value is not None:
+                change = dict(name=key, value=self._get(key), mode='validate')
+                self._notify(change)
+                if not prop.equal(self._get(key), change['value']):
+                    raise ValueError(
+                        'Invalid value for property {}: {}'.format(
+                            key, self._get(key)
+                        )
+                    )
             prop.assert_valid(self)
         return True
 
@@ -299,7 +309,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         rcl=value['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
-        state, unused = utils.filter_props(cls, value, False)
+        state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if len(unused) > 0 and verbose:
             warn('Unused properties during deserialization: {}'.format(
@@ -308,7 +318,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, trusted, **kwargs)
-        mutable, immutable = utils.filter_props(cls, newstate, True)
+        mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
             newinst = cls(**mutable)
         for key, val in iteritems(immutable):
@@ -328,6 +338,21 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
         pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
         return (self.__class__, (), pickle_dict)
+
+    @utils.stop_recursion_with(False)
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if not isinstance(other, self.__class__):
+            return False
+        for prop in itervalues(self._props):
+            if prop.equal(getattr(self, prop.name), getattr(other, prop.name)):
+                continue
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class Instance(basic.Property):
@@ -442,6 +467,11 @@ class Instance(basic.Property):
             return self.instance_class.deserialize(value, trusted, **kwargs)
         return self.from_json(value, **kwargs)
 
+    def equal(self, value_a, value_b):
+        if issubclass(self.instance_class, HasProperties):
+            return value_a == value_b
+        return value_a is value_b
+
     @staticmethod
     def to_json(value, **kwargs):
         """Convert instance to JSON"""
@@ -504,7 +534,6 @@ class List(basic.Property):
         if not isinstance(value, basic.Property):
             raise TypeError('prop must be a Property or HasProperties class')
         self._prop = value
-
 
     @property
     def name(self):
@@ -619,6 +648,16 @@ class List(basic.Property):
         if value is None:
             return None
         return [self.prop.deserialize(val, trusted, **kwargs) for val in value]
+
+    def equal(self, value_a, value_b):
+        try:
+            if len(value_a) == len(value_b):
+                equal_list = [self.prop.equal(a, b)
+                              for a, b in zip(value_a, value_b)]
+                return all(equal_list)
+        except TypeError:
+            pass
+        return False
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -800,6 +839,9 @@ class Union(basic.Property):
             except (ValueError, KeyError, TypeError):
                 continue
         return self.from_json(value, **kwargs)
+
+    def equal(self, value_a, value_b):
+        return any((prop.equal(value_a, value_b) for prop in self.props))
 
     @staticmethod
     def to_json(value, **kwargs):

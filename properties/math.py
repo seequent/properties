@@ -8,7 +8,7 @@ import numpy as np
 from six import integer_types, string_types
 import vectormath as vmath
 
-from .basic import Property
+from .basic import Property, TOL
 
 TYPE_MAPPINGS = {
     int: 'i',
@@ -111,6 +111,18 @@ class Array(Property):
             if shp != '*' and value.shape[i] != shp:
                 self.error(instance, value)
         return value
+
+    def equal(self, value_a, value_b):
+        try:
+            if value_a.__class__ is not value_b.__class__:
+                return False
+            nan_mask = ~np.isnan(value_a)
+            if not np.array_equal(nan_mask, ~np.isnan(value_b)):
+                return False
+            return np.allclose(value_a[nan_mask], value_b[nan_mask], atol=TOL)
+        except TypeError:
+            return False
+
 
     def error(self, instance, value, error=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""

@@ -30,6 +30,19 @@ class TestRecursion(unittest.TestCase):
         with self.assertRaises(ValueError):
             hhp.validate()
 
+        class HasRecursion(properties.HasProperties):
+
+            def twelve(self):
+                return 12
+
+            @properties.stop_recursion_with(twelve)
+            def add_one_recursively(self):
+                return self.add_one_recursively() + 1
+
+        hr = HasRecursion()
+
+        assert hr.add_one_recursively() == 13
+
     def test_list_recursion(self):
 
         class HasInteger(properties.HasProperties):

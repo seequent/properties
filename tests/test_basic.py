@@ -34,6 +34,17 @@ class TestBasic(unittest.TestCase):
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
 
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].name = 5
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].doc = 5
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].terms = 5
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].terms = {'one': 1, 'two': 2}
+        with self.assertRaises(TypeError):
+            GettablePropOpt._props['mygp'].doc = {'args': (1,), 'otherargs': 5}
+
         gpo = GettablePropOpt()
         with self.assertRaises(AttributeError):
             setattr(gpo, 'mygp', 5)
@@ -65,6 +76,9 @@ class TestBasic(unittest.TestCase):
             PropOpts().validate()
 
         assert PropOpts(myprop=5).validate()
+
+        assert PropOpts() == PropOpts()
+        assert PropOpts(myprop=5) != PropOpts()
 
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):
@@ -105,6 +119,10 @@ class TestBasic(unittest.TestCase):
         opt.mybool = False
         assert opt.mybool is False
 
+        assert properties.Bool('').equal(True, True)
+        assert not properties.Bool('').equal(True, 1)
+        assert not properties.Bool('').equal(True, 'true')
+
         json = properties.Bool.to_json(opt.mybool)
         assert not json
         assert not properties.Bool.from_json(json)
@@ -125,6 +143,18 @@ class TestBasic(unittest.TestCase):
 
         assert BoolOpts.deserialize({'mybool': 'Y'}).mybool
         assert BoolOpts._props['mybool'].deserialize(None) is None
+
+        assert properties.Bool('').equal(True, True)
+        assert not properties.Bool('').equal(True, 1)
+        assert not properties.Bool('').equal(True, 'true')
+
+        with self.assertRaises(ValueError):
+            BoolOpts._props['mybool'].assert_valid(opt, 'true')
+
+        opt.validate()
+        opt._backend['mybool'] = 'true'
+        with self.assertRaises(ValueError):
+            opt.validate()
 
     def test_numbers(self):
 
@@ -180,6 +210,11 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(nums.serialize(include_class=False), serialized)
         assert NumOpts.deserialize(serialized).myfloatrange == 10.
 
+        assert properties.Integer('').equal(5, 5)
+        assert properties.Float('').equal(5, 5.)
+        assert not properties.Float('').equal(5, 5.1)
+        assert not properties.Float('').equal('hi', 'hi')
+
     def test_complex(self):
 
         class ComplexOpts(properties.HasProperties):
@@ -205,6 +240,10 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(comp.serialize(include_class=False),
                          {'mycomplex': '(5+2j)'})
         assert ComplexOpts.deserialize({'mycomplex': '(0+1j)'}).mycomplex == 1j
+
+        assert properties.Complex('').equal((1+1j), (1+1j))
+        assert not properties.Complex('').equal((1+1j), 1)
+        assert not properties.Complex('').equal('hi', 'hi')
 
     def test_string(self):
 
@@ -278,6 +317,9 @@ class TestBasic(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             strings.anotherstring = 'aa'
+
+        assert properties.String('').equal('equal', 'equal')
+        assert not properties.String('').equal('equal', 'EQUAL')
 
     def test_string_choice(self):
 
@@ -358,6 +400,9 @@ class TestBasic(unittest.TestCase):
             {'mychoicedict': 'a'}
         ).mychoicedict == 'vowel'
 
+        assert properties.StringChoice('', {}).equal('equal', 'equal')
+        assert not properties.StringChoice('', {}).equal('equal', 'EQUAL')
+
     def test_color(self):
 
         class ColorOpts(properties.HasProperties):
@@ -395,6 +440,9 @@ class TestBasic(unittest.TestCase):
             {'mycolor': [0, 10, 20]}
         ).mycolor == (0, 10, 20)
 
+        assert properties.Color('').equal((0, 10, 20), (0, 10, 20))
+        assert not properties.Color('').equal((0, 10, 20), [0, 10, 20])
+
     def test_datetime(self):
 
         class DateTimeOpts(properties.HasProperties):
@@ -422,6 +470,11 @@ class TestBasic(unittest.TestCase):
             {'mydate': '2010-01-02'}
         ).mydate == datetime.datetime(2010, 1, 2)
 
+        assert properties.DateTime('').equal(datetime.datetime(2010, 1, 2),
+                                             datetime.datetime(2010, 1, 2))
+        assert not properties.DateTime('').equal(datetime.datetime(2010, 1, 2),
+                                                 datetime.datetime(2010, 1, 3))
+
     def test_uid(self):
 
         class UidModel(properties.HasProperties):
@@ -441,6 +494,8 @@ class TestBasic(unittest.TestCase):
 
         assert properties.Uuid.to_json(json_uuid) == json_uuid_str
         assert str(properties.Uuid.from_json(json_uuid_str)) == json_uuid_str
+
+        assert properties.Uuid('').equal(uuid.UUID(int=0), uuid.UUID(int=0))
 
     def test_file(self):
 
@@ -495,16 +550,31 @@ class TestBasic(unittest.TestCase):
         fopen = open(fname, 'wb')
         fopt.myfile_writebin = fopen
         fopt.myfile_writebin.write(b' oh hi')
-        fopt.myfile_writebin.close()
 
         with self.assertRaises(ValueError):
             fopt.myfile_nomode = fname
 
+        fopt.myfile_read = fname
+        fopt.myfile_write = fname
         fopt.myfile_nomode = io.BytesIO()
+        fopt.validate()
+
+        fopt.myfile_read.close()
+        fopt.myfile_write.close()
         fopt.myfile_nomode.close()
+        fopt.myfile_writebin.close()
+        with self.assertRaises(ValueError):
+            fopt.validate()
 
         with self.assertRaises(ValueError):
             fopt.myfile_read = fopt.myfile_nomode
+
+        fopen = open(fname, 'wb')
+        assert properties.File('').equal(fopen, fopen)
+        fopen_again = open(fname, 'wb')
+        assert not properties.File('').equal(fopen, fopen_again)
+        fopen.close()
+        fopen_again.close()
 
         os.remove(fname)
 

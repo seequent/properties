@@ -61,7 +61,6 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     * **default** - property's default value
     """
     class_info = 'corrected'
-    name = ''
     _class_default = undefined
 
     def __init__(self, doc, **kwargs):
@@ -82,6 +81,20 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 raise AttributeError(
                     'Cannot set property: "{}".'.format(key)
                 )
+
+    @property
+    def name(self):
+        """The name of the property on a HasProperties class
+
+        This is set in the metaclass.
+        """
+        return getattr(self, '_name', '')
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, string_types):
+            raise TypeError('name must be a string')
+        self._name = value
 
     @property
     def doc(self):
@@ -183,9 +196,18 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         """Check if the current state of a property is valid"""
         if value is None:
             value = instance._get(self.name)
-        if value is not None:
-            self.validate(instance, value)
+        if (
+                value is not None and
+                not self.equal(value, self.validate(instance, value))
+        ):
+            raise ValueError('Invalid value for property {}: {}'.format(
+                self.name, value
+            ))
         return True
+
+    def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
+        """Test if two property values are equal"""
+        return value_a == value_b
 
     def get_property(self):
         """Establishes access of GettableProperty values"""
@@ -236,6 +258,27 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         to_json assumes that value read from JSON is valid
         """
         return value
+
+    def error(self, instance, value, error=None, extra=''):
+        """Generates a ValueError on setting property to an invalid value"""
+        error = error if error is not None else ValueError
+        if instance is None:
+            prefix = '{} property'.format(self.__class__.__name__)
+        else:
+            prefix = "The '{name}' property of a {cls} instance".format(
+                name=self.name,
+                cls=instance.__class__.__name__,
+            )
+        raise error(
+            '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
+            'specified. {extra}'.format(
+                prefix=prefix,
+                info=self.info,
+                val=value,
+                vtype=type(value),
+                extra=extra,
+            )
+        )
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -330,6 +373,8 @@ class DynamicProperty(GettableProperty):                                       #
 
     @name.setter
     def name(self, value):
+        if not isinstance(value, string_types):
+            raise TypeError('name must be a string')
         self.prop.name = value
         self._name = value
 
@@ -355,17 +400,6 @@ class DynamicProperty(GettableProperty):                                       #
     def validate(self, instance, value):
         """Validate using self.prop"""
         return self.prop.validate(instance, value)
-
-    def assert_valid(self, instance, value=None):
-        """Always True for dynamic properties
-
-        This does not generate the dynamic value; it always returns True
-        unless a value is specified. Since getters and setters are defined
-        in the class only, an invalid value will never be reached.
-        """
-        if value is not None:
-            self.validate(instance, value)
-        return True
 
     def setter(self, func):
         """Give dynamic properties a setter function
@@ -424,6 +458,9 @@ class DynamicProperty(GettableProperty):                                       #
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
 
+    def equal(self, value_a, value_b):
+        return self.prop.equal(value_a, value_b)
+
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
         return 'dynamic {}'.format(self.prop.sphinx_class())
@@ -466,9 +503,8 @@ class Property(GettableProperty):
                     cls=instance.__class__.__name__
                 )
             )
-        if value is not None:
-            self.validate(instance, value)
-        return True
+        valid = super(Property, self).assert_valid(instance, value)
+        return valid
 
     def validate(self, instance, value):
         """Check if value is valid and possibly coerce it to new value"""
@@ -496,27 +532,6 @@ class Property(GettableProperty):
             self._set(scope.name, undefined)
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
-
-    def error(self, instance, value, error=None, extra=''):
-        """Generates a ValueError on setting property to an invalid value"""
-        error = error if error is not None else ValueError
-        if instance is None:
-            prefix = '{} property'.format(self.__class__.__name__)
-        else:
-            prefix = "The '{name}' property of a {cls} instance".format(
-                name=self.name,
-                cls=instance.__class__.__name__,
-            )
-        raise error(
-            '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
-            'specified. {extra}'.format(
-                prefix=prefix,
-                info=self.info,
-                val=value,
-                vtype=type(value),
-                extra=extra,
-            )
-        )
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -559,6 +574,9 @@ class Bool(Property):
         if not isinstance(value, bool):
             self.error(instance, value)
         return value
+
+    def equal(self, value_a, value_b):
+        return value_a is value_b
 
     @staticmethod
     def from_json(value, **kwargs):
@@ -620,7 +638,7 @@ class Integer(Property):
         try:
             intval = int(value)
             if abs(value - intval) > TOL:
-                raise ValueError()
+                self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
         _in_bounds(self, instance, intval)
@@ -655,11 +673,17 @@ class Float(Integer):
         try:
             floatval = float(value)
             if abs(value - floatval) > TOL:
-                raise ValueError()
+                self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
         _in_bounds(self, instance, floatval)
         return floatval
+
+    def equal(self, value_a, value_b):
+        try:
+            return abs(value_a - value_b) <= TOL
+        except TypeError:
+            return False
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -688,10 +712,18 @@ class Complex(Property):
                     abs(value.real - compval.real) > TOL or
                     abs(value.imag - compval.imag) > TOL
             ):
-                raise ValueError()
+                self.error(instance, value)
         except (TypeError, ValueError, AttributeError):
             self.error(instance, value)
         return compval
+
+    def equal(self, value_a, value_b):
+        try:
+            real_equal = abs(value_a.real - value_b.real) <= TOL
+            imag_equal = abs(value_a.imag - value_b.imag) <= TOL
+            return real_equal and imag_equal
+        except (TypeError, AttributeError):
+            return False
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -770,7 +802,7 @@ class String(Property):
         if isinstance(value, string_types):
             try:
                 value = re.compile(value)
-            except re.error:
+            except (re.error, TypeError):
                 raise TypeError('Invalid regex pattern: {}'.format(value))
         if hasattr(value, 'search') and callable(value.search):
             self._regex = value
@@ -1024,25 +1056,17 @@ class DateTime(Property):
 class Uuid(GettableProperty):
     """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
 
-    class_info = 'an auto-generated UUID'
+    class_info = 'a unique ID auto-generated with uuid.uuid4()'
 
     @property
     def default(self):
         return getattr(self, '_default', uuid.uuid4)
 
-    def assert_valid(self, instance, value=None):
-        """Ensure the value is a UUID instance"""
-        if value is None:
-            value = instance._get(self.name)
-        if not isinstance(value, uuid.UUID) or not value.version == 4:
-            raise ValueError(
-                "The '{name}' property of a {cls} instance must be a unique "
-                "ID generated with uuid.uuid4().".format(
-                    name=self.name,
-                    cls=instance.__class__.__name__
-                )
-            )
-        return True
+    def validate(self, instance, value):
+        """Check that value is a valid UUID instance"""
+        if not isinstance(value, uuid.UUID):
+            self.error(instance, value)
+        return value
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -1150,6 +1174,9 @@ class File(Property):
         if getattr(value, 'closed', False):
             self.error(instance, value, extra='File is closed.')
         return value
+
+    def equal(self, value_a, value_b):
+        return value_a is value_b
 
     @property
     def info(self):

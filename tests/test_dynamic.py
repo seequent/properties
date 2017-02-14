@@ -45,6 +45,10 @@ class TestDynamic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del hdp.my_doubled_int
 
+        assert HasDynamicProperty._props['my_vector'].equal(
+            vectormath.Vector3(0, 1, 2), vectormath.Vector3(0, 1, 2)
+        )
+
     def test_dynamic_setter(self):
 
         class HasDynamicProperty(properties.HasProperties):
@@ -195,6 +199,25 @@ class TestDynamic(unittest.TestCase):
                 @my_doubled_int.deleter
                 def my_doubled_int(self, extra):
                     del self.my_float
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int', default = 10)
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+        with self.assertRaises(TypeError):
+            class HasDynamicProperty(properties.HasProperties):
+                my_float = properties.Float('a float')
+
+                @properties.Integer('a dynamic int')
+                def my_doubled_int(self):
+                    return self.my_float*2
+
+            HasDynamicProperty._props['my_doubled_int'].name = 5
+
 
 
 if __name__ == '__main__':
