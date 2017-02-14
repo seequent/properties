@@ -158,7 +158,7 @@ class Array(Property):
         def _recurse_list(val):
             if len(val) > 0 and isinstance(val[0], list):
                 return [_recurse_list(v) for v in val]
-            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]  #pylint: disable=no-member
+            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]
         return _recurse_list(value.tolist())
 
     @staticmethod

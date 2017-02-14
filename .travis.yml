@@ -16,6 +16,7 @@ install:
 
 script:
   - make tests
+  - make test-docs
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

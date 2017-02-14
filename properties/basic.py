@@ -40,7 +40,6 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     * **doc** - property's custom doc string
     * **default** - property's default value
     """
-
     info_text = 'corrected'
     name = ''
     _class_default = undefined
@@ -230,6 +229,179 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             cls=self.__class__.__name__,
             pref=self.__module__
         )
+
+    def __call__(self, func):
+        return DynamicProperty(self.doc, func=func, prop=self)
+
+
+class DynamicProperty(GettableProperty):                                       #pylint: disable=too-many-instance-attributes
+    """DynamicProperties are GettableProperties calculated dynamically
+
+    These allow for a similar behaviour to @property with additional
+    documentation and validation built in. DynamicProperties are not
+    saved to the backend (and therefore are not serialized), do not fire
+    change notifications, and don't allow default values.
+
+    These are created when properties are used like @property:
+    .. code::
+
+        @properties.Vector3('my dynamic vector')
+        def location(self):
+            return [self.x, self.y, self.z]
+
+        @location.setter
+        def location(self, value):
+            self.x, self.y, self.z = value
+
+    Available keywords:
+
+    * **func** - the function used to calculate the dynamic value. The
+      output of this function is then passed through property validation.
+    * **prop** - the Property used to validate and document the dynamic
+      value
+    """
+
+    def __init__(self, doc, func, prop, **kwargs):
+        self.func = func
+        self.prop = prop
+        self.name = func.__name__
+        super(DynamicProperty, self).__init__(doc, **kwargs)
+        self.tag(prop.meta)
+
+    @property
+    def func(self):
+        """func is used to calculate the dynamic value"""
+        return self._func
+
+    @func.setter
+    def func(self, value):
+        if not callable(value):
+            raise TypeError('func must be callable function')
+        if hasattr(value, '__code__') and value.__code__.co_argcount != 1:
+            raise TypeError('func must be a function with one argument')
+        self._func = value
+
+    @property
+    def prop(self):
+        """prop is used to document and validate the dynamic value"""
+        return self._prop
+
+    @prop.setter
+    def prop(self, value):
+        if not isinstance(value, GettableProperty):
+            raise TypeError('DynamicProperty prop must be a Property instance')
+        if value.default is not undefined:
+            raise TypeError('DynamicProperties cannot have a default value')
+        self._prop = value
+
+    @property
+    def name(self):
+        """The name of the property on a HasProperties class
+
+        This is set in the metaclass. For DynamicProperties, prop inherits
+        the name
+        """
+        return getattr(self, '_name', '')
+
+    @name.setter
+    def name(self, value):
+        self.prop.name = value
+        self._name = value
+
+    @property
+    def serializer(self):
+        """DynamicProperty serializers pass through to prop serializer
+
+        By default, the serializer will be called on None (and return None)
+        since no value is stored in the backend. If an alternative
+        serializer is registered, it must account for None.
+        """
+        return self.prop.serializer
+
+    @property
+    def deserializer(self):
+        """DynamicProperty deserializers pass through to prop deserializer
+
+        By default, values will not be serialized, so the deserializer is
+        unnecessary.
+        """
+        return self.prop.deserializer
+
+    def validate(self, instance, value):
+        """Validate using self.prop"""
+        return self.prop.validate(instance, value)
+
+    def assert_valid(self, instance, value=None):
+        """Always True for dynamic properties
+
+        This does not generate the dynamic value; it always returns True
+        unless a value is specified. Since getters and setters are defined
+        in the class only, an invalid value will never be reached.
+        """
+        if value is not None:
+            self.validate(instance, value)
+        return True
+
+    def setter(self, func):
+        """Give dynamic properties a setter function
+
+        Input to the function is validated with prop validation prior to
+        execution.
+        """
+        if not callable(func):
+            raise TypeError('setter must be callable function')
+        if hasattr(func, '__code__') and func.__code__.co_argcount != 2:
+            raise TypeError('setter must be a function with two arguments')
+        if func.__name__ != self.name:
+            raise TypeError('setter function must have same name as getter')
+        self._set_func = func
+        return self
+
+    @property
+    def set_func(self):
+        """set_func is called when a DynamicProperty is set"""
+        return getattr(self, '_set_func', None)
+
+    def deleter(self, func):
+        """Give dynamic properties a deleter function"""
+        if not callable(func):
+            raise TypeError('deleter must be callable function')
+        if hasattr(func, '__code__') and func.__code__.co_argcount != 1:
+            raise TypeError('deleter must be a function with two arguments')
+        if func.__name__ != self.name:
+            raise TypeError('deleter function must have same name as getter')
+        self._del_func = func
+        return self
+
+    @property
+    def del_func(self):
+        """del_func is called when a DynamicProperty is deleted"""
+        return getattr(self, '_del_func', None)
+
+    def get_property(self):
+        """Establishes the dynamic behaviour of Property values"""
+        scope = self
+        def fget(self):
+            """Call dynamic function then validate output"""
+            return scope.validate(self, scope.func(self))
+
+        def fset(self, value):
+            """Validate and call setter"""
+            if scope.set_func is None:
+                raise AttributeError('cannot set attribute')
+            scope.set_func(self, scope.validate(self, value))
+
+        def fdel(self):
+            """call deleter"""
+            if scope.del_func is None:
+                raise AttributeError('cannot delete attribute')
+            scope.del_func(self)
+
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+
+    def sphinx_class(self):
+        """Property class name formatted for Sphinx doc linking"""
+        return 'dynamic {}'.format(self.prop.sphinx_class())
 
 
 class Property(GettableProperty):

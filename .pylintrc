@@ -60,7 +60,7 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=attribute-defined-outside-init
+disable=attribute-defined-outside-init,no-member
 
 
 [REPORTS]
@@ -202,7 +202,7 @@ single-line-if-stmt=no
 no-space-check=trailing-comma,dict-separator
 
 # Maximum number of lines in a module
-max-module-lines=1000
+max-module-lines=1250
 
 # String used as indentation unit. This is usually "    " (4 spaces) or "\t" (1
 # tab).
