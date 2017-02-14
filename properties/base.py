@@ -268,17 +268,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return True
 
     @handlers.validator
+    @utils.stop_recursion_with(True)
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
-        self._validating = True
-        try:
-            for k in self._props:
-                prop = self._props[k]
-                prop.assert_valid(self)
-        finally:
-            self._validating = False
+        for k in self._props:
+            prop = self._props[k]
+            prop.assert_valid(self)
         return True
 
+    @utils.stop_recursion_with(
+        utils.SelfReferenceError('Object contains unserializable self reference')
+    )
     def serialize(self, include_class=True, **kwargs):
         """Serializes a HasProperties instance to JSON"""
         data = ((k, v.serialize(self._get(v.name), include_class, **kwargs))
@@ -319,6 +319,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, val in iteritems(newstate):
             setattr(self, key, pickle.loads(val))
 
+    @utils.stop_recursion_with(
+        utils.SelfReferenceError('Object contains unpicklable self reference')
+    )
     def __reduce__(self):
         data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
         pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
@@ -399,10 +402,10 @@ class Instance(basic.Property):
     def assert_valid(self, instance, value=None):
         """Checks if valid, including HasProperty instances pass validation"""
         valid = super(Instance, self).assert_valid(instance, value)
-        if valid is False:
-            return valid
+        if not valid:
+            return False
         if value is None:
-            value = getattr(instance, self.name, None)
+            value = instance._get(self.name)
         if isinstance(value, HasProperties):
             value.validate()
         return True
@@ -583,10 +586,10 @@ class List(basic.Property):
     def assert_valid(self, instance, value=None):
         """Check if list and contained properties are valid"""
         valid = super(List, self).assert_valid(instance, value)
-        if valid is False:
-            return valid
+        if not valid:
+            return False
         if value is None:
-            value = getattr(instance, self.name, None)
+            value = instance._get(self.name)
         if value is None:
             return True
         if self.min_length is not None and len(value) < self.min_length:
@@ -746,8 +749,8 @@ class Union(basic.Property):
     def assert_valid(self, instance, value=None):
         """Check if the Union has a valid value"""
         valid = super(Union, self).assert_valid(instance, value)
-        if valid is False:
-            return valid
+        if not valid:
+            return False
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)
