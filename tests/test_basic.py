@@ -82,13 +82,13 @@ class TestBasic(unittest.TestCase):
             myprop3 = properties.Property('empty property')
 
         assert WithDocOrder().__doc__ == (
-            '\n\n**Required**\n\n'
-            ':param myprop1: empty property\n'
-            ':type myprop1: :class:`Property <properties.basic.Property>`\n'
-            ':param myprop2: empty property\n'
-            ':type myprop2: :class:`Property <properties.basic.Property>`\n'
-            ':param myprop3: empty property\n'
-            ':type myprop3: :class:`Property <properties.basic.Property>`'
+            '\n\n**Required Properties**\n\n'
+            '* **myprop1** (:class:`Property <properties.basic.Property>`): '
+            'empty property\n\n'
+            '* **myprop2** (:class:`Property <properties.basic.Property>`): '
+            'empty property\n\n'
+            '* **myprop3** (:class:`Property <properties.basic.Property>`): '
+            'empty property'
         )
 
         class NoMoreDocOrder(WithDocOrder):

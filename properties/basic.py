@@ -240,7 +240,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
         return (
-            ':attribute {name}: ({cls}) - {doc}{info}'.format(
+            '**{name}** ({cls}): {doc}{info}'.format(
                 name=self.name,
                 doc=self.doc,
                 info='' if self.info == 'corrected' else ', ' + self.info,
@@ -539,7 +539,7 @@ class Property(GettableProperty):
             default_str = ', Default: {}'.format(default_str)
 
         return (
-            ':param {name}: {doc}{info}{default}\n:type {name}: {cls}'.format(
+            '**{name}** ({cls}): {doc}{info}{default}'.format(
                 name=self.name,
                 doc=self.doc,
                 info='' if self.info == 'corrected' else ', ' + self.info,
