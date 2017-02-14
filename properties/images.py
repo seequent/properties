@@ -10,13 +10,12 @@ from io import BytesIO
 import png
 from six import string_types
 
-from .basic import Property
-
+from .basic import File
 
 PNG_PREAMBLE = 'data:image/png;base64,'
 
 
-class ImagePNG(Property):
+class ImagePNG(File):
     """Property for PNG images
 
     Available keyword:
@@ -25,6 +24,11 @@ class ImagePNG(Property):
       (default is 'texture.png')
     """
     class_info = 'a PNG image file'
+
+    file_modes = {'rb', 'rb+', 'wb+', 'ab+'}
+
+    def __init__(self, doc, mode='rb', **kwargs):
+        super(ImagePNG, self).__init__(doc, mode, **kwargs)
 
     @property
     def filename(self):
@@ -45,23 +49,16 @@ class ImagePNG(Property):
         # Pass if already validated
         if getattr(value, '__valid__', False):
             return value
-        # Try to open if string (ie filename) is given
-        if isinstance(value, string_types):
-            try:
-                value = open(value, 'rb')
-            except IOError:
-                self.error(obj, value, extra='Invalid file name.')
-        # Validate that input is PNG
+        # Validate that value is PNG
         if isinstance(value, png.Image):
             pass
-        elif hasattr(value, 'read'):
+        else:
+            value = super(ImagePNG, self).validate(obj, value)
             try:
                 png.Reader(value).validate_signature()
             except png.FormatError:
                 self.error(obj, value, extra='Open file is not PNG.')
             value.seek(0)
-        else:
-            self.error(obj, value)
         # Write input to new bytestream
         output = BytesIO()
         output.name = self.filename
