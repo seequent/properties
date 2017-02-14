@@ -77,8 +77,8 @@ class TestBasic(unittest.TestCase):
 
         assert PropOpts(myprop=5).validate()
 
-        assert PropOpts() == PropOpts()
-        assert PropOpts(myprop=5) != PropOpts()
+        assert PropOpts().equal(PropOpts())
+        assert not PropOpts(myprop=5).equal(PropOpts())
 
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):

@@ -224,13 +224,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             listener.func(self, change)
 
     def _set(self, name, value):
-        change = dict(name=name, value=value, mode='validate')
+        prev = self._get(name)
+        change = dict(name=name, previous=prev, value=value, mode='validate')
         self._notify(change)
         if change['value'] is utils.undefined:
             self._backend.pop(name, None)
         else:
             self._backend[name] = change['value']
-        change.update(name=name, mode='observe')
+        if not self._props[name].equal(prev, change['value']):
+            change.update(name=name, previous=prev, mode='observe_change')
+            self._notify(change)
+        change.update(name=name, previous=prev, mode='observe_set')
         self._notify(change)
 
     def _reset(self, name=None):
@@ -258,6 +262,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             val = val()
         setattr(self, name, val)
 
+    @utils.stop_recursion_with(True)
     def validate(self):
         """Call all the registered ClassValidators"""
         for val in itervalues(self._class_validators):
@@ -265,19 +270,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return True
 
     @handlers.validator
-    @utils.stop_recursion_with(True)
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
         for key, prop in iteritems(self._props):
             value = self._get(key)
             if value is not None:
-                change = dict(name=key, value=self._get(key), mode='validate')
+                change = dict(name=key, previous=value, value=value,
+                              mode='validate')
                 self._notify(change)
-                if not prop.equal(self._get(key), change['value']):
+                if not prop.equal(value, change['value']):
                     raise ValueError(
-                        'Invalid value for property {}: {}'.format(
-                            key, self._get(key)
-                        )
+                        'Invalid value for property {}: {}'.format(key, value)
                     )
             prop.assert_valid(self)
         return True
@@ -340,7 +343,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return (self.__class__, (), pickle_dict)
 
     @utils.stop_recursion_with(False)
-    def __eq__(self, other):
+    def equal(self, other):
         if self is other:
             return True
         if not isinstance(other, self.__class__):
@@ -350,9 +353,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 continue
             return False
         return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
 
 class Instance(basic.Property):
@@ -437,6 +437,7 @@ class Instance(basic.Property):
             value.validate()
         return True
 
+
     def serialize(self, value, include_class=True, **kwargs):
         """Serialize instance to JSON
 
@@ -468,8 +469,8 @@ class Instance(basic.Property):
         return self.from_json(value, **kwargs)
 
     def equal(self, value_a, value_b):
-        if issubclass(self.instance_class, HasProperties):
-            return value_a == value_b
+        if isinstance(value_a, HasProperties):
+            return value_a.equal(value_b)
         return value_a is value_b
 
     @staticmethod
@@ -575,9 +576,23 @@ class List(basic.Property):
         self._max_length = value
 
     @property
+    def coerce(self):
+        """Coerce sets/tuples to list or other inputs to length-1 list"""
+        return getattr(self, '_coerce', False)
+
+    @coerce.setter
+    def coerce(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('coerce must be a boolean')
+        self._coerce = value
+
+    @property
     def info(self):
         """Supplemental description of the list, with length and type"""
-        itext = 'a list (each item is {info})'.format(info=self.prop.info)
+        itext = '{class_info} (each item is {prop_info})'.format(
+            class_info=self.class_info,
+            prop_info=self.prop.info,
+        )
         if self.max_length is None and self.min_length is None:
             return itext
         if self.max_length is None:
@@ -603,8 +618,10 @@ class List(basic.Property):
         This returns a copy of the list to prevent unwanted sharing of
         list pointers.
         """
-        if not isinstance(value, (tuple, list)):
+        if not self.coerce and not isinstance(value, self._class_default):
             self.error(instance, value)
+        if self.coerce and not isinstance(value, (list, tuple, set)):
+            value = [value]
         out = []
         for val in value:
             try:
@@ -612,7 +629,7 @@ class List(basic.Property):
             except ValueError:
                 self.error(instance, val,
                            extra='This is an invalid list item.')
-        return out
+        return self._class_default(out)
 
     def assert_valid(self, instance, value=None):
         """Check if list and contained properties are valid"""
@@ -647,7 +664,9 @@ class List(basic.Property):
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
-        return [self.prop.deserialize(val, trusted, **kwargs) for val in value]
+        output_list = [self.prop.deserialize(val, trusted, **kwargs)
+                       for val in value]
+        return self._class_default(output_list)
 
     def equal(self, value_a, value_b):
         try:
@@ -665,8 +684,10 @@ class List(basic.Property):
 
         If the list contains HasProperties instances, they are serialized.
         """
-        serial_list = [val.serialize(**kwargs) if isinstance(val, HasProperties)
-                       else val for val in value]
+        serial_list = [
+            val.serialize(**kwargs) if isinstance(val, HasProperties)
+            else val for val in value
+        ]
         return serial_list
 
     @staticmethod
@@ -680,7 +701,46 @@ class List(basic.Property):
 
     def sphinx_class(self):
         """Redefine sphinx class to point to prop class"""
-        return self.prop.sphinx_class().replace(':class:`', ':class:`list of ')
+        sphinx_class = self.prop.sphinx_class().replace(
+            ':class:`', ':class:`{} of '.format(self.class_info)
+        )
+        return sphinx_class
+
+
+class Tuple(List):
+
+    class_info = 'a tuple'
+    _class_default = tuple
+
+    @staticmethod
+    def from_json(value, **kwargs):
+        """Return a copy of the json list as a tuple
+
+        Individual tuple elements cannot be converted statically since the
+        tuple's prop type is unknown.
+        """
+        return tuple(value)
+
+
+class Set(List):
+
+    class_info = 'a set'
+    _class_default = set
+
+    def equal(self, value_a, value_b):
+        try:
+            return len(value_a) == len(value_a.union(value_b))
+        except AttributeError:
+            return False
+
+    @staticmethod
+    def from_json(value, **kwargs):
+        """Return a copy of the json list as a set
+
+        Individual set elements cannot be converted statically since the
+        set's prop type is unknown.
+        """
+        return set(value)
 
 
 class Union(basic.Property):
@@ -763,7 +823,7 @@ class Union(basic.Property):
                     prop.validate(None, value)
                 self._default = value
                 return
-            except (ValueError, KeyError, TypeError, AssertionError):
+            except (ValueError, KeyError, TypeError, AttributeError):
                 continue
         raise TypeError('Invalid default for Union property')
 
@@ -783,7 +843,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.validate(instance, value)
-            except (ValueError, KeyError, TypeError):
+            except (ValueError, KeyError, TypeError, AttributeError):
                 continue
         self.error(instance, value)
 
@@ -795,7 +855,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)
-            except (ValueError, KeyError, TypeError):
+            except (ValueError, KeyError, TypeError, AttributeError):
                 continue
         raise ValueError(
             'The "{name}" property of a {cls} instance has not been set '
@@ -818,7 +878,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 prop.validate(None, value)
-            except (ValueError, KeyError, TypeError):
+            except (ValueError, KeyError, TypeError, AttributeError):
                 continue
             return prop.serialize(value, include_class, **kwargs)
         return self.to_json(value, **kwargs)
@@ -836,7 +896,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.deserialize(value, trusted, **kwargs)
-            except (ValueError, KeyError, TypeError):
+            except (ValueError, KeyError, TypeError, AttributeError):
                 continue
         return self.from_json(value, **kwargs)
 

@@ -18,6 +18,8 @@ from .base import (
     HasProperties,
     Instance,
     List,
+    Set,
+    Tuple,
     Union,
 )
 
@@ -65,7 +67,9 @@ except ImportError:
 from .handlers import (
     listeners_disabled,
     observer,
+    observers_disabled,
     validator,
+    validators_disabled,
 )
 from .utils import (
     everything,

@@ -8,20 +8,19 @@ from six import string_types
 
 from .utils import everything
 
-LISTENER_TYPES = {'validate', 'observe'}
+LISTENER_TYPES = {'validate', 'observe_set', 'observe_change'}
 
 
 class listeners_disabled(object):                                              #pylint: disable=invalid-name, too-few-public-methods
-    """Context manager for disabling certain listener types
+    """Context manager for disabling all listener types
 
     Usage:
 
-        with properties.listeners_disabled('observe'):
+        with properties.listeners_disabled():
             self.quietly_update()
 
-    If no input parameter is used, all listeners are disabled. Note: this
-    context manager only affects change notifications on a HasProperties
-    instance; it does not affect Property validation.
+    Note: this context manager only affects change notifications on a
+    HasProperties instance; it does not affect Property validation.
     """
 
     _quarantine = set()
@@ -39,8 +38,17 @@ class listeners_disabled(object):                                              #
 
     @disable_type.setter
     def disable_type(self, value):
-        if value is not None and value not in LISTENER_TYPES:
+        if value is None:
+            self._disable_type = value
+            return
+        if not isinstance(value, (string_types, list, tuple, set)):
             raise TypeError('Invalid listener type: {}'.format(value))
+        if isinstance(value, string_types):
+            value = {value}
+        value = set(value)
+        for val in value:
+            if val not in LISTENER_TYPES:
+                raise TypeError('Invalid listener type: {}'.format(value))
         self._disable_type = value
 
     def __enter__(self):
@@ -48,10 +56,25 @@ class listeners_disabled(object):                                              #
         if self.disable_type is None:
             listeners_disabled._quarantine = set(LISTENER_TYPES)
         else:
-            listeners_disabled._quarantine.add(self.disable_type)
+            listeners_disabled._quarantine.update(self.disable_type)
 
     def __exit__(self, *exc):
         listeners_disabled._quarantine = self._previous_state
+
+
+class validators_disabled(listeners_disabled):                                 #pylint: disable=invalid-name, too-few-public-methods
+    """Context manager for disabling all property change validators"""
+
+    def __init__(self):
+        super(validators_disabled, self).__init__({'validate'})
+
+
+class observers_disabled(listeners_disabled):                                  #pylint: disable=invalid-name, too-few-public-methods
+    """Context manager for disabling all property change observers"""
+
+    def __init__(self):
+        super(observers_disabled, self).__init__({'observe_set',
+                                                  'observe_change'})
 
 
 def _set_listener(instance, obs):
@@ -129,7 +152,7 @@ class ClassValidator(object):                                                  #
         self.func = func
 
 
-def observer(names_or_instance, names=None, func=None):
+def observer(names_or_instance, names=None, func=None, change_only=False):
     """Observe the result of a change in a named property
 
         You can use this inside a class as a wrapper, which will
@@ -151,9 +174,11 @@ def observer(names_or_instance, names=None, func=None):
 
     """
 
+    mode = 'observe_change' if change_only else 'observe_set'
+
     if names is None and func is None:
-        return Observer(names_or_instance, 'observe')
-    obs = Observer(names, 'observe')(func)
+        return Observer(names_or_instance, mode)
+    obs = Observer(names, mode)(func)
     _set_listener(names_or_instance, obs)
     return obs
 

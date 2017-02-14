@@ -117,7 +117,7 @@ class TestHandlers(unittest.TestCase):
         with self.assertRaises(AttributeError):
             he.a = 0
         with self.assertRaises(AttributeError):
-            he.b = 0
+            he.b = 1
         with self.assertRaises(AttributeError):
             he.c = 0
         with self.assertRaises(AttributeError):
@@ -190,14 +190,14 @@ class TestHandlers(unittest.TestCase):
             el.a = 5
 
         with self.assertRaises(ValidateError):
-            with properties.listeners_disabled('observe'):
+            with properties.listeners_disabled('observe_set'):
                 el.a = 5
 
         with properties.listeners_disabled('validate'):
-            with properties.listeners_disabled('observe'):
-                with properties.listeners_disabled('observe'):
-                    with properties.listeners_disabled('validate'):
-                        with properties.listeners_disabled('observe'):
+            with properties.observers_disabled():
+                with properties.listeners_disabled('observe_change'):
+                    with properties.validators_disabled():
+                        with properties.listeners_disabled('observe_set'):
                             el.a = 5
                         el.a = 6
                     el.a = 7
