@@ -20,12 +20,36 @@ else:
 
 
 class Union(basic.Property):
-    """Union property of multiple property types
+    """Property with multiple valid Property types
+
+    Union Properties contain a list of Property instances; validation,
+    serialization, etc., attempt to use each Property in this list
+    sequentially and only fail if all Property instances fail.
+
+    .. note::
+
+        Union properties attempt to use each Property instance they include
+        in order; that means the order could affect the outcome. For example,
+
+        .. code::
+
+            union_0 = properties.Union(
+                doc='String and Color',
+                props=[properties.String(''), properties.Color('')]
+            )
+            union_1 = properties.Union(
+                doc='Color and String',
+                props=[properties.Color(''), properties.String('')]
+            )
+
+            assert union_0.validate(None, 'red') == 'red'
+            assert union_1.validate(None, 'red') == (255, 0, 0)
 
     Allowed keywords:
 
-    * **props** - a list of the different valid property types. May also
-      be HasProperties classes
+    * **props** - A list of valid property instances for the Union Property.
+      HasProperties classes may also be specified; these are coerced to
+      Instance Properties of the respective class.
     """
 
     class_info = 'a union of multiple property types'
