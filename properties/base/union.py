@@ -45,7 +45,8 @@ class Union(basic.Property):
             assert union_0.validate(None, 'red') == 'red'
             assert union_1.validate(None, 'red') == (255, 0, 0)
 
-    Allowed keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
     * **props** - A list of valid property instances for the Union Property.
       HasProperties classes may also be specified; these are coerced to

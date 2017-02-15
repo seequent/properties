@@ -19,16 +19,25 @@ else:
 
 
 class Instance(basic.Property):
-    """Instance property
+    """Property for instances of a specified class
 
-    Allowed keywords:
+    Instance Properties may be used for any type, but they gain additional
+    power with HasProperties types. The Instance Property may be assigned
+    a dictionary with valid HasProperties class keywords; this is coerced
+    to an instance of the HasProperties class. Also, HasProperties methods
+    behave recursively, so if the parent HasProperties class is validated,
+    serialized, etc., then HasProperties Instance Properties on the class
+    will also be validated, serialized, etc.
 
-    * **instance_class** - the allowed class for the property
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **auto_create** - if True, create an instance of the class as
-      default value. Note: auto_create passes no arguments.
-      auto_create cannot be true for an instance_class
-      that requires arguments.
+    * **instance_class** - The allowed class for the property.
+    * **auto_create** - If True, this Property is instantiated by default.
+      This is equivalent to setting the default keyword to the instance_class.
+      If False, the default value is undefined. Note: auto_create passes no
+      arguments, so it cannot be True if the instance_class requires
+      arguments.
     """
 
     class_info = 'an instance'
