@@ -1,10 +1,14 @@
 language: python
 python:
   - 2.7
-  - 3.3
   - 3.4
   - 3.5
+  - 3.6
 sudo: false
+
+matrix:
+  allow_failures:
+    - python: 3.6
 
 addons:
   apt:
@@ -16,6 +20,7 @@ install:
 
 script:
   - make tests
+  - make test-docs
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

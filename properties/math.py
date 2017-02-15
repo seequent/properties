@@ -8,7 +8,7 @@ import numpy as np
 from six import integer_types, string_types
 import vectormath as vmath
 
-from .basic import Property
+from .basic import Property, TOL
 
 TYPE_MAPPINGS = {
     int: 'i',
@@ -31,7 +31,7 @@ class Array(Property):
       Default: (float, int)
     """
 
-    info_text = 'a list or numpy array'
+    class_info = 'a list or numpy array'
 
     @property
     def wrapper(self):
@@ -84,9 +84,10 @@ class Array(Property):
                             'and/or bool'.format(value))
         self._dtype = value
 
+    @property
     def info(self):
         return '{info} of {type} with shape {shp}'.format(
-            info=self.info_text,
+            info=self.class_info,
             type=', '.join([str(t) for t in self.dtype]),
             shp='(' + ', '.join(['\*' if s == '*' else str(s)                  #pylint: disable=anomalous-backslash-in-string
                                  for s in self.shape]) + ')',
@@ -102,15 +103,26 @@ class Array(Property):
                 'Array validation is only implmented for wrappers that are '
                 'subclasses of numpy.ndarray'
             )
-        for typ, kind in TYPE_MAPPINGS.items():
-            if value.dtype.kind == kind and typ not in self.dtype:
-                self.error(instance, value)
+        if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
+            self.error(instance, value)
         if len(self.shape) != value.ndim:
             self.error(instance, value)
         for i, shp in enumerate(self.shape):
             if shp != '*' and value.shape[i] != shp:
                 self.error(instance, value)
         return value
+
+    def equal(self, value_a, value_b):
+        try:
+            if value_a.__class__ is not value_b.__class__:
+                return False
+            nan_mask = ~np.isnan(value_a)
+            if not np.array_equal(nan_mask, ~np.isnan(value_b)):
+                return False
+            return np.allclose(value_a[nan_mask], value_b[nan_mask], atol=TOL)
+        except TypeError:
+            return False
+
 
     def error(self, instance, value, error=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
@@ -127,12 +139,18 @@ class Array(Property):
                 shp=value.shape,
                 typ=value.dtype
             )
-        raise error(
-            "The '{name}' property of a {cls} instance must be {info}. "
-            "{desc} was specified. {extra}".format(
+
+        if instance is None:
+            prefix = '{} property'.format(self.__class__.__name__)
+        else:
+            prefix = "The '{name}' property of a {cls} instance".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
-                info=self.info(),
+            )
+        raise error(
+            '{prefix} must be {info}. {desc} was specified. {extra}'.format(
+                prefix=prefix,
+                info=self.info,
                 desc=val_description,
                 extra=extra,
             )
@@ -159,7 +177,7 @@ class Array(Property):
         def _recurse_list(val):
             if len(val) > 0 and isinstance(val[0], list):
                 return [_recurse_list(v) for v in val]
-            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]  #pylint: disable=no-member
+            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]
         return _recurse_list(value.tolist())
 
     @staticmethod
@@ -218,7 +236,7 @@ class BaseVector(Array):
 class Vector3(BaseVector):
     """3D vector property"""
 
-    info_text = 'a 3D Vector'
+    class_info = 'a 3D Vector'
 
     @property
     def wrapper(self):
@@ -252,7 +270,7 @@ class Vector3(BaseVector):
 class Vector2(BaseVector):
     """2D vector property"""
 
-    info_text = 'a 2D Vector'
+    class_info = 'a 2D Vector'
 
     @property
     def wrapper(self):
@@ -289,7 +307,7 @@ class Vector2(BaseVector):
 class Vector3Array(BaseVector):
     """3D vector array property"""
 
-    info_text = 'a list of Vector3'
+    class_info = 'a list of Vector3'
 
     @property
     def wrapper(self):
@@ -329,7 +347,7 @@ class Vector3Array(BaseVector):
 class Vector2Array(BaseVector):
     """2D vector array property"""
 
-    info_text = 'a list of Vector2'
+    class_info = 'a list of Vector2'
 
     @property
     def wrapper(self):

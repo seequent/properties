@@ -94,6 +94,18 @@ class TestSerialization(unittest.TestCase):
             properties.HasProperties.deserialize(hp3_dict, trusted=True), HP3
         )
 
+        with self.assertRaises(ValueError):
+            HP1.deserialize(5)
+
+    def test_immutable_serial(self):
+
+        class UidModel(properties.HasProperties):
+            uid = properties.Uuid('unique id')
+
+        um1 = UidModel()
+        um2 = UidModel.deserialize(um1.serialize())
+        assert um1.equal(um2)
+
     def test_none_serial(self):
 
         class ManyProperties(properties.HasProperties):

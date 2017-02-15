@@ -26,6 +26,13 @@ Instance
     :members:
     :undoc-members:
 
+Union
+-----
+
+.. autoclass:: properties.base.Union
+    :members:
+    :undoc-members:
+
 List
 ----
 
@@ -33,10 +40,24 @@ List
     :members:
     :undoc-members:
 
-Union
+Set
+---
+
+.. autoclass:: properties.base.Set
+    :members:
+    :undoc-members:
+
+Tuple
 -----
 
-.. autoclass:: properties.base.Union
+.. autoclass:: properties.base.Tuple
+    :members:
+    :undoc-members:
+
+DynamicProperty
+---------------
+
+.. autoclass:: properties.basic.DynamicProperty
     :members:
     :undoc-members:
 
@@ -100,6 +121,20 @@ UUID
 ----
 
 .. autoclass:: properties.basic.Uuid
+    :members:
+    :undoc-members:
+
+File
+----
+
+.. autoclass:: properties.basic.File
+    :members:
+    :undoc-members:
+
+Renamed
+-------
+
+.. autoclass:: properties.basic.Renamed
     :members:
     :undoc-members:
 
