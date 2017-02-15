@@ -171,8 +171,7 @@ class PropertyMetaclass(type):
 
     def __call__(cls, *args, **kwargs):
         """Here additional instance setup happens before init"""
-
-        obj = cls.__new__(cls)
+        obj = cls.__new__(cls, *args, **kwargs)
         obj._backend = dict()
         obj._listeners = dict()
 
