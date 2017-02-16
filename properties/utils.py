@@ -8,24 +8,41 @@ from functools import wraps
 
 
 def filter_props(has_props_cls, input_dict, include_immutable=True):
-    """Separate key/value pairs that correspond to existing properties
+    """Split a dictionary based keys that correspond to Properties
+
+    Returns:
+    **(props_dict, others_dict)** - Tuple of two dictionaries. The first contains
+    key/value pairs from the input dictionary that correspond to the
+    Properties of the input HasProperties class. The second contains the remaining key/value
+    pairs.
 
     Parameters:
-        has_props_cls     - HasProperties class or instance
-        input_dict        - Dictionary that partially corresponds to the
-                            cls._props dictionary
-        include_immutable - If True, immutable properties (ie
-                            GettableProperties) are included in props_dict.
-                            If False, immutable properties are excluded
-                            from props_dict.
+    * **has_props_cls** - HasProperties class or instance used to filter the
+      dictionary
+    * **input_dict** - Dictionary to filter
+    * **include_immutable** - If True (the default), immutable properties (i.e.
+      Properties that inherit from GettableProperty but not Property) are
+      included in props_dict. If False, immutable properties are excluded
+      from props_dict.
 
-    Output:
-        (props_dict, others_dict) - Tuple of two dicts. The first contains
-            key/value pairs from input_dict that correspond to the
-            properties in the has_props_cls props dictionary (if
-            include_immutable is True, this also includes the
-            GettableProperties). The second contains the remaining key/value
-            pairs.
+    For example
+
+    .. code::
+
+        class Profile(properties.HasProperties):
+            name = properties.String('First and last name')
+            age = properties.Integer('Age, years')
+
+        bio_dict = {
+            'name': 'Bill',
+            'age': 65,
+            'hometown': 'Bakersfield',
+            'email': 'bill@gmail.com',
+        }
+
+        (props, others) = properties.filter_props(Profile, bio_dict)
+        assert set(props) == {'name', 'age'}
+        assert set(others) == {'hometown', 'email'}
     """
     props_dict = {
         k: v for k, v in iter(input_dict.items()) if (
@@ -39,33 +56,21 @@ def filter_props(has_props_cls, input_dict, include_immutable=True):
 
 
 class stop_recursion_with(object):                                             #pylint: disable=invalid-name, too-few-public-methods
-    """Decorator class used to wrap instance methods that may call themselves
+    """Decorator for HasProperties methods that may call themselves
 
-    It prevents infinite recursion by running the original method the
+    This prevents infinite recursion by running the original method the
     first time it is encountered, then returning an alternative
     backup value if run again recursively.
 
+    For example :code:`HasProperties.validate` has this decorator. If
+    during validation, the HasProperties instance encounters a reference,
+    it will return True rather than attempting to validate again.
+
     Parameters:
-        backup - the value returned on subsequent recursive
-                 function calls. If callable, input parameters
-                 to the original function are passed through
-
-    Usage:
-
-        class HasInstance(properties.HasProperties):
-            my_instance = properties.Instance(
-                doc='An instance, may be another HasInstnace',
-                instance_class=properties.HasProperties
-            )
-
-            @properties.validator
-            @stop_recursion_with(True)
-            def validate_my_instance(self):
-                '''Validates my_instance property
-
-                Does not infinitely recurse if my_instance points to self.
-                '''
-                return self.my_instance.validate()
+    * **backup** - A value to be returned on subsequent recursive function
+      calls, rather than the original decorated function. This value may also
+      be callable; if so, input parameters to the original function are
+      passed through.
     """
 
     def __init__(self, backup):
@@ -106,16 +111,19 @@ class SelfReferenceError(Exception):
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
-    """A basic object with a name and help string
+    """Basic object with name and doc for specifying singletons
 
-    This is used for the utils.undefined object which is defined once and
-    used for undefined values across the entire properties package.
-
-    This allows checking if :code:`something is utils.undefined`.
+    Avalable Sentinels:
+    * :code:`properties.undefined` - The default value for all Properties
+      if no other default is specified. When an undefined property is
+      accessed, it returns :code:`None`. Properties that are required must
+      be set to something other than undefined.
+    * :code:`properties.everything` - Sentinel representing all available
+      properties. This is used when specifying observed properties.
     """
-    def __init__(self, name, helpdoc):
+    def __init__(self, name, doc):
         self.name = name
-        self.help = helpdoc
+        self.doc = doc
 
 
 undefined = Sentinel('undefined', 'undefined value for properties.')           #pylint: disable=invalid-name
