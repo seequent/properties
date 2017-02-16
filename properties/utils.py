@@ -70,7 +70,8 @@ class stop_recursion_with(object):                                             #
     * **backup** - A value to be returned on subsequent recursive function
       calls, rather than the original decorated function. This value may also
       be callable; if so, input parameters to the original function are
-      passed through.
+      passed through. It may also be an exception instance that will be
+      raised.
     """
 
     def __init__(self, backup):
