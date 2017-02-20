@@ -4,5 +4,21 @@ HasProperties
 =============
 
 .. autoclass:: properties.base.HasProperties
-    :members:
-    :undoc-members:
+    :members: validate, serialize, deserialize, equal
+
+.. autoclass:: properties.base.PropertiesMetaclass
+
+Documentation
+-------------
+
+Validation
+----------
+
+Serialization
+-------------
+
+Notifications
+-------------
+
+Defaults
+--------

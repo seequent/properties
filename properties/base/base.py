@@ -232,6 +232,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     HasProperties classes also store a registry of all HasProperties classes
     in as :code:`_REGISTRY`. If a subclass re-declares _REGISTRY, the
     subsequent subclasses will be saved to this new registry.
+
+    The :code:`PropertiesMetaclass` contains more information about what goes
+    into :code:`HasProperties` class construction and validation.
     """
 
     _defaults = dict()
