@@ -1,0 +1,4 @@
+.. _notifications:
+
+Notifications
+=============

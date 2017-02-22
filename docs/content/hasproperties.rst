@@ -3,22 +3,29 @@
 HasProperties
 =============
 
-.. autoclass:: properties.base.HasProperties
+.. autoclass:: properties.HasProperties
     :members: validate, serialize, deserialize, equal
 
-.. autoclass:: properties.base.PropertiesMetaclass
+.. autoclass:: properties.base.PropertyMetaclass
 
-Documentation
--------------
+**HasProperties Features**
 
-Validation
-----------
+* :ref:`documentation` -
 
-Serialization
--------------
+* :ref:`validation` -
 
-Notifications
--------------
+* :ref:`serialization` -
 
-Defaults
---------
+* :ref:`notifications` -
+
+* :ref:`defaults` -
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+
+    ./documentation
+    ./validation
+    ./serialization
+    ./notifications
+    ./defaults
