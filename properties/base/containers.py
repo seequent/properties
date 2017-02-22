@@ -84,15 +84,15 @@ def properties_operator(cls, name):
 
 @add_properties_callbacks
 class PropertiesList(list):
-    """Custom list used by List Property for HasProperties notifications
+    """List for :class:`List <properties.List>` Property with notifications
 
-    This class keeps track of the Property and HasProperties instance
-    it is held by. When the list is modified, it is set again rather than
-    mutating. This decreases performance but allows notifications to fire
-    on the HasProperties instance.
+    This class keeps track of the Property and HasProperties
+    instance it is held by. When the list is modified, it is set again
+    rather than mutating. This decreases performance but allows notifications
+    to fire on the HasProperties instance.
 
-    If a PropertiesList is not part of a HasProperties class, its
-    behavior is identical to a built-in list.
+    If a **PropertiesList** is not part of a HasProperties
+    class, its behavior is identical to a built-in :code:`list`.
     """
 
     _mutators = ['append', 'extend', 'insert', 'pop', 'remove', 'clear',
@@ -104,15 +104,15 @@ class PropertiesList(list):
 
 @add_properties_callbacks
 class PropertiesSet(set):
-    """Custom set used by Set Property for HasProperties notifications
+    """Set for :class:`Set <properties.Set>` Property with notifications
 
-    This class keeps track of the Property and HasProperties instance
-    it is held by. When the set is modified, it is set again rather than
-    mutating. This decreases performance but allows notifications to fire
-    on the HasProperties instance.
+    This class keeps track of the Property and HasProperties
+    instance it is held by. When the set is modified, it is set again
+    rather than mutating. This decreases performance but allows notifications
+    to fire on the HasProperties instance.
 
-    If a PropertiesSet is not part of a HasProperties class, its
-    behavior is identical to a built-in list.
+    If a **PropertiesSet** is not part of a HasProperties
+    class, its behavior is identical to a built-in :code:`set`.
     """
 
     _mutators = ['add', 'clear', 'difference_update', 'discard',
@@ -129,14 +129,15 @@ OBSERVABLE = {list: PropertiesList, set: PropertiesSet}
 
 
 class Tuple(basic.Property):
-    """Property for tuples, where each entry is another property type
+    """Property for tuples, where each entry is another Property type
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
 
     * **prop** - Property instance that specifies the Property type of
-      each entry in the Tuple. A HasProperties class may also be specified;
-      this is simply coerced to an Instance Property of that class.
+      each entry in the **Tuple**. A HasProperties class may also be
+      specified; this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
     * **min_length** - Minimum valid length of the tuple, inclusive. If None
       (the default), there is no minimum length.
     * **max_length** - Maximum valid length of the tuple, inclusive. If None
@@ -341,14 +342,15 @@ class Tuple(basic.Property):
 
 
 class List(Tuple):
-    """Property for lists, where each entry is another property type
+    """Property for lists, where each entry is another Property type
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
 
     * **prop** - Property instance that specifies the Property type of
-      each entry in the List. A HasProperties class may also be specified;
-      this is simply coerced to an Instance Property of that class.
+      each entry in the **List**. A HasProperties class may also be specified;
+      this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
     * **min_length** - Minimum valid length of the list, inclusive. If None
       (the default), there is no minimum length.
     * **max_length** - Maximum valid length of the list, inclusive. If None
@@ -357,8 +359,8 @@ class List(Tuple):
       types are coerced to a list and other non-container values become a
       length-1 list. Default value is False.
     * **observe_mutations** - If False, the underlying storage class is
-      a built-in list. If True, the underlying storage class will be
-      :class:`PropertiesList <properties.basic.containers.PropertiesList>`.
+      a built-in :code:`list`. If True, the underlying storage class will be
+      :class:`PropertiesList <properties.base.containers.PropertiesList>`.
       The benefit of PropertiesList is that all mutations
       will trigger HasProperties change notifications. The drawback is
       slower performance as copies of the list are made on every operation.
@@ -398,14 +400,15 @@ class List(Tuple):
 
 
 class Set(List):
-    """Property for sets, where each entry is another property type
+    """Property for sets, where each entry is another Property type
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
 
     * **prop** - Property instance that specifies the Property type of
-      each entry in the Set. A HasProperties class may also be specified;
-      this is simply coerced to an Instance Property of that class.
+      each entry in the **Set**. A HasProperties class may also be specified;
+      this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
     * **min_length** - Minimum valid length of the set, inclusive. If None
       (the default), there is no minimum length.
     * **max_length** - Maximum valid length of the set, inclusive. If None
@@ -414,8 +417,8 @@ class Set(List):
       types are coerced to a set and other non-container values become a
       length-1 set. Default value is False.
     * **observe_mutations** - If False, the underlying storage class is
-      a built-in set. If True, the underlying storage class will be
-      :class:`PropertiesSet <properties.basic.containers.PropertiesSet>`.
+      a built-in :code:`set`. If True, the underlying storage class will be
+      :class:`PropertiesSet <properties.base.containers.PropertiesSet>`.
       The benefit of PropertiesSet is that all mutations
       will trigger HasProperties change notifications. The drawback is
       slower performance as copies of the set are made on every operation.

@@ -22,9 +22,9 @@ else:
 class Union(basic.Property):
     """Property with multiple valid Property types
 
-    Union Properties contain a list of Property instances; validation,
-    serialization, etc., attempt to use each Property in this list
-    sequentially and only fail if all Property instances fail.
+    **Union** Properties contain a list of :ref:`property` instances;
+    validation, serialization, etc., attempt to use each Property in this
+    list sequentially and only fail if all Property instances fail.
 
     .. note::
 

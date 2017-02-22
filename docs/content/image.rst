@@ -12,4 +12,4 @@ Image Properties
 ImagePNG
 --------
 
-.. autoclass:: properties.images.ImagePNG
+.. autoclass:: properties.ImagePNG

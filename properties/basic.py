@@ -56,8 +56,9 @@ class ArgumentWrangler(type):
 class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #pylint: disable=too-many-instance-attributes
     """Property with immutable value
 
-    GettableProperties are assigned their default values upon HasProperties
-    instance construction, and cannot be modified after that.
+    **GettableProperties** are assigned their default values upon
+    :ref:`hasproperties` instance construction, and cannot be modified after
+    that.
 
     Keyword arguments match those available to :ref:`Property <property>`
     with the exception of **required**.
@@ -89,8 +90,6 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     @property
     def name(self):
         """The name of the Property on a HasProperties class
-
-        This is set in the metaclass.
         """
         return getattr(self, '_name', '')
 
@@ -890,15 +889,15 @@ class String(Property):
     :ref:`Property <property>`):
 
     * **strip** - Substring to strip off input. By default, nothing is
-      stripped
+      stripped.
     * **change_case** - If 'lower', coerces input to lowercase; if 'upper',
       coerce input to uppercase. If None (the default), case is left
       unchanged.
     * **unicode** - If True, coerce strings to unicode. Default is True
       to ensure consistent behavior across Python 2/3.
     * **regex** - Regular expression (pattern or compiled expression) the
-      input string must match. Note: `search` is used to determine if
-      string is valid; to match the entire string, ensure '^' and '$' are
+      input string must match. Note: :code:`re.search` is used to determine
+      if string is valid; to match the entire string, ensure '^' and '$' are
       contained in the regex pattern.
     """
 
@@ -1205,11 +1204,11 @@ class DateTime(Property):
 class Uuid(GettableProperty):
     """Immutable property for unique identifiers
 
-    Default value is generated on HasProperties class instantiation
+    Default value is generated on :ref:`hasproperties` class instantiation
     using :code:`uuid.uuid4()`
 
-    No additional keywords are avalaible besides those those inherited from
-    :ref:`GettableProperty <gettable>`.
+    No additional keywords are available besides those those inherited from
+    :class:`GettableProperty <properties.GettableProperty>`.
     """
 
     class_info = 'a unique ID auto-generated with uuid.uuid4()'
@@ -1356,7 +1355,6 @@ class Renamed(GettableProperty):
     .. code::
 
         class MyClass(properties.HasProperties):
-
             myStringProp = properties.String('My string property')
 
     backwards compatibility can be maintained with
@@ -1364,9 +1362,7 @@ class Renamed(GettableProperty):
     .. code::
 
         class MyClass(properties.HasProperties):
-
             my_string_prop = properties.String('My string property')
-
             myStringProp = properties.Renamed('my_string_prop')
 
     **Argument** (other Property keyword arguments are not available):

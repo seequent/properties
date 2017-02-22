@@ -3,7 +3,7 @@
 Property
 ========
 
-.. autoclass:: properties.basic.Property
+.. autoclass:: properties.Property
     :members: assert_valid, validate, meta, tag, equal, serialize, deserialize, to_json, from_json, error
 
 Defining new Property types

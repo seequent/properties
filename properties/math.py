@@ -18,7 +18,7 @@ TYPE_MAPPINGS = {
 
 
 class Array(Property):
-    """Property for numpy :class:`arrays <numpy.ndarray>`
+    """Property for :class:`numpy arrays <numpy.ndarray>`
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
@@ -240,8 +240,9 @@ class Vector3(BaseVector):
     """Property for :class:`3D vectors<vectormath.vector.Vector3>`
 
     These Vectors are of shape (3,) and dtype float. In addition to
-    length-3 arrays, these properties accept strings including: zero, x,
-    y, z, -x, -y, -z, east, west, north, south, up, and down.
+    length-3 arrays, these properties accept strings including: 'zero', 'x',
+    'y', 'z', '-x', '-y', '-z', 'east', 'west', 'north', 'south', 'up',
+    and 'down'.
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
@@ -282,11 +283,11 @@ class Vector3(BaseVector):
 
 
 class Vector2(BaseVector):
-    """Property for :class:`2D vectors<vectormath.vector.Vector2>`
+    """Property for :class:`2D vectors <vectormath.vector.Vector2>`
 
     These Vectors are of shape (2,) and dtype float. In addition to
-    length-2 arrays, these properties accept strings including: zero, x,
-    y, -x, -y, east, west, north, and south.
+    length-2 arrays, these properties accept strings including: 'zero', 'x',
+    'y', '-x', '-y', 'east', 'west', 'north', and 'south'.
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
@@ -330,12 +331,12 @@ class Vector2(BaseVector):
 
 
 class Vector3Array(BaseVector):
-    """Property for an :class:`array of 3D vectors<vectormath.vector.Vector3Array>`
+    """Property for an :class:`array of 3D vectors <vectormath.vector.Vector3Array>`
 
     This array of vectors are of shape ('*', 3) and dtype float. In addition
     to an array of this shape, these properties accept a list of strings
-    including: zero, x, y, z, -x, -y, -z, east, west, north, south, up,
-    and down.
+    including: 'zero', 'x', 'y', 'z', '-x', '-y', '-z', 'east', 'west',
+    'north', 'south', 'up', and 'down'.
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
@@ -382,11 +383,12 @@ class Vector3Array(BaseVector):
 
 
 class Vector2Array(BaseVector):
-    """Property for an :class:`array of 2D vectors<vectormath.vector.Vector2Array>`
+    """Property for an :class:`array of 2D vectors <vectormath.vector.Vector2Array>`
 
     This array of vectors are of shape ('*', 2) and dtype float. In addition
     to an array of this shape, these properties accept a list of strings
-    including: zero, x, y, -x, -y, east, west, north, and south.
+    including:  'zero', 'x', 'y', '-x', '-y', 'east', 'west', 'north',
+    and 'south'.
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):

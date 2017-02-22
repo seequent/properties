@@ -21,13 +21,13 @@ else:
 class Instance(basic.Property):
     """Property for instances of a specified class
 
-    Instance Properties may be used for any type, but they gain additional
-    power with HasProperties types. The Instance Property may be assigned
-    a dictionary with valid HasProperties class keywords; this is coerced
-    to an instance of the HasProperties class. Also, HasProperties methods
-    behave recursively, so if the parent HasProperties class is validated,
-    serialized, etc., then HasProperties Instance Properties on the class
-    will also be validated, serialized, etc.
+    **Instance** Properties may be used for any type, but they gain additional
+    power with :ref:`hasproperties` types. The **Instance** Property may be
+    assigned a dictionary with valid HasProperties class keywords; this is
+    coerced to an instance of the HasProperties class. Also, HasProperties
+    methods behave recursively, so if the parent HasProperties class is
+    validated, serialized, etc., then HasProperties **Instance** Properties
+    on the class will also be validated, serialized, etc.
 
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):

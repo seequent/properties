@@ -13,24 +13,24 @@ Math Properties
 Array
 -----
 
-.. autoclass:: properties.math.Array
+.. autoclass:: properties.Array
 
 Vector3
 -------
 
-.. autoclass:: properties.math.Vector3
+.. autoclass:: properties.Vector3
 
 Vector2
 -------
 
-.. autoclass:: properties.math.Vector2
+.. autoclass:: properties.Vector2
 
 Vector3Array
 ------------
 
-.. autoclass:: properties.math.Vector3Array
+.. autoclass:: properties.Vector3Array
 
 Vector2Array
 ------------
 
-.. autoclass:: properties.math.Vector2Array
+.. autoclass:: properties.Vector2Array

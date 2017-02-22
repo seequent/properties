@@ -3,4 +3,4 @@
 Instance Property
 =================
 
-.. autoclass:: properties.base.Instance
+.. autoclass:: properties.Instance

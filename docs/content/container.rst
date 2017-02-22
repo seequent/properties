@@ -6,17 +6,17 @@ Container Properties
 Tuple
 -----
 
-.. autoclass:: properties.base.Tuple
+.. autoclass:: properties.Tuple
 
 List
 ----
 
-.. autoclass:: properties.base.List
+.. autoclass:: properties.List
 
 Set
 ---
 
-.. autoclass:: properties.base.Set
+.. autoclass:: properties.Set
 
 Custom Containers
 -----------------
