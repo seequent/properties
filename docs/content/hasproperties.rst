@@ -10,9 +10,9 @@ HasProperties
 
 **HasProperties Features**
 
-* :ref:`documentation` -
-
 * :ref:`validation` -
+
+* :ref:`documentation` -
 
 * :ref:`serialization` -
 
@@ -24,8 +24,8 @@ HasProperties
     :maxdepth: 2
     :hidden:
 
-    ./documentation
     ./validation
+    ./documentation
     ./serialization
     ./notifications
     ./defaults

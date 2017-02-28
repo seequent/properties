@@ -198,9 +198,9 @@ def observer(names_or_instance, names=None, func=None, change_only=False):
     The variable name must refer to a Property name on the HasProperties
     class. A list of Property names may also be used; the same
     callback function will fire when any of these Properties change. Also,
-    :code:`properties.everything` may be specified instead of the variable
-    name. In that case, the callback function will fire when any Property
-    changes.
+    :class:`properties.everything <properties.utils.Sentinel>` may be
+    specified instead of the variable name. In that case, the callback
+    function will fire when any Property changes.
 
     The callback function must take two arguments. The first is the
     HasProperties instance; the second is the change notification dictionary.
@@ -265,9 +265,9 @@ def validator(names_or_instance, names=None, func=None):
     The variable name must refer to a Property name on the HasProperties
     class. A list of Property names may also be used; the same
     callback function will fire when any of these Properties change. Also,
-    :code:`properties.everything` may be specified instead of the variable
-    name. In that case, the callback function will fire when any Property
-    changes.
+    :class:`properties.everything <properties.utils.Sentinel>` may be
+    specified instead of the variable name. In that case, the callback
+    function will fire when any Property changes.
 
     The callback function must take two arguments. The first is the
     HasProperties instance; the second is the change notification dictionary.

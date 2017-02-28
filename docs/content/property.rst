@@ -6,125 +6,43 @@ Property
 .. autoclass:: properties.Property
     :members: assert_valid, validate, meta, tag, equal, serialize, deserialize, to_json, from_json, error
 
-Defining new Property types
----------------------------
+Defining custom Property types
+------------------------------
 
-:code:`Property` can be subclassed to create new property types. First, define
-the new class and give it some basic :code:`class_info`; this is a string that
-describes the property class. It is supplemental to the help doc provided on the
-property instance. Also, override :code:`validate` to ensure property values are
-coerced and validated correctly.
+Custom Property types can be created by subclassing
+:class:`Property <properties.Property>` and customizing a few attributes
+and methods. These include:
 
-.. exec::
+:code:`class_info`
 
-    import properties
+    This attribute of the new Property class is a general, descriptive string.
+    The string is appended to the Property-instance-specific :code:`doc` in
+    HasProperties class docstrings and error messages.
 
-    class UppercaseProp(properties.Property):
-        """String property that is coerced to uppercase"""
+:code:`validate(self, instance, value)`
 
-        class_info = 'a string, coerced to uppercase'
+    This method defines what values the Property will accept. It must return
+    the validated value. This value may be coerced from the input **value**;
+    however, validating on the coerced value must not modify the value further.
 
-        def validate(self, instance, value):
-            """Check that input is a string and coerce to uppercase"""
-            if not isinstance(value, str):
-                raise ValueError(
-                    'Values for UppercaseProp {name} must be strings'.format(
-                        name=self.name
-                    )
-                )
-            return value.upper()
+    The input **instance** is the containing HasProperties instance or None
+    if the Property is not part of a HasProperties instance, so validate
+    must account for either of these scenarios. Usually, Property validation
+    should be instance-independent.
 
+    If **value** is invalid, a ValueError should be raised by calling
+    :code:`self.error(instance, value)`
 
-Then use :code:`UppercaseProp` as a property of a :code:`HasProperties` class:
+:code:`to_json(value, **kwargs)`/:code:`from_json(value, **kwargs)`
 
-.. exec::
+    These static methods should allow converting between a validated
+    Property value and a JSON-dumpable version of the Property value.
+    Both these methods assume the value is valid.
 
-    import properties #hide
-    class Megaphone(properties.HasProperties):
-        """Megaphone class is used to tell speeches loudly"""
-        import properties #hide
-        class UppercaseProp(properties.Property): #hide
-            class_info = 'a string, coerced to uppercase' #hide
-            def validate(self, instance, value): #hide
-                if not isinstance(value, str): #hide
-                    raise ValueError( #hide
-                        'Values for UppercaseProp {name} must be strings'.format( #hide
-                            name=self.name #hide
-                        ) #hide
-                    ) #hide
-                return value.upper() #hide
+    The :code:`serialize` and :code:`deserialize` should not need to be
+    customized in new Properties; they simply call upon these methods.
 
-        speech = UppercaseProp('words spoken through the megaphone')
+:code:`equal(self, value_a, value_b)`
 
-:code:`Megaphone` is now a class with documentation and type-checked properties:
-
-.. exec::
-
-    import properties #hide
-    class Megaphone(properties.HasProperties): #hide
-        """Megaphone class is used to tell speeches loudly""" #hide
-        import properties #hide
-        class UppercaseProp(properties.Property): #hide
-            class_info = 'a string, coerced to uppercase' #hide
-            def validate(self, instance, value): #hide
-                if not isinstance(value, str): #hide
-                    raise ValueError( #hide
-                        'Values for UppercaseProp {name} must be strings'.format( #hide
-                            name=self.name #hide
-                        ) #hide
-                    ) #hide
-                return value.upper() #hide
-            def sphinx_class(self): #hide
-                return ':class:`{cls} <{pref}.{cls}>`'.format( #hide
-                    cls=self.__class__.__name__, pref='__main__' #hide
-                ) #hide
-        speech = UppercaseProp('words spoken through the megaphone') #hide
-    my_megaphone = Megaphone()
-    print(my_megaphone.__doc__)
-
-.. exec::
-
-    import properties #hide
-    class Megaphone(properties.HasProperties): #hide
-        """Megaphone class is used to tell speeches loudly""" #hide
-        import properties #hide
-        class UppercaseProp(properties.Property): #hide
-            class_info = 'a string, coerced to uppercase' #hide
-            def validate(self, instance, value): #hide
-                if not isinstance(value, str): #hide
-                    raise ValueError( #hide
-                        'Values for UppercaseProp {name} must be strings'.format( #hide
-                            name=self.name #hide
-                        ) #hide
-                    ) #hide
-                return value.upper() #hide
-        speech = UppercaseProp('words spoken through the megaphone') #hide
-    my_megaphone = Megaphone() #hide
-    my_megaphone.speech = 'To be or not to be?'
-    print(my_megaphone.speech)
-
-.. exec::
-
-    import properties #hide
-    class Megaphone(properties.HasProperties): #hide
-        """Megaphone class is used to tell speeches loudly""" #hide
-        import properties #hide
-        class UppercaseProp(properties.Property): #hide
-            class_info = 'a string, coerced to uppercase' #hide
-            def validate(self, instance, value): #hide
-                if not isinstance(value, str): #hide
-                    raise ValueError( #hide
-                        'Values for UppercaseProp {name} must be strings'.format( #hide
-                            name=self.name #hide
-                        ) #hide
-                    ) #hide
-                return value.upper() #hide
-        speech = UppercaseProp('words spoken through the megaphone') #hide
-    my_megaphone = Megaphone() #hide
-    try:
-        my_megaphone.speech = 5
-    except ValueError as verr:
-        print('ValueError Raised: {}'.format(verr))
-
-Note that :code:`Property` instances only work inside a :code:`HasProperties` class.
-
+    This method defines how valid property values should be compared for
+    equality if the default `value_a == value_b` is insufficient.

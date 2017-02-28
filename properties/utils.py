@@ -16,7 +16,8 @@ def filter_props(has_props_cls, input_dict, include_immutable=True):
     Properties of the input HasProperties class. The second contains the remaining key/value
     pairs.
 
-    Parameters:
+    **Parameters**:
+
     * **has_props_cls** - HasProperties class or instance used to filter the
       dictionary
     * **input_dict** - Dictionary to filter
@@ -66,7 +67,8 @@ class stop_recursion_with(object):                                             #
     during validation, the HasProperties instance encounters a reference,
     it will return True rather than attempting to validate again.
 
-    Parameters:
+    **Parameters**:
+
     * **backup** - A value to be returned on subsequent recursive function
       calls, rather than the original decorated function. This value may also
       be callable; if so, input parameters to the original function are
@@ -114,10 +116,11 @@ class SelfReferenceError(Exception):
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
     """Basic object with name and doc for specifying singletons
 
-    Avalable Sentinels:
+    **Avalable Sentinels**:
+
     * :code:`properties.undefined` - The default value for all Properties
       if no other default is specified. When an undefined property is
-      accessed, it returns :code:`None`. Properties that are required must
+      accessed, it returns None. Properties that are required must
       be set to something other than undefined.
     * :code:`properties.everything` - Sentinel representing all available
       properties. This is used when specifying observed properties.
