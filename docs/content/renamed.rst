@@ -3,4 +3,4 @@
 Renamed Property
 ----------------
 
-.. autoclass:: properties.basic.Renamed
+.. autoclass:: properties.Renamed

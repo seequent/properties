@@ -6,19 +6,19 @@ Other Property Types
 StringChoice
 ------------
 
-.. autoclass:: properties.basic.StringChoice
+.. autoclass:: properties.StringChoice
 
 Color
 -----
 
-.. autoclass:: properties.basic.Color
+.. autoclass:: properties.Color
 
 DateTime
 --------
 
-.. autoclass:: properties.basic.DateTime
+.. autoclass:: properties.DateTime
 
 File
 ----
 
-.. autoclass:: properties.basic.File
+.. autoclass:: properties.File

@@ -3,9 +3,9 @@
 Gettable Property
 =================
 
-.. autoclass:: properties.basic.GettableProperty
+.. autoclass:: properties.GettableProperty
 
 UUID
 ----
 
-.. autoclass:: properties.basic.Uuid
+.. autoclass:: properties.Uuid

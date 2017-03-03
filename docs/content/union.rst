@@ -3,4 +3,4 @@
 Union Property
 ==============
 
-.. autoclass:: properties.base.Union
+.. autoclass:: properties.Union

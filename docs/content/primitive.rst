@@ -6,24 +6,24 @@ Primitive Properties
 Bool
 ----
 
-.. autoclass:: properties.basic.Bool
+.. autoclass:: properties.Bool
 
 Integer
 -------
 
-.. autoclass:: properties.basic.Integer
+.. autoclass:: properties.Integer
 
 Float
 -----
 
-.. autoclass:: properties.basic.Float
+.. autoclass:: properties.Float
 
 Complex
 -------
 
-.. autoclass:: properties.basic.Complex
+.. autoclass:: properties.Complex
 
 String
 ------
 
-.. autoclass:: properties.basic.String
+.. autoclass:: properties.String

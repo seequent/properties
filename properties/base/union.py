@@ -20,11 +20,13 @@ else:
 
 
 class Union(basic.Property):
-    """Property where a Union of multiple Property types are valid
+    """Property with multiple valid Property types
 
-    Validation, serialization, etc. cycle through the corresponding methods
-    on the specified Property types until one succeeds. If all Property
-    types raise an error, the Union Property will also raise an error.
+    **Union** Properties contain a list of :ref:`property` instances.
+    Validation, serialization, etc. cycle through the corresponding method
+    on the each Property instance sequentially until one succeeds. If all
+    Property types raise an error, the Union Property will also raise an
+    error.
 
     .. note::
 
@@ -35,11 +37,11 @@ class Union(basic.Property):
 
             import properties
             union_0 = properties.Union(
-                doc='String and Color union',
+                doc='String and Color',
                 props=(properties.String(''), properties.Color('')),
             )
             union_1 = properties.Union(
-                doc='String and Color union',
+                doc='String and Color',
                 props=(properties.Color(''), properties.String('')),
             )
 
@@ -49,9 +51,10 @@ class Union(basic.Property):
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
 
-    * **props** - List of Property instances that each specify a valid type
-      of value. HasProperties classes may also be specified; these are simply
-      coerced to corresponding Instance Properties.
+    * **props** - A list of Property instances that each specify a valid
+      type for the Union Property. HasProperties classes may also be
+      specified; these are coerced to Instance Properties of the respective
+      class.
     """
 
     class_info = 'a union of multiple property types'

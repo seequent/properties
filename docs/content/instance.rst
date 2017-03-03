@@ -3,6 +3,4 @@
 Instance Property
 =================
 
-.. autoclass:: properties.base.Instance
-    :members:
-    :undoc-members:
+.. autoclass:: properties.Instance

@@ -13,6 +13,7 @@
     content/hasproperties
     content/property
     content/builtin
+    content/utils
 
 
 Indices and tables
