@@ -28,6 +28,9 @@ class ImagePNG(File):
     file_modes = {'rb', 'rb+', 'wb+', 'ab+'}
 
     def __init__(self, doc, mode='rb', **kwargs):
+        kwargs.update(
+            {'valid_modes': kwargs.get('valid_modes', ImagePNG.file_modes)}
+        )
         super(ImagePNG, self).__init__(doc, mode, **kwargs)
 
     @property
