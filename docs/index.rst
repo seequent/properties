@@ -1,5 +1,3 @@
-
-
 .. _properties_index:
 
 .. include:: ../README.rst

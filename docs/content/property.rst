@@ -13,11 +13,14 @@ Custom Property types can be created by subclassing
 :class:`Property <properties.Property>` and customizing a few attributes
 and methods. These include:
 
-:code:`class_info`
+:code:`class_info`/:code:`info`
 
-    This attribute of the new Property class is a general, descriptive string.
-    The string is appended to the Property-instance-specific :code:`doc` in
-    HasProperties class docstrings and error messages.
+    This are used when documenting the Property. :code:`class_info`
+    is a general, descriptive string attribute of the new Property class.
+    :code:`info` is an :code:`@property` method that gives an
+    instance-specific description of the Property, if necessary. If
+    :code:`info` is not defined, it defaults to :code:`class_info`.
+    This string is used in HasProperties class docstrings and error messages.
 
 :code:`validate(self, instance, value)`
 
@@ -46,3 +49,13 @@ and methods. These include:
 
     This method defines how valid property values should be compared for
     equality if the default `value_a == value_b` is insufficient.
+
+:code:`_class_default`
+
+    This should be set to the default value of the new property class. It
+    may also be a callable that returns the default value.
+    Almost always this should be left untouched; in that case, the
+    default will be :class:`properties.undefined <properties.utils.Sentinel>`.
+    However, in some cases, it makes sense to override. For example,
+    :ref:`container property types <container>` use empty versions of
+    their respective container for default values.
