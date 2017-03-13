@@ -179,9 +179,10 @@ class PropertyMetaclass(type):
                 )
             try:
                 if callable(value):
-                    newcls._props[key].validate(None, value())
-                else:
-                    newcls._props[key].validate(None, value)
+                    value = value()
+                if value is utils.undefined:
+                    continue
+                newcls._props[key].validate(None, value)
             except ValueError:
                 raise AttributeError(
                     "Invalid default for property '{}'".format(key)
