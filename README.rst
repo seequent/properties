@@ -10,6 +10,10 @@ properties
     :target: https://github.com/3ptscience/properties/blob/master/LICENSE
     :alt: MIT license
 
+.. image:: https://readthedocs.org/projects/propertiespy/badge/
+    :target: http://propertiespy.readthedocs.io/en/latest/
+    :alt: ReadTheDocs
+
 .. image:: https://travis-ci.org/3ptscience/properties.svg?branch=master
     :target: https://travis-ci.org/3ptscience/properties
     :alt: Travis tests
@@ -46,13 +50,17 @@ Scope
 The :code:`properties` package allows you to create **strongly typed** objects in a
 consistent way. This allows you to hook into **notifications** and other libraries.
 
-
 Goals
 -----
 
 * Keep a clean name space so that it can be used easily by users
 * Prioritize documentation
 * Connect to other libraries for interactive visualizations
+
+Documentation
+-------------
+
+API Documentation is available at `ReadTheDocs <https://propertiespy.readthedocs.io/en/latest/>`_.
 
 Alternatives
 ------------
@@ -64,7 +72,7 @@ Alternatives
 Connections
 -----------
 
-* `steno3d <https://github.com/3ptscience/steno3dpy>`_ for the client API
+* `SimPEG <https://github.com/simpeg/simpeg>`_ Simulation and Parameter Estimation in Geophysics
 
 Installation
 ------------
