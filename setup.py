@@ -29,7 +29,7 @@ EXTRAS = {
 EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
     name='properties',
-    version='0.3.0',
+    version='0.3.1',
     packages=find_packages(exclude=('tests',)),
     install_requires=['six'],
     extras_require=EXTRAS,

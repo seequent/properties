@@ -1,5 +1,3 @@
-
-
 .. _properties_index:
 
 .. include:: ../README.rst
@@ -8,9 +6,12 @@
 
 .. toctree::
     :maxdepth: 2
+    :includehidden:
 
-    content/examples
-    content/basic
+    content/hasproperties
+    content/property
+    content/builtin
+    content/utils
 
 
 Indices and tables

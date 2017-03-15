@@ -60,7 +60,7 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=attribute-defined-outside-init
+disable=attribute-defined-outside-init,no-member
 
 
 [REPORTS]
@@ -202,7 +202,7 @@ single-line-if-stmt=no
 no-space-check=trailing-comma,dict-separator
 
 # Maximum number of lines in a module
-max-module-lines=1000
+max-module-lines=1500
 
 # String used as indentation unit. This is usually "    " (4 spaces) or "\t" (1
 # tab).
@@ -314,7 +314,7 @@ valid-metaclass-classmethod-first-arg=mcs
 
 # List of member names, which should be excluded from the protected access
 # warning.
-exclude-protected=_asdict,_fields,_replace,_source,_make,_props,_prop_observers,_class_validators,_REGISTRY,_get_listeners,_set_listener,_get,_listeners,_defaults,_backend,_reset
+exclude-protected=_asdict,_fields,_replace,_source,_make,_props,_prop_observers,_class_validators,_REGISTRY,_get_listeners,_set_listener,_get,_listeners,_defaults,_backend,_reset,_name,_instance
 
 
 [DESIGN]

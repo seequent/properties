@@ -10,21 +10,34 @@ from io import BytesIO
 import png
 from six import string_types
 
-from .basic import Property
-
+from .basic import File
 
 PNG_PREAMBLE = 'data:image/png;base64,'
 
 
-class ImagePNG(Property):
+class ImagePNG(File):
     """Property for PNG images
 
-    Available keyword:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **filename** - name associated with open copy of PNG image
-      (default is 'texture.png')
+    * **mode**: Opens the file in this mode. Must be a binary mode that
+      supports file reading. Default value is 'rb'.
+    * **valid_modes**: Tuple of valid modes for open files. This must
+      include **mode**. If nothing is specified, **valid_mode** is set
+      to **mode**.
+    * **filename** - Name associated with open copy of PNG image.
+      Default is 'texture.png'.
     """
-    info_text = 'a PNG image file'
+    class_info = 'a PNG image file'
+
+    file_modes = {'rb', 'rb+', 'wb+', 'ab+'}
+
+    def __init__(self, doc, mode='rb', **kwargs):
+        kwargs.update(
+            {'valid_modes': kwargs.get('valid_modes', ImagePNG.file_modes)}
+        )
+        super(ImagePNG, self).__init__(doc, mode, **kwargs)
 
     @property
     def filename(self):
@@ -45,23 +58,16 @@ class ImagePNG(Property):
         # Pass if already validated
         if getattr(value, '__valid__', False):
             return value
-        # Try to open if string (ie filename) is given
-        if isinstance(value, string_types):
-            try:
-                value = open(value, 'rb')
-            except IOError:
-                self.error(obj, value, extra='Invalid file name.')
-        # Validate that input is PNG
+        # Validate that value is PNG
         if isinstance(value, png.Image):
             pass
-        elif hasattr(value, 'read'):
+        else:
+            value = super(ImagePNG, self).validate(obj, value)
             try:
                 png.Reader(value).validate_signature()
             except png.FormatError:
                 self.error(obj, value, extra='Open file is not PNG.')
             value.seek(0)
-        else:
-            self.error(obj, value)
         # Write input to new bytestream
         output = BytesIO()
         output.name = self.filename

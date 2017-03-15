@@ -170,16 +170,12 @@ When you ask for the doc string of :code:`CoffeeProfile`, you get
 
 .. code:: rst
 
-    **Required**
+    **Required Properties:**
 
-    :param count: How many coffees have you had today?, an integer, Default: 0
-    :type count: :class:`Integer <properties.basic.Integer>`
-    :param had_enough_coffee: Have you had enough coffee today?, a boolean, Default: False
-    :type had_enough_coffee: :class:`Bool <properties.basic.Bool>`
-    :param name: What should I call you?, a string
-    :type name: :class:`String <properties.basic.String>`
+    * **count** (:class:`Integer <properties.basic.Integer>`): How many coffees have you had today?, an integer, Default: 0
+    * **had_enough_coffee** (:class:`Bool <properties.basic.Bool>`): Have you had enough coffee today?, a boolean, Default: False
+    * **name** (:class:`String <properties.basic.String>`): What should I call you?, a unicode string
 
-    **Optional**
+    **Optional Properties:**
 
-    :param caffeine_choice: How do you take your caffeine?, any of "something fancy", "tea", "coffee", "cappuccino", "latte"
-    :type caffeine_choice: :class:`StringChoice <properties.basic.StringChoice>`
+    * **caffeine_choice** (:class:`StringChoice <properties.basic.StringChoice>`): How do you take your caffeine?, any of "coffee", "tea", "latte", "cappuccino", "something fancy"

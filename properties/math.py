@@ -8,7 +8,7 @@ import numpy as np
 from six import integer_types, string_types
 import vectormath as vmath
 
-from .basic import Property
+from .basic import Property, TOL
 
 TYPE_MAPPINGS = {
     int: 'i',
@@ -18,20 +18,22 @@ TYPE_MAPPINGS = {
 
 
 class Array(Property):
-    """Serializable float or int array property using numpy.ndarray
+    """Property for :class:`numpy arrays <numpy.ndarray>`
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **shape** - tuple with integer or '*' entries corresponding to valid
-      array shapes. '*' means the dimension can be any length.
-      array dimension shapes. '*' means the dimension can be any length.
+    * **shape** - Tuple that describes the allowed shape of the array.
+      Length of shape tuple corresponds to number of dimensions; values
+      correspond to the allowed length for each dimension. These values
+      may be integers or '*' for any length.
       For example, an n x 3 array would be shape ('*', 3).
-      Default: ('*',)
-    * **dtype** - float, int, bool, or a tuple containing any of these.
-      Default: (float, int)
+      The default value is ('*',).
+    * **dtype** - Allowed data type for the array. May be float, int,
+      bool, or a tuple containing any of these. The default is (float, int).
     """
 
-    info_text = 'a list or numpy array'
+    class_info = 'a list or numpy array'
 
     @property
     def wrapper(self):
@@ -84,9 +86,10 @@ class Array(Property):
                             'and/or bool'.format(value))
         self._dtype = value
 
+    @property
     def info(self):
         return '{info} of {type} with shape {shp}'.format(
-            info=self.info_text,
+            info=self.class_info,
             type=', '.join([str(t) for t in self.dtype]),
             shp='(' + ', '.join(['\*' if s == '*' else str(s)                  #pylint: disable=anomalous-backslash-in-string
                                  for s in self.shape]) + ')',
@@ -102,9 +105,8 @@ class Array(Property):
                 'Array validation is only implmented for wrappers that are '
                 'subclasses of numpy.ndarray'
             )
-        for typ, kind in TYPE_MAPPINGS.items():
-            if value.dtype.kind == kind and typ not in self.dtype:
-                self.error(instance, value)
+        if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
+            self.error(instance, value)
         if len(self.shape) != value.ndim:
             self.error(instance, value)
         for i, shp in enumerate(self.shape):
@@ -112,11 +114,23 @@ class Array(Property):
                 self.error(instance, value)
         return value
 
-    def error(self, instance, value, error=None, extra=''):
+    def equal(self, value_a, value_b):
+        try:
+            if value_a.__class__ is not value_b.__class__:
+                return False
+            nan_mask = ~np.isnan(value_a)
+            if not np.array_equal(nan_mask, ~np.isnan(value_b)):
+                return False
+            return np.allclose(value_a[nan_mask], value_b[nan_mask], atol=TOL)
+        except TypeError:
+            return False
+
+
+    def error(self, instance, value, error_class=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
-        error = error if error is not None else ValueError
+        error_class = error_class if error_class is not None else ValueError
         if not isinstance(value, (list, tuple, np.ndarray)):
-            super(Array, self).error(instance, value, error, extra)
+            super(Array, self).error(instance, value, error_class, extra)
         if isinstance(value, (list, tuple)):
             val_description = 'A {typ} of length {len}'.format(
                 typ=value.__class__.__name__,
@@ -127,23 +141,30 @@ class Array(Property):
                 shp=value.shape,
                 typ=value.dtype
             )
-        raise error(
-            "The '{name}' property of a {cls} instance must be {info}. "
-            "{desc} was specified. {extra}".format(
+
+        if instance is None:
+            prefix = '{} property'.format(self.__class__.__name__)
+        else:
+            prefix = "The '{name}' property of a {cls} instance".format(
                 name=self.name,
                 cls=instance.__class__.__name__,
-                info=self.info(),
+            )
+        raise error_class(
+            '{prefix} must be {info}. {desc} was specified. {extra}'.format(
+                prefix=prefix,
+                info=self.info,
                 desc=val_description,
                 extra=extra,
             )
         )
 
-    def deserialize(self, value, trusted=False, **kwargs):
+    def deserialize(self, value, **kwargs):
         """De-serialize the property value from JSON
 
         If no deserializer has been registered, this converts the value
         to the wrapper class with given dtype.
         """
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
@@ -159,7 +180,7 @@ class Array(Property):
         def _recurse_list(val):
             if len(val) > 0 and isinstance(val[0], list):
                 return [_recurse_list(v) for v in val]
-            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]  #pylint: disable=no-member
+            return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]
         return _recurse_list(value.tolist())
 
     @staticmethod
@@ -209,16 +230,28 @@ class BaseVector(Array):
             except ZeroDivisionError:
                 self.error(
                     instance, value,
-                    error=ZeroDivisionError,
+                    error_class=ZeroDivisionError,
                     extra='The vector must have a length specified.'
                 )
         return value
 
 
 class Vector3(BaseVector):
-    """3D vector property"""
+    """Property for :class:`3D vectors<vectormath.vector.Vector3>`
 
-    info_text = 'a 3D Vector'
+    These Vectors are of shape (3,) and dtype float. In addition to
+    length-3 arrays, these properties accept strings including: 'zero', 'x',
+    'y', 'z', '-x', '-y', '-z', 'east', 'west', 'north', 'south', 'up',
+    and 'down'.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
+
+    class_info = 'a 3D Vector'
 
     @property
     def wrapper(self):
@@ -250,9 +283,20 @@ class Vector3(BaseVector):
 
 
 class Vector2(BaseVector):
-    """2D vector property"""
+    """Property for :class:`2D vectors <vectormath.vector.Vector2>`
 
-    info_text = 'a 2D Vector'
+    These Vectors are of shape (2,) and dtype float. In addition to
+    length-2 arrays, these properties accept strings including: 'zero', 'x',
+    'y', '-x', '-y', 'east', 'west', 'north', and 'south'.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
+
+    class_info = 'a 2D Vector'
 
     @property
     def wrapper(self):
@@ -287,9 +331,21 @@ class Vector2(BaseVector):
 
 
 class Vector3Array(BaseVector):
-    """3D vector array property"""
+    """Property for an :class:`array of 3D vectors <vectormath.vector.Vector3Array>`
 
-    info_text = 'a list of Vector3'
+    This array of vectors are of shape ('*', 3) and dtype float. In addition
+    to an array of this shape, these properties accept a list of strings
+    including: 'zero', 'x', 'y', 'z', '-x', '-y', '-z', 'east', 'west',
+    'north', 'south', 'up', and 'down'.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, all vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
+
+    class_info = 'a list of Vector3'
 
     @property
     def wrapper(self):
@@ -327,9 +383,21 @@ class Vector3Array(BaseVector):
 
 
 class Vector2Array(BaseVector):
-    """2D vector array property"""
+    """Property for an :class:`array of 2D vectors <vectormath.vector.Vector2Array>`
 
-    info_text = 'a list of Vector2'
+    This array of vectors are of shape ('*', 2) and dtype float. In addition
+    to an array of this shape, these properties accept a list of strings
+    including:  'zero', 'x', 'y', '-x', '-y', 'east', 'west', 'north',
+    and 'south'.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **length** - On validation, all vectors are scaled to this length. If
+      None (the default), vectors are not scaled
+    """
+
+    class_info = 'a list of Vector2'
 
     @property
     def wrapper(self):
@@ -338,7 +406,7 @@ class Vector2Array(BaseVector):
 
     @property
     def shape(self):
-        """Vector3Array is shape n x 2"""
+        """Vector2Array is shape n x 2"""
         return ('*', 2)
 
     def _length_array(self, value):

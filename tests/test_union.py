@@ -86,6 +86,18 @@ class TestUnion(unittest.TestCase):
 
         assert HasIntAndList._props['myints'].deserialize(None) is None
 
+        union_prop = properties.Union(
+            doc='',
+            props=[properties.Instance('', HasDummyUnion),
+                   properties.String('')]
+        )
+        assert union_prop.equal('hi', 'hi')
+        hdu = HasDummyUnion()
+        assert union_prop.equal(hdu, hdu)
+        assert union_prop.equal(hdu, HasDummyUnion())
+        assert not union_prop.equal(hdu, 'hi')
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -18,6 +18,8 @@ from .base import (
     HasProperties,
     Instance,
     List,
+    Set,
+    Tuple,
     Union,
 )
 
@@ -26,10 +28,12 @@ from .basic import (
     Color,
     Complex,
     DateTime,
+    File,
     Float,
     GettableProperty,
     Integer,
     Property,
+    Renamed,
     String,
     StringChoice,
     Uuid,
@@ -61,10 +65,22 @@ try:
 except ImportError:
     pass
 
-from .utils import everything, undefined, filter_props
-from .handlers import observer, validator
+from .handlers import (
+    listeners_disabled,
+    observer,
+    observers_disabled,
+    validator,
+    validators_disabled,
+)
+from .utils import (
+    everything,
+    filter_props,
+    SelfReferenceError,
+    stop_recursion_with,
+    undefined,
+)
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 __author__ = '3point Science'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2016 3point Science,'
+__copyright__ = 'Copyright 2017 3point Science,'

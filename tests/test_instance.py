@@ -97,6 +97,16 @@ class TestInstance(unittest.TestCase):
 
         assert hf.serialize(include_class=False) == {'myfloatinst': 0.5}
 
+        sc = SomeClass()
+        assert properties.Instance('', SomeClass).equal(sc, sc)
+        assert not properties.Instance('', SomeClass).equal(sc, SomeClass())
+
+        hia = HasIntA()
+        assert properties.Instance('', HasIntA).equal(hia, hia)
+        assert properties.Instance('', HasIntA).equal(HasIntA(), HasIntA())
+        assert not properties.Instance('', HasIntA).equal(HasIntA(5),
+                                                          HasIntA(1))
+
 
 if __name__ == '__main__':
     unittest.main()
