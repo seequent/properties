@@ -84,7 +84,16 @@ def properties_operator(cls, name):
 
 @add_properties_callbacks
 class PropertiesList(list):
-    """Custom list used by List property with HasProperties notifications"""
+    """List for :class:`List <properties.List>` Property with notifications
+
+    This class keeps track of the Property and HasProperties
+    instance it is held by. When the list is modified, it is set again
+    rather than mutating. This decreases performance but allows notifications
+    to fire on the HasProperties instance.
+
+    If a **PropertiesList** is not part of a HasProperties
+    class, its behavior is identical to a built-in :code:`list`.
+    """
 
     _mutators = ['append', 'extend', 'insert', 'pop', 'remove', 'clear',
                  'sort', 'reverse', '__setitem__', '__delitem__',
@@ -95,7 +104,16 @@ class PropertiesList(list):
 
 @add_properties_callbacks
 class PropertiesSet(set):
-    """Custom set used by Set property with HasProperties notifications"""
+    """Set for :class:`Set <properties.Set>` Property with notifications
+
+    This class keeps track of the Property and HasProperties
+    instance it is held by. When the set is modified, it is set again
+    rather than mutating. This decreases performance but allows notifications
+    to fire on the HasProperties instance.
+
+    If a **PropertiesSet** is not part of a HasProperties
+    class, its behavior is identical to a built-in :code:`set`.
+    """
 
     _mutators = ['add', 'clear', 'difference_update', 'discard',
                  'intersection_update', 'pop', 'remove',
@@ -111,16 +129,22 @@ OBSERVABLE = {list: PropertiesList, set: PropertiesSet}
 
 
 class Tuple(basic.Property):
-    """Tuple property, where each entry is another property type
+    """Property for tuples, where each entry is another Property type
 
-    The tuple entry property type must be specified in the constructor.
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    Allowed keywords:
-
-    * **prop** - type of property allowed in the tuple. prop may also be a
-      HasProperties class.
-
-    * **min_length**/**max_length** - valid length limits of the tuple
+    * **prop** - Property instance that specifies the Property type of
+      each entry in the **Tuple**. A HasProperties class may also be
+      specified; this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
+    * **min_length** - Minimum valid length of the tuple, inclusive. If None
+      (the default), there is no minimum length.
+    * **max_length** - Maximum valid length of the tuple, inclusive. If None
+      (the default), there is no maximum length.
+    * **coerce** - If False, input must be a tuple. If True, container
+      types are coerced to a tuple and other non-container values become a
+      length-1 tuple. Default value is False.
     """
 
     class_info = 'a tuple'
@@ -198,10 +222,9 @@ class Tuple(basic.Property):
     @property
     def info(self):
         """Supplemental description of the list, with length and type"""
-        itext = '{class_info} (each item is {prop_info})'.format(
-            class_info=self.class_info,
-            prop_info=self.prop.info,
-        )
+        itext = self.class_info
+        if self.prop.info:
+            itext += ' (each item is {})'.format(self.prop.info)
         if self.max_length is None and self.min_length is None:
             return itext
         if self.max_length is None:
@@ -257,23 +280,25 @@ class Tuple(basic.Property):
             self.prop.assert_valid(instance, val)
         return True
 
-    def serialize(self, value, include_class=True, **kwargs):
+    def serialize(self, value, **kwargs):
         """Return a serialized copy of the tuple"""
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
         if self.serializer is not None:
             return self.serializer(value, **kwargs)
         if value is None:
             return None
-        serial_list = [self.prop.serialize(val, include_class, **kwargs)
+        serial_list = [self.prop.serialize(val, **kwargs)
                        for val in value]
         return serial_list
 
-    def deserialize(self, value, trusted=False, **kwargs):
+    def deserialize(self, value, **kwargs):
         """Return a deserialized copy of the tuple"""
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
-        output_list = [self.prop.deserialize(val, trusted, **kwargs)
+        output_list = [self.prop.deserialize(val, **kwargs)
                        for val in value]
         return self._class_default(output_list)
 
@@ -317,14 +342,28 @@ class Tuple(basic.Property):
 
 
 class List(Tuple):
-    """List property where each entry is another property type
+    """Property for lists, where each entry is another Property type
 
-    Allowed keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **observe_mutations** - if True, the underlying storage class will
-      be PropertiesList, not builtin list. The benefit of PropertiesList
-      is that all mutations will trigger HasProperties change notifications.
-      The drawback is slower performance as copies of the list are made.
+    * **prop** - Property instance that specifies the Property type of
+      each entry in the **List**. A HasProperties class may also be specified;
+      this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
+    * **min_length** - Minimum valid length of the list, inclusive. If None
+      (the default), there is no minimum length.
+    * **max_length** - Maximum valid length of the list, inclusive. If None
+      (the default), there is no maximum length.
+    * **coerce** - If False, input must be a list. If True, container
+      types are coerced to a list and other non-container values become a
+      length-1 list. Default value is False.
+    * **observe_mutations** - If False, the underlying storage class is
+      a built-in :code:`list`. If True, the underlying storage class will be
+      :class:`PropertiesList <properties.base.containers.PropertiesList>`.
+      The benefit of PropertiesList is that all mutations
+      will trigger HasProperties change notifications. The drawback is
+      slower performance as copies of the list are made on every operation.
     """
 
     class_info = 'a list'
@@ -361,7 +400,29 @@ class List(Tuple):
 
 
 class Set(List):
-    """Basic Set property where each entry is another property type"""
+    """Property for sets, where each entry is another Property type
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **prop** - Property instance that specifies the Property type of
+      each entry in the **Set**. A HasProperties class may also be specified;
+      this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
+    * **min_length** - Minimum valid length of the set, inclusive. If None
+      (the default), there is no minimum length.
+    * **max_length** - Maximum valid length of the set, inclusive. If None
+      (the default), there is no maximum length.
+    * **coerce** - If False, input must be a set. If True, container
+      types are coerced to a set and other non-container values become a
+      length-1 set. Default value is False.
+    * **observe_mutations** - If False, the underlying storage class is
+      a built-in :code:`set`. If True, the underlying storage class will be
+      :class:`PropertiesSet <properties.base.containers.PropertiesSet>`.
+      The benefit of PropertiesSet is that all mutations
+      will trigger HasProperties change notifications. The drawback is
+      slower performance as copies of the set are made on every operation.
+    """
 
     class_info = 'a set'
     _class_default = set

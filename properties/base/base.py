@@ -22,10 +22,31 @@ else:
 
 
 class PropertyMetaclass(type):
-    """PropertyMetaClass to set up behaviour of HasProperties classes
+    """Metaclass to establish behavior of **HasProperties** classes
 
-    Establish property dictionary, set up listeners, auto-generate
-    docstrings, and add HasProperties class to Registry
+    On class construction:
+
+    * Build Property dictionary from the class dictionary and the base
+      classes' Properties.
+    * Build listener dictionaries from class dictionary and the base
+      classes' listeners.
+    * Check Property names are not private.
+    * Ensure the Property names referred to by
+      :ref:`Renamed Properties <renamed>` and
+      handlers are valid.
+    * Build class docstring.
+    * Construct default value dictionary, and check that any provided
+      defaults are valid.
+    * Add the class to the **HasProperties** :code:`_REGISTRY` or the
+      closest parent class with a new registry defined
+
+    On class instantiation:
+
+    * Initialize private backend dictionary where Property values are stored.
+    * Initialize private listener dictionary and set the listeners on the
+      class instance.
+    * Set all the default values on the class without firing change
+      notifications.
     """
 
     def __new__(mcs, name, bases, classdict):                                  #pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -82,6 +103,9 @@ class PropertyMetaclass(type):
                 raise AttributeError(
                     'Property names cannot be private: {}'.format(key)
                 )
+            if isinstance(prop, basic.Renamed) and prop.new_name not in _props:
+                raise TypeError('Invalid new name for renamed property: '
+                                '{}'.format(prop.new_name))
             prop.name = key
             classdict[key] = prop.get_property()
 
@@ -124,7 +148,7 @@ class PropertyMetaclass(type):
 
         # Build the documentation based on above sorting
         if req:
-            doc_str += '\n\n**Required Properties:**\n\n' + '\n\n'.join(
+            doc_str += '\n\n**Required Properties:**\n\n' + '\n'.join(
                 ('* ' + _props[key].sphinx() for key in req)
             )
         if opt:
@@ -132,7 +156,7 @@ class PropertyMetaclass(type):
                 ('* ' + _props[key].sphinx() for key in opt)
             )
         if imm:
-            doc_str += '\n\n**Immutable Attributes:**\n\n' + '\n'.join(
+            doc_str += '\n\n**Other Properties:**\n\n' + '\n'.join(
                 ('* ' + _props[key].sphinx() for key in imm)
             )
         classdict['__doc__'] = doc_str
@@ -155,9 +179,10 @@ class PropertyMetaclass(type):
                 )
             try:
                 if callable(value):
-                    newcls._props[key].validate(None, value())
-                else:
-                    newcls._props[key].validate(None, value)
+                    value = value()
+                if value is utils.undefined:
+                    continue
+                newcls._props[key].validate(None, value)
             except ValueError:
                 raise AttributeError(
                     "Invalid default for property '{}'".format(key)
@@ -170,7 +195,12 @@ class PropertyMetaclass(type):
         return newcls
 
     def __call__(cls, *args, **kwargs):
-        """Here additional instance setup happens before init"""
+        """Here additional instance setup happens here before init is called
+
+        This allows subclasses of :code:`HasProperties` to override
+        the init method without worrying about breaking setup.
+        """
+
         obj = cls.__new__(cls, *args, **kwargs)
         obj._backend = dict()
         obj._listeners = dict()
@@ -200,7 +230,22 @@ class PropertyMetaclass(type):
 
 
 class HasProperties(with_metaclass(PropertyMetaclass, object)):
-    """HasProperties class with properties"""
+    """Base class to enable :ref:`property` behavior
+
+    Classes that inherit **HasProperties** need simply to declare the
+    Properties they need. **HasProperties** will save these Properties as
+    :code:`_props` on the class. Property values will be saved to
+    :code:`_backend` on the instance.
+
+    **HasProperties** classes also store a registry of all
+    **HasProperties** classes in as :code:`_REGISTRY`. If a subclass
+    re-declares :code:`_REGISTRY`, the subsequent subclasses will be saved
+    to this new registry.
+
+    The :class:`PropertyMetaclass <properties.base.PropertyMetaclass>`
+    contains more information about what goes into **HasProperties**
+    class construction and validation.
+    """
 
     _defaults = dict()
     _REGISTRY = dict()
@@ -262,7 +307,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     @utils.stop_recursion_with(True)
     def validate(self):
-        """Call all the registered ClassValidators"""
+        """Call all registered class validator methods
+
+        These are all methods decorated with :code:`@properties.validator`.
+        Validator methods are expected to raise an error if they fail.
+        """
         for val in itervalues(self._class_validators):
             val.func(self)
         return True
@@ -287,9 +336,26 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         utils.SelfReferenceError('Object contains unserializable self reference')
     )
     def serialize(self, include_class=True, **kwargs):
-        """Serializes a HasProperties instance to JSON"""
-        data = ((k, v.serialize(self._get(v.name), include_class, **kwargs))
-                for k, v in iteritems(self._props))
+        """Serializes a **HasProperties** instance to dictionary
+
+        This uses the Property serializers to serialize all Property values
+        to a JSON-compatible dictionary. Properties that are undefined are
+        not included. If the **HasProperties** instance contains a reference
+        to itself, a :code:`properties.SelfReferenceError` will be raised.
+
+        **Parameters**:
+
+        * **include_class** - If True (the default), the name of the class
+          will also be saved to the serialized dictionary under key
+          :code:`'__class__'`
+        * Any other keyword arguments will be passed through to the Property
+          serializers.
+        """
+        data = (
+            (k, v.serialize(
+                self._get(v.name), include_class=include_class, **kwargs
+            )) for k, v in iteritems(self._props)
+        )
         json_dict = {k: v for k, v in data if v is not None}
         if include_class:
             json_dict.update({'__class__': self.__class__.__name__})
@@ -297,7 +363,28 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     @classmethod
     def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
-        """Creates new HasProperties instance from JSON dictionary"""
+        """Creates **HasProperties** instance from serialized dictionary
+
+        This uses the Property deserializers to deserialize all
+        JSON-compatible dictionary values into their corresponding Property
+        values on a new instance of a **HasProperties** class. Extra keys
+        in the dictionary that do not correspond to Properties will be
+        ignored.
+
+        **Parameters**:
+
+        * **value** - Dictionary to deserialize new instance from.
+        * **trusted** - If True (and if the input dictionary has
+          :code:`'__class__'` keyword and this class is in the registry), the
+          new **HasProperties** class will come from the dictionary.
+          If False (the default), only the **HasProperties** class this
+          method is called on will be constructed.
+        * **verbose** - Raise warnings if :code:`'__class__'` is not found in
+          the registry or of there are unused Property values in the input
+          dictionary. Default is True.
+        * Any other keyword arguments will be passed through to the Property
+          deserializers.
+        """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
         if trusted and '__class__' in value:
@@ -318,7 +405,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             ), RuntimeWarning)
         newstate = {}
         for key, val in iteritems(state):
-            newstate[key] = cls._props[key].deserialize(val, trusted, **kwargs)
+            newstate[key] = cls._props[key].deserialize(
+                val, trusted=trusted, **kwargs
+            )
         mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
             newinst = cls(**mutable)
@@ -342,7 +431,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     @utils.stop_recursion_with(False)
     def equal(self, other):
-        """Determine if two HasProperties instances are equivalent"""
+        """Determine if two **HasProperties** instances are equivalent
+
+        Equivalence is determined by checking if all Property values on
+        two instances are equal, using :code:`Property.equal`.
+        """
         if self is other:
             return True
         if not isinstance(other, self.__class__):
