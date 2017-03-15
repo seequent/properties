@@ -80,7 +80,7 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.0'
+__version__ = '0.3.1b1'
 __author__ = '3point Science'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2017 3point Science,'

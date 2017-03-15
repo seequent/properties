@@ -201,7 +201,7 @@ class PropertyMetaclass(type):
         the init method without worrying about breaking setup.
         """
 
-        obj = cls.__new__(cls)
+        obj = cls.__new__(cls, *args, **kwargs)
         obj._backend = dict()
         obj._listeners = dict()
 
