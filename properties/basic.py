@@ -341,7 +341,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         """Property class name formatted for Sphinx doc linking"""
         return ':class:`{cls} <{pref}.{cls}>`'.format(
             cls=self.__class__.__name__,
-            pref=self.__module__
+            pref='properties'
         )
 
     def __call__(self, func):
