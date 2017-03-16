@@ -97,11 +97,11 @@ class TestBasic(unittest.TestCase):
 
         assert WithDocOrder().__doc__ == (
             '\n\n**Required Properties:**\n\n'
-            '* **myprop1** (:class:`Property <properties.basic.Property>`): '
+            '* **myprop1** (:class:`Property <properties.Property>`): '
             'empty property\n'
-            '* **myprop3** (:class:`Property <properties.basic.Property>`): '
+            '* **myprop3** (:class:`Property <properties.Property>`): '
             'empty property\n'
-            '* **myprop2** (:class:`Property <properties.basic.Property>`): '
+            '* **myprop2** (:class:`Property <properties.Property>`): '
             'empty property'
         )
 

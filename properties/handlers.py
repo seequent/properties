@@ -66,8 +66,8 @@ class listeners_disabled(object):                                              #
 class validators_disabled(listeners_disabled):                                 #pylint: disable=invalid-name, too-few-public-methods
     """Context manager for disabling all property change validators
 
-    This context manager behaves like :code:`listeners_disabled`, but
-    only affects HasProperties methods decorated with :code:`@validator`
+    This context manager behaves like :class:`properties.listeners_disabled`,
+    but only affects HasProperties methods decorated with :code:`@validator`
     """
 
     def __init__(self):
@@ -77,8 +77,8 @@ class validators_disabled(listeners_disabled):                                 #
 class observers_disabled(listeners_disabled):                                  #pylint: disable=invalid-name, too-few-public-methods
     """Context manager for disabling all property change observers
 
-    This context manager behaves like :code:`listeners_disabled`, but
-    only affects HasProperties methods decorated with :code:`@observer`
+    This context manager behaves like :class:`properties.listeners_disabled`,
+    but only affects HasProperties methods decorated with :code:`@observer`
     """
 
     def __init__(self):

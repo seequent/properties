@@ -15,7 +15,7 @@ creating easy-to-read, linked documentation.
 
     Properties are documented in three groups: Required, Optional,
     and Other. Within these groups, they are in alphabetical order by
-    default. This can be overridden by defining `_doc_order`, a list
+    default. This can be overridden by defining :code:`_doc_order`, a list
     of Property names in the desired order, in a HasProperties class.
     However, this alternative order only applies within the
     Required/Optional/Other groupings; it does not supersede these groups.
