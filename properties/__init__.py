@@ -9,10 +9,6 @@ import properties
 class Profile(properties.HasProperties):
     name = properties.String('What is your name?')
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from .base import (
     HasProperties,
@@ -82,7 +78,7 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.2'
-__author__ = '3point Science'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2017 3point Science,'
+__version__ = u'0.3.2'
+__author__ = u'3point Science'
+__license__ = u'MIT'
+__copyright__ = u'Copyright 2017 3point Science,'
