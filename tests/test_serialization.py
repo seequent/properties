@@ -104,7 +104,7 @@ class TestSerialization(unittest.TestCase):
 
         um1 = UidModel()
         um2 = UidModel.deserialize(um1.serialize())
-        assert um1.equal(um2)
+        assert properties.equal(um1, um2)
 
     def test_none_serial(self):
 

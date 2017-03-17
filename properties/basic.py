@@ -511,7 +511,7 @@ class DynamicProperty(GettableProperty):                                       #
         return getattr(self, '_del_func', None)
 
     def get_property(self):
-        """Establishes the dynamic behaviour of Property values"""
+        """Establishes the dynamic behavior of Property values"""
         scope = self
 
         def fget(self):
