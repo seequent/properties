@@ -468,3 +468,19 @@ def equal(value_a, value_b):
             continue
         return False
     return True
+
+
+def copy(value, **kwargs):
+    """Return a copy of a **HasProperties** instance
+
+    A copy is produced by serializing the HasProperties instance then
+    deserializing it to a new instance. Therefore, if any properties
+    cannot be serialized/deserialized, :code:`copy` will fail. Any
+    keyword arguments will be passed through to both :code:`serialize`
+    and :code:`deserialize`.
+    """
+
+    if not isinstance(value, HasProperties):
+        raise ValueError('properties.copy may only be used to copy'
+                         'HasProperties instances')
+    return value.__class__.deserialize(value.serialize(**kwargs), **kwargs)
