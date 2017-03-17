@@ -21,6 +21,8 @@ from .base import (
     Set,
     Tuple,
     Union,
+    copy,
+    equal,
 )
 
 from .basic import (

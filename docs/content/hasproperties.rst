@@ -4,11 +4,23 @@ HasProperties
 =============
 
 .. autoclass:: properties.HasProperties
-    :members: validate, serialize, deserialize, equal
+    :members: validate, serialize, deserialize
 
 .. autoclass:: properties.base.PropertyMetaclass
 
-.. rubric:: HasProperties Features
+|
+|
+
+.. rubric:: Functions that act on HasProperties instances:
+
+.. autofunction:: properties.copy
+
+.. autofunction:: properties.equal
+
+|
+|
+
+.. rubric:: HasProperties features:
 
 * :ref:`documentation` - Classes are auto-documented with
   a sphinx-style docstring.
