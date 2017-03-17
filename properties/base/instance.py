@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import json
 from six import PY2
 
-from .base import HasProperties
+from .base import HasProperties, equal
 from .. import basic
 from .. import utils
 
@@ -144,7 +144,7 @@ class Instance(basic.Property):
 
     def equal(self, value_a, value_b):
         if isinstance(value_a, HasProperties):
-            return value_a.equal(value_b)
+            return equal(value_a, value_b)
         return value_a is value_b
 
     @staticmethod

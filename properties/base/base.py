@@ -436,12 +436,35 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         Equivalence is determined by checking if all Property values on
         two instances are equal, using :code:`Property.equal`.
         """
-        if self is other:
-            return True
-        if not isinstance(other, self.__class__):
-            return False
-        for prop in itervalues(self._props):
-            if prop.equal(getattr(self, prop.name), getattr(other, prop.name)):
-                continue
-            return False
+        warn('HasProperties.equal has been depricated in favor of '
+             'properties.equal and will be removed in the next release',
+             FutureWarning)
+        return equal(self, other)
+
+
+@utils.stop_recursion_with(False)
+def equal(value_a, value_b):
+    """Determine if two **HasProperties** instances are equivalent
+
+    Equivalence is determined by checking if (1) the two instances are
+    the same class and (2) all Property values on two instances are
+    equal, using :code:`Property.equal`. If the two values are the same
+    HasProperties instance (eg. :code:`value_a is value_b`) this method
+    returns True. Finally, if either value is not a HasProperties
+    instance, equality is simply checked with ==.
+    """
+    if (
+            not isinstance(value_a, HasProperties) or
+            not isinstance(value_b, HasProperties)
+    ):
+        return value_a == value_b
+    if value_a is value_b:
         return True
+    if value_a.__class__ is not value_b.__class__:
+        return False
+    for prop in itervalues(value_a._props):
+        if prop.equal(getattr(value_a, prop.name),
+                      getattr(value_b, prop.name)):
+            continue
+        return False
+    return True
