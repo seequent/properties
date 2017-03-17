@@ -165,7 +165,7 @@ class Instance(basic.Property):
     def from_json(value, **kwargs):
         """Instance properties cannot statically convert from JSON"""
         raise TypeError("Instance properties cannot statically convert "
-                        "values from JSON. 'eserialize' must be used on an "
+                        "values from JSON. 'deserialize' must be used on an "
                         "instance of Instance Property instead, and if the "
                         "instance_class is not a HasProperties subclass a "
                         "custom deserializer must be registered")
