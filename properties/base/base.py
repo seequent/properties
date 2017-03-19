@@ -452,6 +452,12 @@ def equal(value_a, value_b):
     HasProperties instance (eg. :code:`value_a is value_b`) this method
     returns True. Finally, if either value is not a HasProperties
     instance, equality is simply checked with ==.
+
+    .. note::
+
+        HasProperties objects with recursive self-references will not
+        evaluate to equal, even if their property values and structure
+        are equivalent.
     """
     if (
             not isinstance(value_a, HasProperties) or
