@@ -20,6 +20,7 @@ from .base import (
     List,
     Set,
     Tuple,
+    UidModel,
     Union,
 )
 
