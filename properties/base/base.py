@@ -8,7 +8,7 @@ from collections import OrderedDict
 import pickle
 from warnings import warn
 
-from six import iteritems, itervalues, PY2, with_metaclass
+from six import iteritems, itervalues, PY2, text_type, with_metaclass
 
 from .. import basic
 from .. import handlers
@@ -254,8 +254,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         # Set the keyword arguments with change notifications
         for key, val in iteritems(kwargs):
             if not hasattr(self, key) and key not in self._props.keys():
-                raise AttributeError("Keyword input '{}' is not a known "
-                                     "property or attribute".format(key))
+                raise AttributeError("Keyword input '{}' is not a "
+                                     "known property or attribute of "
+                                     "{}".format(key, self.__class__.__name__))
             setattr(self, key, val)
 
     def _get(self, name):
@@ -384,6 +385,35 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           dictionary. Default is True.
         * Any other keyword arguments will be passed through to the Property
           deserializers.
+
+        .. note::
+
+            The new instance is constructed with deserialized properties
+            provided as keyword arguments (ie :code:`cls(**properties)`
+            is called). This means that deserialize will fail if the
+            init method has been overridden to require input parameters
+            that are not property values.
+        """
+        cls, state = cls._deserialize_setup(value, trusted, verbose)
+        newstate = {}
+        for key, val in iteritems(state):
+            newstate[key] = cls._props[key].deserialize(
+                val, trusted=trusted, **kwargs
+            )
+        mutable, immutable = utils.filter_props(cls, newstate, False)
+        with handlers.listeners_disabled():
+            newinst = cls(**mutable)
+        for key, val in iteritems(immutable):
+            valid_val = cls._props[key].validate(newinst, val)
+            newinst._backend[key] = valid_val
+        return newinst
+
+    @classmethod
+    def _deserialize_setup(cls, value, trusted, verbose):
+        """Helper method to review the deserialization dictionary
+
+        Returns the class to deserialize to which may differ from the
+        input cls and a filtered dictionary with the deserialized properties.
         """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
@@ -403,18 +433,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             warn('Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
             ), RuntimeWarning)
-        newstate = {}
-        for key, val in iteritems(state):
-            newstate[key] = cls._props[key].deserialize(
-                val, trusted=trusted, **kwargs
-            )
-        mutable, immutable = utils.filter_props(cls, newstate, False)
-        with handlers.listeners_disabled():
-            newinst = cls(**mutable)
-        for key, val in iteritems(immutable):
-            valid_val = cls._props[key].validate(newinst, val)
-            newinst._backend[key] = valid_val
-        return newinst
+        return cls, state
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):
@@ -445,3 +464,100 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 continue
             return False
         return True
+
+
+class UidModel(HasProperties):
+    """UidModel is a HasProperties class that includes unique ID
+
+    Adding a UID to HasProperties allows serialization of more complex
+    structures, including recursive self-references.
+
+    .. note::
+
+        The UID value is ignored when determining if two UidModels are
+        equal, and the UID does not persist on deserializationl"""
+
+    _REGISTRY = dict()
+
+    uid = basic.Uuid(
+        'Unique identifier',
+        serializer=lambda val, **kwargs: None,
+        deserializer=lambda val, **kwargs: None
+    )
+    uid.equal = lambda *args: True
+
+    def serialize(self, include_class=True, registry=None, **kwargs):
+        """Serialize nested UidModels to a flat dictionary with pointers
+
+        **Parameters**:
+
+        * **include_class** - If True (the default), the name of the class
+          will also be saved to the serialized dictionary under key
+          :code:`'__class__'`
+        * **registry** - The flat dictionary to save pointer references.
+          If None (the default), a new dictionary will be created.
+        * Any other keyword arguments will be passed through to the Property
+          serializers.
+        """
+        if registry is None:
+            registry = dict()
+            root = True
+        else:
+            root = False
+        key = text_type(self.uid)
+        if key not in registry:
+            registry.update({key: None})
+            registry.update({key: super(UidModel, self).serialize(
+                include_class=include_class,
+                registry=registry,
+                **kwargs
+            )})
+        if root:
+            return registry
+        return key
+
+    @classmethod
+    def deserialize(cls, uid, registry, trusted=False, verbose=True, **kwargs):
+        """Deserialize nested UidModels from flat pointer dictionary
+
+        **Parameters**
+
+        * **uid** - The unique ID key that determines where deserialization
+          begins
+        * **registry** - Flat pointer dictionary produced by
+          :code:`serialize`. The registry is mutated during deserialziaton;
+          values are replaced by UidModel objects.
+        * **trusted** - If True (and if the input dictionary has
+          :code:`'__class__'` keyword and this class is in the registry), the
+          new **HasProperties** class will come from the dictionary.
+          If False (the default), only the **HasProperties** class this
+          method is called on will be constructed.
+        * **verbose** - Raise warnings if :code:`'__class__'` is not found in
+          the registry or of there are unused Property values in the input
+          dictionary. Default is True.
+        * Any other keyword arguments will be passed through to the Property
+          deserializers.
+
+        .. note::
+
+            UidModel instances are constructed with no input arguments
+            (ie :code:`cls()` is called). This means deserialization will
+            fail if the init method has been overridden to require
+            input parameters.
+        """
+        if uid not in registry:
+            raise ValueError('uid not found: {}'.format(uid))
+        if not isinstance(registry[uid], UidModel):
+            cls, state = cls._deserialize_setup(registry[uid], trusted, verbose)
+            new_inst = cls()
+            registry.update({uid: new_inst})
+            for key, val in iteritems(state):
+                new_val = cls._props[key].deserialize(
+                    value=val,
+                    registry=registry,
+                    trusted=trusted,
+                    **kwargs
+                )
+                valid_val = cls._props[key].validate(new_inst, new_val)
+                new_inst._backend[key] = valid_val
+        return registry[uid]
