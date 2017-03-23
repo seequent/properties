@@ -267,14 +267,20 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             listener.func(self, change)
 
     def _set(self, name, value):
-        prev = self._get(name)
+        prev = self._backend.get(name, utils.undefined)
         change = dict(name=name, previous=prev, value=value, mode='validate')
         self._notify(change)
         if change['value'] is utils.undefined:
             self._backend.pop(name, None)
         else:
             self._backend[name] = change['value']
-        if not self._props[name].equal(prev, change['value']):
+        if prev is utils.undefined and change['value'] is utils.undefined:
+            pass
+        elif(
+                prev is utils.undefined or
+                change['value'] is utils.undefined or
+                not self._props[name].equal(prev, change['value'])
+        ):
             change.update(name=name, previous=prev, mode='observe_change')
             self._notify(change)
         change.update(name=name, previous=prev, mode='observe_set')
