@@ -247,8 +247,17 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return True
 
     def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
-        """Check if two valid Property values are equal"""
-        return value_a == value_b
+        """Check if two valid Property values are equal
+
+        .. note::
+
+            This method assumes that :code:`None` and
+            :code:`properties.undefined` are never passed in as values
+        """
+        equal = value_a == value_b
+        if hasattr(equal, '__iter__'):
+            return all(equal)
+        return equal
 
     def get_property(self):
         """Establishes access of GettableProperty values"""
