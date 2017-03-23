@@ -108,6 +108,13 @@ class TestBasic(unittest.TestCase):
         class NoMoreDocOrder(WithDocOrder):
             _doc_order = None
 
+        assert properties.Property('').equal(5, 5)
+        assert not properties.Property('').equal(5, 'hi')
+        assert properties.Property('').equal(np.array([1., 2.]),
+                                             np.array([1., 2.]))
+        assert not properties.Property('').equal(np.array([1., 2.]),
+                                                 np.array([3., 4.]))
+
     def test_bool(self):
 
         class BoolOpts(properties.HasProperties):
