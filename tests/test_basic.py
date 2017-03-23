@@ -83,7 +83,9 @@ class TestBasic(unittest.TestCase):
             assert issubclass(w[0].category, FutureWarning)
 
         assert properties.equal(PropOpts(), PropOpts())
-        assert not PropOpts(myprop=5).equal(PropOpts())
+        assert properties.equal(PropOpts(myprop=5), PropOpts(myprop=5))
+        assert not properties.equal(PropOpts(myprop=5), PropOpts())
+        assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
 
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):

@@ -469,6 +469,12 @@ def equal(value_a, value_b):
     if value_a.__class__ is not value_b.__class__:
         return False
     for prop in itervalues(value_a._props):
+        prop_a = getattr(value_a, prop.name)
+        prop_b = getattr(value_b, prop.name)
+        if prop_a is None and prop_b is None:
+            continue
+        if prop_a is None or prop_b is None:
+            return False
         if prop.equal(getattr(value_a, prop.name),
                       getattr(value_b, prop.name)):
             continue
