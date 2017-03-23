@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import json
 from six import PY2
 
-from .base import HasProperties
+from .base import HasProperties, equal
 from .. import basic
 from .. import utils
 
@@ -143,9 +143,7 @@ class Instance(basic.Property):
         return self.from_json(value, **kwargs)
 
     def equal(self, value_a, value_b):
-        if isinstance(value_a, HasProperties):
-            return value_a.equal(value_b)
-        return value_a is value_b
+        return equal(value_a, value_b)
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -165,7 +163,7 @@ class Instance(basic.Property):
     def from_json(value, **kwargs):
         """Instance properties cannot statically convert from JSON"""
         raise TypeError("Instance properties cannot statically convert "
-                        "values from JSON. 'eserialize' must be used on an "
+                        "values from JSON. 'deserialize' must be used on an "
                         "instance of Instance Property instead, and if the "
                         "instance_class is not a HasProperties subclass a "
                         "custom deserializer must be registered")

@@ -442,12 +442,63 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         Equivalence is determined by checking if all Property values on
         two instances are equal, using :code:`Property.equal`.
         """
-        if self is other:
-            return True
-        if not isinstance(other, self.__class__):
-            return False
-        for prop in itervalues(self._props):
-            if prop.equal(getattr(self, prop.name), getattr(other, prop.name)):
-                continue
-            return False
+        warn('HasProperties.equal has been depricated in favor of '
+             'properties.equal and will be removed in the next release',
+             FutureWarning)
+        return equal(self, other)
+
+
+@utils.stop_recursion_with(False)
+def equal(value_a, value_b):
+    """Determine if two **HasProperties** instances are equivalent
+
+    Equivalence is determined by checking if (1) the two instances are
+    the same class and (2) all Property values on two instances are
+    equal, using :code:`Property.equal`. If the two values are the same
+    HasProperties instance (eg. :code:`value_a is value_b`) this method
+    returns True. Finally, if either value is not a HasProperties
+    instance, equality is simply checked with ==.
+
+    .. note::
+
+        HasProperties objects with recursive self-references will not
+        evaluate to equal, even if their property values and structure
+        are equivalent.
+    """
+    if (
+            not isinstance(value_a, HasProperties) or
+            not isinstance(value_b, HasProperties)
+    ):
+        return value_a == value_b
+    if value_a is value_b:
         return True
+    if value_a.__class__ is not value_b.__class__:
+        return False
+    for prop in itervalues(value_a._props):
+        prop_a = getattr(value_a, prop.name)
+        prop_b = getattr(value_b, prop.name)
+        if prop_a is None and prop_b is None:
+            continue
+        if prop_a is None or prop_b is None:
+            return False
+        if prop.equal(getattr(value_a, prop.name),
+                      getattr(value_b, prop.name)):
+            continue
+        return False
+    return True
+
+
+def copy(value, **kwargs):
+    """Return a copy of a **HasProperties** instance
+
+    A copy is produced by serializing the HasProperties instance then
+    deserializing it to a new instance. Therefore, if any properties
+    cannot be serialized/deserialized, :code:`copy` will fail. Any
+    keyword arguments will be passed through to both :code:`serialize`
+    and :code:`deserialize`.
+    """
+
+    if not isinstance(value, HasProperties):
+        raise ValueError('properties.copy may only be used to copy'
+                         'HasProperties instances')
+    return value.__class__.deserialize(value.serialize(**kwargs), **kwargs)
