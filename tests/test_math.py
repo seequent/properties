@@ -83,6 +83,14 @@ class TestMath(unittest.TestCase):
                                           np.array([1., 2., 3.]))
         assert not properties.Array('').equal(np.array([1., 2., 3.]),
                                               [1., 2., 3.])
+        assert properties.Array('').equal(np.array([1., 2., np.nan, np.nan]),
+                                          np.array([1., 2., np.nan, np.nan]))
+        assert properties.Array('').equal(np.array([1., 2., np.inf, np.nan]),
+                                          np.array([1., 2., np.inf, np.nan]))
+        assert not properties.Array('').equal(
+            np.array([1., 2., np.nan, np.nan]),
+            np.array([1., 2., np.inf, np.nan])
+        )
 
     def test_vector2(self):
 
