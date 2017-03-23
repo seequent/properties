@@ -68,6 +68,7 @@ Alternatives
 * `traits <https://github.com/enthought/traits>`_ is used by Enthought
 * `traitlets <https://github.com/ipython/traitlets>`_ is used in the Jupyter project
 * `mypy <https://github.com/python/mypy>`_ and `PEP0484 <https://www.python.org/dev/peps/pep-0484/>`_ which document typing but do not include coercion or notifications
+* `numtraits <https://github.com/astrofrog/numtraits>`_ is used in the `astropy <http://www.astropy.org/>`_ community, deals with unit conversion
 
 Connections
 -----------
