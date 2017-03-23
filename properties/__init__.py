@@ -21,6 +21,8 @@ from .base import (
     Set,
     Tuple,
     Union,
+    copy,
+    equal,
 )
 
 from .basic import (
@@ -80,7 +82,13 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 __author__ = '3point Science'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2017 3point Science,'
+
+try:
+    del absolute_import, division, print_function, unicode_literals
+except NameError:
+    # Error cleaning namespace
+    pass

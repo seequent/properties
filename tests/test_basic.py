@@ -77,8 +77,15 @@ class TestBasic(unittest.TestCase):
 
         assert PropOpts(myprop=5).validate()
 
-        assert PropOpts().equal(PropOpts())
-        assert not PropOpts(myprop=5).equal(PropOpts())
+        with warnings.catch_warnings(record=True) as w:
+            assert PropOpts().equal(PropOpts())
+            assert len(w) == 1
+            assert issubclass(w[0].category, FutureWarning)
+
+        assert properties.equal(PropOpts(), PropOpts())
+        assert properties.equal(PropOpts(myprop=5), PropOpts(myprop=5))
+        assert not properties.equal(PropOpts(myprop=5), PropOpts())
+        assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
 
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):
@@ -107,6 +114,13 @@ class TestBasic(unittest.TestCase):
 
         class NoMoreDocOrder(WithDocOrder):
             _doc_order = None
+
+        assert properties.Property('').equal(5, 5)
+        assert not properties.Property('').equal(5, 'hi')
+        assert properties.Property('').equal(np.array([1., 2.]),
+                                             np.array([1., 2.]))
+        assert not properties.Property('').equal(np.array([1., 2.]),
+                                                 np.array([3., 4.]))
 
     def test_bool(self):
 
@@ -641,6 +655,33 @@ class TestBasic(unittest.TestCase):
 
         assert myp.my_int is None
 
+    def test_copy(self):
+
+        class HasProps2(properties.HasProperties):
+            my_list = properties.List('my list', properties.Bool(''))
+            five = properties.GettableProperty('five', default=5)
+            my_array = properties.Vector3Array('my array')
+
+        class HasProps1(properties.HasProperties):
+            my_hp2 = properties.Instance('my HasProps2', HasProps2)
+            my_union = properties.Union(
+                'string or int',
+                (properties.String(''), properties.Integer(''))
+            )
+
+        hp1 = HasProps1(
+            my_hp2=HasProps2(
+                my_list=[True, True, False],
+                my_array=[[1., 2., 3.], [4., 5., 6.]],
+            ),
+            my_union=10,
+        )
+        hp1_copy = properties.copy(hp1)
+        assert properties.equal(hp1, hp1_copy)
+        assert hp1 is not hp1_copy
+        assert hp1.my_hp2 is not hp1_copy.my_hp2
+        assert hp1.my_hp2.my_list is not hp1_copy.my_hp2.my_list
+        assert hp1.my_hp2.my_array is not hp1_copy.my_hp2.my_array
 
 if __name__ == '__main__':
     unittest.main()

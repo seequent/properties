@@ -207,8 +207,10 @@ def observer(names_or_instance, names=None, func=None, change_only=False):
     This dictionary contains:
 
     * 'name' - the name of the changed Property
-    * 'previous' - the value of the Property prior to change
-    * 'value' - the new value of the Property
+    * 'previous' - the value of the Property prior to change (this will be
+      :code:`properties.undefined` if the value was not previously set)
+    * 'value' - the new value of the Property (this will be
+      :code:`properties.undefined` if the value is deleted)
     * 'mode' - the mode of the change; for observers, this is either
       'observe_set' or 'observe_change'
 
@@ -274,8 +276,10 @@ def validator(names_or_instance, names=None, func=None):
     This dictionary contains:
 
     * 'name' - the name of the changed Property
-    * 'previous' - the value of the Property prior to change
-    * 'value' - the new value of the Property
+    * 'previous' - the value of the Property prior to change (this will be
+      :code:`properties.undefined` if the value was not previously set)
+    * 'value' - the new value of the Property (this will be
+      :code:`properties.undefined` if the value is deleted)
     * 'mode' - the mode of the change; for validators, this is 'validate'
 
     **Mode 2:**
