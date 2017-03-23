@@ -143,9 +143,7 @@ class Instance(basic.Property):
         return self.from_json(value, **kwargs)
 
     def equal(self, value_a, value_b):
-        if isinstance(value_a, HasProperties):
-            return equal(value_a, value_b)
-        return value_a is value_b
+        return equal(value_a, value_b)
 
     @staticmethod
     def to_json(value, **kwargs):
