@@ -336,9 +336,9 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def sphinx(self):
         """Generate Sphinx-formatted documentation for the Property"""
         try:
-            __IPYTHON__
+            assert __IPYTHON__
             classdoc = ''
-        except NameError:
+        except (NameError, AssertionError):
             scls = self.sphinx_class()
             classdoc = ' ({})'.format(scls) if scls else ''
 
