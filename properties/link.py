@@ -123,13 +123,13 @@ class directional_link(object):                                                #
     def _validate(item):
         """Validate (instance, prop name) tuple"""
         if not isinstance(item, tuple) or len(item) != 2:
-            raise ValueError('Linked items must by instance/prop name tuple')
+            raise ValueError('Linked items must be instance/prop-name tuple')
         if not isinstance(item[0], tuple(LINK_OBSERVERS)):
             raise ValueError('Only {} instances may be linked'.format(
                 ', '.join([link_cls.__name__ for link_cls in LINK_OBSERVERS])
             ))
         if not isinstance(item[1], string_types):
-            raise ValueError('Properties/traits must be specified as strings')
+            raise ValueError('Properties must be specified as string names')
         if not hasattr(item[0], item[1]):
             raise ValueError('Invalid property {} for {} instance'.format(
                 item[1], item[0].__class__.__name__
@@ -172,8 +172,9 @@ class link(object):                                                            #
 
     .. warning::
 
-        Linking :code:`n` items sets up :code:`n!` directional links;
-        therefore, links should be created judiciously.
+        Linking :code:`n` items sets up :code:`n*(n-1)` directional links,
+        all of which may fire on one change. Some care should be taken
+        when creating links among a large number of items.
     """
 
     def __init__(self, *items, **kwargs):
