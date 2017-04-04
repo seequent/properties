@@ -128,6 +128,36 @@ class TestLink(unittest.TestCase):
         assert hp2.a == 5
         my_link.unlink()
 
+    def test_link_errors(self):
+
+        class HP(properties.HasProperties):
+            a = properties.Integer('a')
+            b = properties.Integer('b')
+            c = properties.Integer('c')
+            d = properties.Integer('d')
+
+        hp = HP()
+        with self.assertRaises(ValueError):
+            properties.link((hp, 'a'))
+        with self.assertRaises(ValueError):
+            properties.link((hp, 'a'), (hp, 'b'), transform=lambda x: 2*x)
+        with self.assertRaises(ValueError):
+            properties.directional_link((hp, 'a'), (hp, 'b'), transform='add')
+        with self.assertRaises(ValueError):
+            properties.directional_link((hp, 'a'), (hp, 'b'), transform=lambda x, y, z: x)
+        with self.assertRaises(ValueError):
+            properties.directional_link(hp, 'a')
+        with self.assertRaises(ValueError):
+            properties.directional_link((hp, 'a'), ('b', hp))
+        with self.assertRaises(ValueError):
+            properties.directional_link((hp, hp.a), (hp, 'b'))
+        with self.assertRaises(ValueError):
+            properties.directional_link((hp, 'a'), (hp, 'z'))
+        with self.assertRaises(ValueError):
+            properties.directional_link((hp, 'a'), (hp, 'a'))
+        with self.assertRaises(ValueError):
+            properties.link((hp, 'a'), (hp, 'b'), (hp, 'c'), (hp, 'a'), (hp, 'd'))
+
 
 if __name__ == '__main__':
     unittest.main()

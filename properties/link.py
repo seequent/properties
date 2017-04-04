@@ -104,7 +104,7 @@ class directional_link(object):                                                #
         elif not callable(value):
             raise ValueError('transform must be callable function')
         elif hasattr(value, '__code__') and value.__code__.co_argcount != 1:
-            raise TypeError('transform must be a function with one argument')
+            raise ValueError('transform must be a function with one argument')
         self._transform = value
 
     def _update(self, *_):
