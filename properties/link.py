@@ -56,6 +56,8 @@ class directional_link(object):                                                #
                  transform=None):
         self.source = source
         self.target = target
+        if source == target:
+            raise ValueError('Linked items must be unique')
         self.transform = transform
         if update_now:
             self._update()
@@ -188,8 +190,6 @@ class link(object):                                                            #
                 if i == j:
                     continue
                 self._dlinks += directional_link(item_i, item_j, **kwargs),
-
-            # self._dlinks += directional_link(items[i-1], item),
 
     @property
     def dlinks(self):
