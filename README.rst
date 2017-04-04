@@ -118,8 +118,11 @@ Alternatives
 Connections
 -----------
 
-* `SimPEG <https://github.com/simpeg/simpeg>`_ Simulation and Parameter Estimation in Geophysics
-* `Steno3D <https://github.com/3ptscience/steno3dpy>`_ Python client for building and uploading 3D models
+* `casingResearch <https://github.com/lheagy/casingResearch>`_ - Research repository for
+  electromagnetic simulations in the presence of well casing
+* `OMF <https://github.com/GMSGDataExchange/omf>`_ - Open Mining Format API and file serialization
+* `SimPEG <https://github.com/simpeg/simpeg>`_ - Simulation and Parameter Estimation in Geophysics
+* `Steno3D <https://github.com/3ptscience/steno3dpy>`_ - Python client for building and uploading 3D models
 
 Installation
 ------------
