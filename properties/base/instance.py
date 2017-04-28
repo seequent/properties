@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 import json
 from six import PY2
+from warnings import warn
 
 from .base import HasProperties, equal
 from .. import basic
@@ -33,7 +34,8 @@ class Instance(basic.Property):
     :ref:`Property <property>`):
 
     * **instance_class** - The allowed class for the property.
-    * **auto_create** - If True, this Property is instantiated by default.
+    * **auto_create** - DEPRECATED - set default to the instance_class
+      instead. If True, this Property is instantiated by default.
       This is equivalent to setting the default keyword to the instance_class.
       If False, the default value is undefined. Note: auto_create passes no
       arguments, so it cannot be True if the instance_class requires
@@ -71,6 +73,9 @@ class Instance(basic.Property):
 
     @auto_create.setter
     def auto_create(self, value):
+        warn('Deprecation warning: auto_create will be removed in a future '
+             'release. Please set default to the instance_class instead',
+             FutureWarning)
         if not isinstance(value, bool):
             raise TypeError('auto_create must be a boolean')
         self._auto_create = value
