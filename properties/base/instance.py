@@ -173,3 +173,51 @@ class Instance(basic.Property):
         return ':class:`{cls} <.{cls}>`'.format(
             cls=self.instance_class.__name__
         )
+
+
+class Class(basic.Property):
+    """Property for subclass of a specified class
+
+    This is a type of class, not an instance of the class.
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **parent_class** - Required parent class for the property. By default,
+      parent_class is simply object. A tuple of allowed parent classes
+      may also be provided.
+    """
+
+    class_info = 'a class type'
+
+    @property
+    def parent_class(self):
+        return getattr(self, '_parent_class', CLASS_TYPES)
+
+    @parent_class.setter
+    def parent_class(self, value):
+        if not isinstance(value, (list, tuple, set)):
+            value = (value, )
+        value = tuple(value)
+        for val in value:
+            if not isinstance(val, CLASS_TYPES):
+                raise TypeError('parent_class must be a class type or tuple '
+                                'of class types')
+        self._parent_class = value
+
+    @property
+    def info(self):
+        if getattr(self, '_parent_class', None) is None:
+            return self.class_info
+        info = 'a subclass of {}'.format(
+            ', '.join(c.__name__ for c in self.parent_class)
+        )
+        return info
+
+    def validate(self, instance, value):
+        if (
+                not isinstance(value, CLASS_TYPES) or
+                not issubclass(value, self.parent_class)
+        ):
+            self.error(instance, value)
+        return value
