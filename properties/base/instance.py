@@ -5,8 +5,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
-from six import PY2
 from warnings import warn
+
+from six import PY2
 
 from .base import HasProperties, equal
 from .. import basic

@@ -50,7 +50,7 @@ class ImagePNG(File):
             raise TypeError('Filename must be a string')
         self._filename = value
 
-    def validate(self, obj, value):
+    def validate(self, instance, value):
         """Checks if value is an open PNG file, valid filename, or png.Image
 
         Returns an open bytestream of the image
@@ -62,11 +62,11 @@ class ImagePNG(File):
         if isinstance(value, png.Image):
             pass
         else:
-            value = super(ImagePNG, self).validate(obj, value)
+            value = super(ImagePNG, self).validate(instance, value)
             try:
                 png.Reader(value).validate_signature()
             except png.FormatError:
-                self.error(obj, value, extra='Open file is not PNG.')
+                self.error(instance, value, extra='Open file is not PNG.')
             value.seek(0)
         # Write input to new bytestream
         output = BytesIO()
