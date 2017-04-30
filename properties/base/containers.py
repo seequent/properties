@@ -119,13 +119,25 @@ class PropertiesSet(set):
                  'intersection_update', 'pop', 'remove',
                  'symmetric_difference_update', 'update']
     _operators = ['__and__', '__or__', '__sub__', '__xor__',
-                  '__rand__', '__ror__', '__rsub__', '__rxor__',
+                  '__rand__', '__ror__', '__rsub__', '__rxor__', 'copy',
                   'difference', 'intersection', 'symmetric_difference',
                   'union']
     _ioperators = ['__iand__', '__ior__', '__isub__', '__ixor__']
 
 
-OBSERVABLE = {list: PropertiesList, set: PropertiesSet}
+@add_properties_callbacks
+class PropertiesDict(dict):
+
+    _mutators = ['clear', 'pop', 'popitem', 'setdefault', 'update',
+                 '__delitem__', '__setitem__']
+    _operators = ['copy', 'fromkeys']
+    _ioperators = []
+
+OBSERVABLE = {
+    list: PropertiesList,
+    set: PropertiesSet,
+    dict: PropertiesDict,
+}
 
 
 class Tuple(basic.Property):
