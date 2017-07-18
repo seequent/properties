@@ -3,7 +3,7 @@ properties
 
 
 .. image:: https://img.shields.io/pypi/v/properties.svg
-    :target: https://pypi.python.org/pypi/properties
+    :target: https://pypi.org/project/properties
     :alt: Latest PyPI version
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
