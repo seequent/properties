@@ -194,7 +194,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     def tag(self, *tag, **kwtags):
         """Tag a Property instance with metadata dictionary"""
-        if len(tag) == 0:
+        if not tag:
             pass
         elif len(tag) == 1 and isinstance(tag[0], dict):
             self._meta.update(tag[0])
@@ -648,11 +648,9 @@ class Property(GettableProperty):
             )
         else:
             default_val = self.default
-            default_str = str(self.default)                                    #pylint: disable=redefined-variable-type
+            default_str = '{}'.format(self.default)
         try:
-            if default_val is None or default_val is undefined:
-                default_str = ''
-            elif len(default_val) == 0:
+            if not default_val or default_val is undefined:
                 default_str = ''
             else:
                 default_str = ', Default: {}'.format(default_str)
