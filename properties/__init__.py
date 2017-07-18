@@ -82,10 +82,10 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.3'
-__author__ = '3point Science'
+__version__ = '0.3.4'
+__author__ = 'ARANZ Geo Limited'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2017 3point Science,'
+__copyright__ = 'Copyright 2017 ARANZ Geo Limited'
 
 try:
     del absolute_import, division, print_function, unicode_literals

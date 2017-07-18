@@ -405,7 +405,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 )
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
-        if len(unused) > 0 and verbose:
+        if unused and verbose:
             warn('Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
             ), RuntimeWarning)
