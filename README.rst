@@ -3,23 +3,23 @@ properties
 
 
 .. image:: https://img.shields.io/pypi/v/properties.svg
-    :target: https://pypi.python.org/pypi/properties
+    :target: https://pypi.org/project/properties
     :alt: Latest PyPI version
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://github.com/3ptscience/properties/blob/master/LICENSE
+    :target: https://github.com/aranzgeo/properties/blob/master/LICENSE
     :alt: MIT license
 
 .. image:: https://readthedocs.org/projects/propertiespy/badge/
     :target: http://propertiespy.readthedocs.io/en/latest/
     :alt: ReadTheDocs
 
-.. image:: https://travis-ci.org/3ptscience/properties.svg?branch=master
-    :target: https://travis-ci.org/3ptscience/properties
+.. image:: https://travis-ci.org/aranzgeo/properties.svg?branch=master
+    :target: https://travis-ci.org/aranzgeo/properties
     :alt: Travis tests
 
-.. image:: https://codecov.io/gh/3ptscience/properties/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/3ptscience/properties
+.. image:: https://codecov.io/gh/aranzgeo/properties/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/aranzgeo/properties
     :alt: Code coverage
 
 .. image:: https://www.quantifiedcode.com/api/v1/project/f79abeb2219a4a2d9b683f8d57bcdab5/badge.svg
@@ -122,7 +122,7 @@ Connections
   electromagnetic simulations in the presence of well casing
 * `OMF <https://github.com/GMSGDataExchange/omf>`_ - Open Mining Format API and file serialization
 * `SimPEG <https://github.com/simpeg/simpeg>`_ - Simulation and Parameter Estimation in Geophysics
-* `Steno3D <https://github.com/3ptscience/steno3dpy>`_ - Python client for building and uploading 3D models
+* `Steno3D <https://github.com/aranzgeo/steno3dpy>`_ - Python client for building and uploading 3D models
 
 Installation
 ------------
@@ -138,7 +138,7 @@ For the development version:
 
 .. code::
 
-    git clone https://github.com/3ptscience/properties.git
+    git clone https://github.com/aranzgeo/properties.git
     cd properties
     pip install -e .
 
