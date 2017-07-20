@@ -4,16 +4,30 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import numpy as np
-from six import integer_types, string_types
-import vectormath as vmath
+try:
+    import numpy as np
+except ImportError:
+    np = None
+try:
+    import vectormath as vmath
+except ImportError:
+    vmath = None
 
-from .basic import Property, TOL
+from six import integer_types, string_types
+
+from .base import List, Union
+from .basic import Bool, Float, Integer, Property, TOL
 
 TYPE_MAPPINGS = {
     int: 'i',
     float: 'f',
     bool: 'b',
+}
+
+PROP_MAPPINGS = {
+    int: Integer,
+    float: Float,
+    bool: Bool,
 }
 
 
@@ -56,6 +70,10 @@ class Array(Property):
 
     @shape.setter
     def shape(self, value):
+        self._shape = self._validate_shape(value)
+
+    @staticmethod
+    def _validate_shape(value):
         if not isinstance(value, tuple):
             raise TypeError("{}: Invalid shape - must be a tuple "
                             "(e.g. ('*',3) for an array of length-3 "
@@ -64,7 +82,7 @@ class Array(Property):
             if shp != '*' and not isinstance(shp, integer_types):
                 raise TypeError("{}: Invalid shape - values "
                                 "must be '*' or int".format(value))
-        self._shape = value
+        return value
 
     @property
     def dtype(self):
@@ -76,6 +94,10 @@ class Array(Property):
 
     @dtype.setter
     def dtype(self, value):
+        self._dtype = self._validate_dtype(value)
+
+    @staticmethod
+    def _validate_dtype(value):
         if not isinstance(value, (list, tuple)):
             value = (value,)
         if not value:
@@ -84,7 +106,7 @@ class Array(Property):
         if any([val not in TYPE_MAPPINGS for val in value]):
             raise TypeError('{}: Invalid dtype - must be int, float, '
                             'and/or bool'.format(value))
-        self._dtype = value
+        return value
 
     @property
     def info(self):
@@ -102,10 +124,10 @@ class Array(Property):
         value = self.wrapper(value)
         if not isinstance(value, np.ndarray):
             raise NotImplementedError(
-                'Array validation is only implmented for wrappers that are '
-                'subclasses of numpy.ndarray'
+                'Array validation is only implemented for wrappers that are '
+                'subclasses of numpy.ndarray or list'
             )
-        if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
+        if value.dtype.kind not in (TYPE_MAPPINGS[t] for t in self.dtype):
             self.error(instance, value)
         if len(self.shape) != value.ndim:
             self.error(instance, value)
@@ -186,6 +208,28 @@ class Array(Property):
     @staticmethod
     def from_json(value, **kwargs):
         return np.array(value).astype(float)
+
+    def __new__(cls, *args, **kwargs):
+        """If np not available, use equivalent List"""
+        if not np:
+            shape = cls._validate_shape(kwargs.pop('shape', ('*',)))
+            dtype = cls._validate_dtype(kwargs.pop('dtype', (float, int)))
+            kwargs['coerce'] = True
+
+            def _get_list_prop(list_kw, ind=0):
+                if ind + 1 == len(shape):
+                    list_kw['prop'] = Union(
+                        doc='',
+                        props=[PROP_MAPPINGS[t]('') for t in dtype],
+                    )
+                else:
+                    list_kw['prop'] = _get_list_prop(kwargs.copy(), ind+1)
+                if shape[ind] != '*':
+                    list_kw['min_length'] = list_kw['max_length'] = shape[ind]
+                return List(*args, **list_kw)
+
+            return _get_list_prop(kwargs.copy())
+        return cls.__init__(*args, **kwargs)
 
 
 class BaseVector(Array):
@@ -281,6 +325,15 @@ class Vector3(BaseVector):
     def from_json(value, **kwargs):
         return vmath.Vector3(value)
 
+    def __new__(cls, *args, **kwargs):
+        """If vmath not available, use equivalent Array"""
+        if not vmath:
+            kwargs.pop('length', None)
+            kwargs['shape'] = (3,)
+            kwargs['dtype'] = (float,)
+            return Array(*args, **kwargs)
+        return cls.__init__(*args, **kwargs)
+
 
 class Vector2(BaseVector):
     """Property for :class:`2D vectors <vectormath.vector.Vector2>`
@@ -328,6 +381,15 @@ class Vector2(BaseVector):
     @staticmethod
     def from_json(value, **kwargs):
         return vmath.Vector2(value)
+
+    def __new__(cls, *args, **kwargs):
+        """If vmath not available, use equivalent Array"""
+        if not vmath:
+            kwargs.pop('length', None)
+            kwargs['shape'] = (2,)
+            kwargs['dtype'] = (float,)
+            return Array(*args, **kwargs)
+        return cls.__init__(*args, **kwargs)
 
 
 class Vector3Array(BaseVector):
@@ -380,6 +442,15 @@ class Vector3Array(BaseVector):
     @staticmethod
     def from_json(value, **kwargs):
         return vmath.Vector3Array(value)
+
+    def __new__(cls, *args, **kwargs):
+        """If vmath not available, use equivalent Array"""
+        if not vmath:
+            kwargs.pop('length', None)
+            kwargs['shape'] = ('*', 3)
+            kwargs['dtype'] = (float,)
+            return Array(*args, **kwargs)
+        return cls.__init__(*args, **kwargs)
 
 
 class Vector2Array(BaseVector):
@@ -435,6 +506,15 @@ class Vector2Array(BaseVector):
     @staticmethod
     def from_json(value, **kwargs):
         return vmath.Vector2Array(value)
+
+    def __new__(cls, *args, **kwargs):
+        """If vmath not available, use equivalent Array"""
+        if not vmath:
+            kwargs.pop('length', None)
+            kwargs['shape'] = ('*', 2)
+            kwargs['dtype'] = (float,)
+            return Array(*args, **kwargs)
+        return cls.__init__(*args, **kwargs)
 
 
 VECTOR_DIRECTIONS = {
