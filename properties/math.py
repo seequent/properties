@@ -47,6 +47,30 @@ VECTOR_DIRECTIONS = {
 }
 
 
+def _validate_shape(value):
+    if not isinstance(value, tuple):
+        raise TypeError("{}: Invalid shape - must be a tuple "
+                        "(e.g. ('*',3) for an array of length-3 "
+                        "arrays)".format(value))
+    for shp in value:
+        if shp != '*' and not isinstance(shp, integer_types):
+            raise TypeError("{}: Invalid shape - values "
+                            "must be '*' or int".format(value))
+    return value
+
+
+def _validate_dtype(value):
+    if not isinstance(value, (list, tuple)):
+        value = (value,)
+    if not value:
+        raise TypeError('No dtype specified - must be int, float, '
+                        'and/or bool')
+    if any([val not in TYPE_MAPPINGS for val in value]):
+        raise TypeError('{}: Invalid dtype - must be int, float, '
+                        'and/or bool'.format(value))
+    return value
+
+
 class Array(Property):
     """Property for :class:`numpy arrays <numpy.ndarray>`
 
@@ -86,19 +110,7 @@ class Array(Property):
 
     @shape.setter
     def shape(self, value):
-        self._shape = self._validate_shape(value)
-
-    @staticmethod
-    def _validate_shape(value):
-        if not isinstance(value, tuple):
-            raise TypeError("{}: Invalid shape - must be a tuple "
-                            "(e.g. ('*',3) for an array of length-3 "
-                            "arrays)".format(value))
-        for shp in value:
-            if shp != '*' and not isinstance(shp, integer_types):
-                raise TypeError("{}: Invalid shape - values "
-                                "must be '*' or int".format(value))
-        return value
+        self._shape = _validate_shape(value)
 
     @property
     def dtype(self):
@@ -110,19 +122,7 @@ class Array(Property):
 
     @dtype.setter
     def dtype(self, value):
-        self._dtype = self._validate_dtype(value)
-
-    @staticmethod
-    def _validate_dtype(value):
-        if not isinstance(value, (list, tuple)):
-            value = (value,)
-        if not value:
-            raise TypeError('No dtype specified - must be int, float, '
-                            'and/or bool')
-        if any([val not in TYPE_MAPPINGS for val in value]):
-            raise TypeError('{}: Invalid dtype - must be int, float, '
-                            'and/or bool'.format(value))
-        return value
+        self._dtype = _validate_dtype(value)
 
     @property
     def info(self):
@@ -224,28 +224,6 @@ class Array(Property):
     def from_json(value, **kwargs):
         return np.array(value).astype(float)
 
-    def __new__(cls, *args, **kwargs):
-        """If np not available, use equivalent List"""
-        if not np:
-            shape = cls._validate_shape(kwargs.pop('shape', ('*',)))
-            dtype = cls._validate_dtype(kwargs.pop('dtype', (float, int)))
-            kwargs['coerce'] = True
-
-            def _get_list_prop(list_kw, ind=0):
-                if ind + 1 == len(shape):
-                    list_kw['prop'] = Union(
-                        doc='',
-                        props=[PROP_MAPPINGS[t]('') for t in dtype],
-                    )
-                else:
-                    list_kw['prop'] = _get_list_prop(kwargs.copy(), ind+1)
-                if shape[ind] != '*':
-                    list_kw['min_length'] = list_kw['max_length'] = shape[ind]
-                return List(*args, **list_kw)
-
-            return _get_list_prop(kwargs.copy())
-        return super(Array, cls).__new__(cls, *args, **kwargs)
-
 
 class BaseVector(Array):
     """Base class for Vector properties"""
@@ -340,15 +318,6 @@ class Vector3(BaseVector):
     def from_json(value, **kwargs):
         return vmath.Vector3(value)
 
-    def __new__(cls, *args, **kwargs):
-        """If vmath not available, use equivalent Array"""
-        if not vmath:
-            kwargs.pop('length', None)
-            kwargs['shape'] = (3,)
-            kwargs['dtype'] = (float,)
-            return Array(*args, **kwargs)
-        return super(Vector3, cls).__new__(cls, *args, **kwargs)
-
 
 class Vector2(BaseVector):
     """Property for :class:`2D vectors <vectormath.vector.Vector2>`
@@ -396,15 +365,6 @@ class Vector2(BaseVector):
     @staticmethod
     def from_json(value, **kwargs):
         return vmath.Vector2(value)
-
-    def __new__(cls, *args, **kwargs):
-        """If vmath not available, use equivalent Array"""
-        if not vmath:
-            kwargs.pop('length', None)
-            kwargs['shape'] = (2,)
-            kwargs['dtype'] = (float,)
-            return Array(*args, **kwargs)
-        return super(Vector2, cls).__new__(cls, *args, **kwargs)
 
 
 class Vector3Array(BaseVector):
@@ -457,15 +417,6 @@ class Vector3Array(BaseVector):
     @staticmethod
     def from_json(value, **kwargs):
         return vmath.Vector3Array(value)
-
-    def __new__(cls, *args, **kwargs):
-        """If vmath not available, use equivalent Array"""
-        if not vmath:
-            kwargs.pop('length', None)
-            kwargs['shape'] = ('*', 3)
-            kwargs['dtype'] = (float,)
-            return Array(*args, **kwargs)
-        return super(Vector3Array, cls).__new__(cls, *args, **kwargs)
 
 
 class Vector2Array(BaseVector):
@@ -522,13 +473,59 @@ class Vector2Array(BaseVector):
     def from_json(value, **kwargs):
         return vmath.Vector2Array(value)
 
-    def __new__(cls, *args, **kwargs):
-        """If vmath not available, use equivalent Array"""
-        if not vmath:
-            kwargs.pop('length', None)
-            kwargs['shape'] = ('*', 2)
-            kwargs['dtype'] = (float,)
-            return Array(*args, **kwargs)
-        return super(Vector2Array, cls).__new__(cls, *args, **kwargs)
+
+# The following are aliases for Array and Vector classes if library
+# dependencies are not available. This is especially useful for using
+# properties in lightweight environments without numpy.
+if not np:
+
+    def Array(*args, **kwargs):                                                #pylint: disable=invalid-name,function-redefined
+        """If numpy not available, Array is replaced with equivalent List"""
+        shape = _validate_shape(kwargs.pop('shape', ('*',)))
+        dtype = _validate_dtype(kwargs.pop('dtype', (float, int)))
+        kwargs['coerce'] = True
+
+        def _get_list_prop(list_kw, ind=0):
+            if ind + 1 == len(shape):
+                list_kw['prop'] = Union(
+                    doc='',
+                    props=[PROP_MAPPINGS[t]('') for t in dtype],
+                )
+            else:
+                list_kw['prop'] = _get_list_prop(kwargs.copy(), ind+1)
+            if shape[ind] != '*':
+                list_kw['min_length'] = list_kw['max_length'] = shape[ind]
+            return List(*args, **list_kw)
+
+        return _get_list_prop(kwargs.copy())
 
 
+if not vmath:
+
+    def Vector3(*args, **kwargs):                                              #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector3 is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = (3,)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
+
+    def Vector2(*args, **kwargs):                                              #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector2 is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = (2,)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
+
+    def Vector3Array(*args, **kwargs):                                         #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector3Array is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = ('*', 3)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
+
+    def Vector2Array(*args, **kwargs):                                         #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector2Array is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = ('*', 2)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
