@@ -19,6 +19,13 @@ from .utils import undefined
 
 TOL = 1e-9
 
+BOOLEAN_TYPES = (bool,)
+try:
+    import numpy as np
+    BOOLEAN_TYPES += (np.bool_,)
+except ImportError:
+    pass
+
 PropertyTerms = collections.namedtuple(
     'PropertyTerms',
     ('name', 'cls', 'args', 'kwargs', 'meta'),
@@ -698,7 +705,7 @@ class Bool(Property):
                 value = bool(value)
             except ValueError:
                 self.error(instance, value)
-        if not isinstance(value, bool):
+        if not isinstance(value, BOOLEAN_TYPES):
             self.error(instance, value)
         return value
 

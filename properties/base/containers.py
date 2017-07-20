@@ -19,6 +19,13 @@ if PY2:
 else:
     CLASS_TYPES = (type,)
 
+CONTAINERS = (list, tuple, set)
+try:
+    import numpy as np
+    CONTAINERS += (np.ndarray,)
+except ImportError:
+    pass
+
 
 def add_properties_callbacks(cls):
     """Class decorator to add change notifications to builtin containers"""
@@ -252,7 +259,7 @@ class Tuple(basic.Property):
         """
         if not self.coerce and not isinstance(value, self._class_default):
             self.error(instance, value)
-        if self.coerce and not isinstance(value, (list, tuple, set)):
+        if self.coerce and not isinstance(value, CONTAINERS):
             value = [value]
         out = []
         for val in value:
