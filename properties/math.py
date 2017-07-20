@@ -78,7 +78,7 @@ class Array(Property):
     def dtype(self, value):
         if not isinstance(value, (list, tuple)):
             value = (value,)
-        if not value:
+        if len(value) == 0:                                                    #pylint: disable=len-as-condition
             raise TypeError('No dtype specified - must be int, float, '
                             'and/or bool')
         if any([val not in TYPE_MAPPINGS for val in value]):

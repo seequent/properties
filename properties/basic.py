@@ -650,7 +650,9 @@ class Property(GettableProperty):
             default_val = self.default
             default_str = '{}'.format(self.default)
         try:
-            if not default_val or default_val is undefined:
+            if default_val is None or default_val is undefined:
+                default_str = ''
+            elif len(default_val) == 0:                                        #pylint: disable=len-as-condition
                 default_str = ''
             else:
                 default_str = ', Default: {}'.format(default_str)
