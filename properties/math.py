@@ -30,6 +30,22 @@ PROP_MAPPINGS = {
     bool: Bool,
 }
 
+VECTOR_DIRECTIONS = {
+    'ZERO': [0, 0, 0],
+    'X': [1, 0, 0],
+    'Y': [0, 1, 0],
+    'Z': [0, 0, 1],
+    '-X': [-1, 0, 0],
+    '-Y': [0, -1, 0],
+    '-Z': [0, 0, -1],
+    'EAST': [1, 0, 0],
+    'WEST': [-1, 0, 0],
+    'NORTH': [0, 1, 0],
+    'SOUTH': [0, -1, 0],
+    'UP': [0, 0, 1],
+    'DOWN': [0, 0, -1],
+}
+
 
 class Array(Property):
     """Property for :class:`numpy arrays <numpy.ndarray>`
@@ -146,7 +162,6 @@ class Array(Property):
             return np.allclose(value_a[nan_mask], value_b[nan_mask], atol=TOL)
         except TypeError:
             return False
-
 
     def error(self, instance, value, error_class=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
@@ -517,18 +532,3 @@ class Vector2Array(BaseVector):
         return super(Vector2Array, cls).__new__(cls, *args, **kwargs)
 
 
-VECTOR_DIRECTIONS = {
-    'ZERO': [0, 0, 0],
-    'X': [1, 0, 0],
-    'Y': [0, 1, 0],
-    'Z': [0, 0, 1],
-    '-X': [-1, 0, 0],
-    '-Y': [0, -1, 0],
-    '-Z': [0, 0, -1],
-    'EAST': [1, 0, 0],
-    'WEST': [-1, 0, 0],
-    'NORTH': [0, 1, 0],
-    'SOUTH': [0, -1, 0],
-    'UP': [0, 0, 1],
-    'DOWN': [0, 0, -1],
-}
