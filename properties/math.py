@@ -229,7 +229,7 @@ class Array(Property):
                 return List(*args, **list_kw)
 
             return _get_list_prop(kwargs.copy())
-        return cls.__init__(*args, **kwargs)
+        return super(Array, cls).__new__(cls, *args, **kwargs)
 
 
 class BaseVector(Array):
@@ -332,7 +332,7 @@ class Vector3(BaseVector):
             kwargs['shape'] = (3,)
             kwargs['dtype'] = (float,)
             return Array(*args, **kwargs)
-        return cls.__init__(*args, **kwargs)
+        return super(Vector3, cls).__new__(cls, *args, **kwargs)
 
 
 class Vector2(BaseVector):
@@ -389,7 +389,7 @@ class Vector2(BaseVector):
             kwargs['shape'] = (2,)
             kwargs['dtype'] = (float,)
             return Array(*args, **kwargs)
-        return cls.__init__(*args, **kwargs)
+        return super(Vector2, cls).__new__(cls, *args, **kwargs)
 
 
 class Vector3Array(BaseVector):
@@ -450,7 +450,7 @@ class Vector3Array(BaseVector):
             kwargs['shape'] = ('*', 3)
             kwargs['dtype'] = (float,)
             return Array(*args, **kwargs)
-        return cls.__init__(*args, **kwargs)
+        return super(Vector3Array, cls).__new__(cls, *args, **kwargs)
 
 
 class Vector2Array(BaseVector):
@@ -514,7 +514,7 @@ class Vector2Array(BaseVector):
             kwargs['shape'] = ('*', 2)
             kwargs['dtype'] = (float,)
             return Array(*args, **kwargs)
-        return cls.__init__(*args, **kwargs)
+        return super(Vector2Array, cls).__new__(cls, *args, **kwargs)
 
 
 VECTOR_DIRECTIONS = {
