@@ -80,6 +80,9 @@ class TestDynamic(unittest.TestCase):
         assert hdp2.my_float == 5.
         assert hdp2.my_doubled_int == 10
 
+        with self.assertRaises(AttributeError):
+            HasDynamicProperty(my_doubled_int=5)
+
     def test_dynamic_deleter(self):
 
         class HasDynamicProperty(properties.HasProperties):
@@ -217,7 +220,6 @@ class TestDynamic(unittest.TestCase):
                     return self.my_float*2
 
             HasDynamicProperty._props['my_doubled_int'].name = 5
-
 
 
 if __name__ == '__main__':
