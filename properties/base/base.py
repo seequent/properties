@@ -253,9 +253,12 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     def __init__(self, **kwargs):
         # Set the keyword arguments with change notifications
         for key, val in iteritems(kwargs):
-            if not hasattr(self, key) and key not in self._props.keys():
+            if not hasattr(self, key) and key not in self._props:
                 raise AttributeError("Keyword input '{}' is not a known "
                                      "property or attribute".format(key))
+            if isinstance(self._props[key], basic.DynamicProperty):
+                raise AttributeError("Dynamic property '{} cannot be set on "
+                                     "init".format(key))
             setattr(self, key, val)
 
     def _get(self, name):
