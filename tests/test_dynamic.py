@@ -31,9 +31,15 @@ class TestDynamic(unittest.TestCase):
                                               self.my_doubled_int]]
                 return val
 
+            @properties.Integer('another dynamic int')
+            def my_tripled_int(self):
+                if self.my_int:
+                    return self.my_int*3
+
         hdp = HasDynamicProperty()
         with self.assertRaises(ValueError):
             hdp.my_doubled_int
+        assert hdp.my_tripled_int is None
         hdp.my_int = 10
         assert hdp.my_doubled_int == 20
         assert isinstance(hdp.my_vector, vectormath.Vector3)
@@ -48,6 +54,7 @@ class TestDynamic(unittest.TestCase):
         assert HasDynamicProperty._props['my_vector'].equal(
             vectormath.Vector3(0, 1, 2), vectormath.Vector3(0, 1, 2)
         )
+
 
     def test_dynamic_setter(self):
 
