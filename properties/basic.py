@@ -66,7 +66,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     class_info = ''
     _class_default = undefined
 
-    def __init__(self, doc, **kwargs):
+    def __init__(self, doc, default=None, **kwargs):
         self.doc = doc
         self._meta = {}
         for key in kwargs:
@@ -86,6 +86,8 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 raise AttributeError(
                     'Cannot set attribute: "{}".'.format(key)
                 )
+        if default is not None:
+            setattr(self, 'default', default)
 
     @property
     def name(self):
