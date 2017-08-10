@@ -66,9 +66,10 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     class_info = ''
     _class_default = undefined
 
-    def __init__(self, doc, default=None, **kwargs):
+    def __init__(self, doc, **kwargs):
         self.doc = doc
         self._meta = {}
+        default = kwargs.pop('default', None)
         for key in kwargs:
             if key == 'terms':
                 raise AttributeError('terms are set by Property metaclass')
@@ -87,7 +88,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                     'Cannot set attribute: "{}".'.format(key)
                 )
         if default is not None:
-            setattr(self, 'default', default)
+            self.default = default
 
     @property
     def name(self):
