@@ -74,6 +74,10 @@ from .handlers import (
     validator,
     validators_disabled,
 )
+from .link import (
+    directional_link,
+    link,
+)
 from .utils import (
     everything,
     filter_props,
