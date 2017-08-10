@@ -501,4 +501,6 @@ def copy(value, **kwargs):
     if not isinstance(value, HasProperties):
         raise ValueError('properties.copy may only be used to copy'
                          'HasProperties instances')
+    kwargs.update({'include_class': kwargs.get('include_class', True)})
+    kwargs.update({'trusted': kwargs.get('trusted', True)})
     return value.__class__.deserialize(value.serialize(**kwargs), **kwargs)
