@@ -228,15 +228,15 @@ class Tuple(basic.Property):
         if self.max_length is None and self.min_length is None:
             return itext
         if self.max_length is None:
-            return '{txt} with length >= {mn}'.format(
-                txt=itext,
-                mn=self.min_length
+            lentext = 'length >= {}'.format(self.min_length)
+        elif self.max_length == self.min_length:
+            lentext = 'length of {}'.format(self.min_length)
+        else:
+            lentext = 'length between {mn} and {mx}'.format(
+                mn='0' if self.min_length is None else self.min_length,
+                mx=self.max_length,
             )
-        return '{txt} with length between {mn} and {mx}'.format(
-            txt=itext,
-            mn='0' if self.min_length is None else self.min_length,
-            mx=self.max_length
-        )
+        return '{} with {}'.format(itext, lentext)
 
     def _unused_default_warning(self):
         if (self.prop.default is not utils.undefined and
