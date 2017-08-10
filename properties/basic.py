@@ -403,6 +403,16 @@ class DynamicProperty(GettableProperty):                                       #
         is not allowed to have a :code:`default` value. Also, the
         :code:`required` attribute will be ignored.
 
+    .. note::
+
+        When implementing a DynamicProperty getter, care should be taken
+        around when other properties do not yet have a value. In the example
+        above, if :code:`self.x`, :code:`self.y`, or :code:`self.z` is still
+        :code:`None` the :code:`location` vector will be invalid, so calling
+        :code:`self.location` will fail. However, if the getter method returns
+        :code:`None` it will be treated as :code:`properties.undefined` and
+        pass validation.
+
     """
 
     def __init__(self, doc, func, prop, **kwargs):
@@ -528,7 +538,10 @@ class DynamicProperty(GettableProperty):                                       #
 
         def fget(self):
             """Call dynamic function then validate output"""
-            return scope.validate(self, scope.func(self))
+            value = scope.func(self)
+            if value is None or value is undefined:
+                return None
+            return scope.validate(self, value)
 
         def fset(self, value):
             """Validate and call setter"""
