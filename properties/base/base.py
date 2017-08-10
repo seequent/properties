@@ -202,8 +202,8 @@ class PropertyMetaclass(type):
         """
 
         obj = cls.__new__(cls, *args, **kwargs)
-        obj._backend = dict()
-        obj._listeners = dict()
+        object.__setattr__(obj, '_backend', dict())
+        object.__setattr__(obj, '_listeners', dict())
 
         # Register the listeners
         for _, val in iteritems(obj._prop_observers):
