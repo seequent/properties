@@ -245,10 +245,10 @@ class Tuple(basic.Property):
                  RuntimeWarning)
 
     def validate(self, instance, value):
-        """Check the length of the tuple and each element in the tuple
+        """Check the class of the container and validate each element
 
-        This returns a copy of the tuple to prevent unwanted sharing of
-        tuple pointers.
+        This returns a copy of the container to prevent unwanted sharing of
+        pointers.
         """
         if not self.coerce and not isinstance(value, self._class_default):
             self.error(instance, value)
