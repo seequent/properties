@@ -122,6 +122,19 @@ class TestBasic(unittest.TestCase):
         assert not properties.Property('').equal(np.array([1., 2.]),
                                                  np.array([3., 4.]))
 
+        class NoAttributes(properties.HasProperties):
+            a = properties.Integer('a')
+
+            def __setattr__(self, attr, value):
+                if value is not properties.undefined:
+                    raise AttributeError()
+                return super(NoAttributes, self).__setattr__(attr, value)
+
+        na = NoAttributes()
+        with self.assertRaises(AttributeError):
+            na.a = 5
+
+
     def test_bool(self):
 
         class BoolOpts(properties.HasProperties):
