@@ -202,8 +202,8 @@ class PropertyMetaclass(type):
         """
 
         obj = cls.__new__(cls, *args, **kwargs)
-        obj._backend = dict()
-        obj._listeners = dict()
+        object.__setattr__(obj, '_backend', dict())
+        object.__setattr__(obj, '_listeners', dict())
 
         # Register the listeners
         for _, val in iteritems(obj._prop_observers):
@@ -505,4 +505,6 @@ def copy(value, **kwargs):
     if not isinstance(value, HasProperties):
         raise ValueError('properties.copy may only be used to copy'
                          'HasProperties instances')
+    kwargs.update({'include_class': kwargs.get('include_class', True)})
+    kwargs.update({'trusted': kwargs.get('trusted', True)})
     return value.__class__.deserialize(value.serialize(**kwargs), **kwargs)
