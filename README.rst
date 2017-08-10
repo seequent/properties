@@ -22,10 +22,6 @@ properties
     :target: https://codecov.io/gh/aranzgeo/properties
     :alt: Code coverage
 
-.. image:: https://www.quantifiedcode.com/api/v1/project/f79abeb2219a4a2d9b683f8d57bcdab5/badge.svg
-    :target: https://www.quantifiedcode.com/app/project/f79abeb2219a4a2d9b683f8d57bcdab5
-    :alt: Code issues
-
 
 Overview Video
 --------------
@@ -118,7 +114,7 @@ Alternatives
 Connections
 -----------
 
-* `casingResearch <https://github.com/lheagy/casingResearch>`_ - Research repository for
+* `casingSimulations <https://github.com/lheagy/casingSimulations>`_ - Research repository for
   electromagnetic simulations in the presence of well casing
 * `OMF <https://github.com/GMSGDataExchange/omf>`_ - Open Mining Format API and file serialization
 * `SimPEG <https://github.com/simpeg/simpeg>`_ - Simulation and Parameter Estimation in Geophysics
