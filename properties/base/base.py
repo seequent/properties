@@ -202,8 +202,8 @@ class PropertyMetaclass(type):
         """
 
         obj = cls.__new__(cls, *args, **kwargs)
-        obj._backend = dict()
-        obj._listeners = dict()
+        object.__setattr__(obj, '_backend', dict())
+        object.__setattr__(obj, '_listeners', dict())
 
         # Register the listeners
         for _, val in iteritems(obj._prop_observers):
@@ -253,9 +253,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     def __init__(self, **kwargs):
         # Set the keyword arguments with change notifications
         for key, val in iteritems(kwargs):
-            if not hasattr(self, key) and key not in self._props.keys():
+            prop = self._props.get(key, None)
+            if not prop and not hasattr(self, key):
                 raise AttributeError("Keyword input '{}' is not a known "
                                      "property or attribute".format(key))
+            if isinstance(prop, basic.DynamicProperty):
+                raise AttributeError("Dynamic property '{} cannot be set on "
+                                     "init".format(key))
             setattr(self, key, val)
 
     def _get(self, name):
@@ -405,7 +409,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 )
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
-        if len(unused) > 0 and verbose:
+        if unused and verbose:
             warn('Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
             ), RuntimeWarning)
@@ -501,4 +505,6 @@ def copy(value, **kwargs):
     if not isinstance(value, HasProperties):
         raise ValueError('properties.copy may only be used to copy'
                          'HasProperties instances')
+    kwargs.update({'include_class': kwargs.get('include_class', True)})
+    kwargs.update({'trusted': kwargs.get('trusted', True)})
     return value.__class__.deserialize(value.serialize(**kwargs), **kwargs)

@@ -69,6 +69,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def __init__(self, doc, **kwargs):
         self.doc = doc
         self._meta = {}
+        default = kwargs.pop('default', None)
         for key in kwargs:
             if key == 'terms':
                 raise AttributeError('terms are set by Property metaclass')
@@ -86,6 +87,8 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 raise AttributeError(
                     'Cannot set attribute: "{}".'.format(key)
                 )
+        if default is not None:
+            self.default = default
 
     @property
     def name(self):
@@ -194,7 +197,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     def tag(self, *tag, **kwtags):
         """Tag a Property instance with metadata dictionary"""
-        if len(tag) == 0:
+        if not tag:
             pass
         elif len(tag) == 1 and isinstance(tag[0], dict):
             self._meta.update(tag[0])
@@ -406,6 +409,16 @@ class DynamicProperty(GettableProperty):                                       #
         is not allowed to have a :code:`default` value. Also, the
         :code:`required` attribute will be ignored.
 
+    .. note::
+
+        When implementing a DynamicProperty getter, care should be taken
+        around when other properties do not yet have a value. In the example
+        above, if :code:`self.x`, :code:`self.y`, or :code:`self.z` is still
+        :code:`None` the :code:`location` vector will be invalid, so calling
+        :code:`self.location` will fail. However, if the getter method returns
+        :code:`None` it will be treated as :code:`properties.undefined` and
+        pass validation.
+
     """
 
     def __init__(self, doc, func, prop, **kwargs):
@@ -531,7 +544,10 @@ class DynamicProperty(GettableProperty):                                       #
 
         def fget(self):
             """Call dynamic function then validate output"""
-            return scope.validate(self, scope.func(self))
+            value = scope.func(self)
+            if value is None or value is undefined:
+                return None
+            return scope.validate(self, value)
 
         def fset(self, value):
             """Validate and call setter"""
@@ -654,11 +670,11 @@ class Property(GettableProperty):
             )
         else:
             default_val = self.default
-            default_str = str(self.default)                                    #pylint: disable=redefined-variable-type
+            default_str = '{}'.format(self.default)
         try:
             if default_val is None or default_val is undefined:
                 default_str = ''
-            elif len(default_val) == 0:
+            elif len(default_val) == 0:                                        #pylint: disable=len-as-condition
                 default_str = ''
             else:
                 default_str = ', Default: {}'.format(default_str)

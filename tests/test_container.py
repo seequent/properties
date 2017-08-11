@@ -112,7 +112,8 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasColorTuple(properties.HasProperties):
-            ccc = properties.Tuple('tuple of colors', properties.Color(''))
+            ccc = properties.Tuple('tuple of colors', properties.Color(''),
+                                   min_length=2, max_length=2)
 
         li = HasColorTuple()
         li.ccc = ('red', '#00FF00')
