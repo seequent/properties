@@ -335,10 +335,10 @@ class Tuple(basic.Property):
 
     def sphinx_class(self):
         """Redefine sphinx class to point to prop class"""
-        sphinx_class = self.prop.sphinx_class().replace(
-            ':class:`', ':class:`{} of '.format(self.class_info)
+        classdoc = self.prop.sphinx_class().replace(
+            ':class:`', '{info} of :class:`'
         )
-        return sphinx_class
+        return classdoc.format(info=self.class_info)
 
 
 class List(Tuple):

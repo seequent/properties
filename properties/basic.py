@@ -271,7 +271,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             """Call the HasProperties _get method"""
             return self._get(scope.name)
 
-        return property(fget=fget, doc=scope.doc)
+        return property(fget=fget, doc=scope.sphinx())
 
     def serialize(self, value, **kwargs):                                      #pylint: disable=unused-argument
         """Serialize a valid Property value
@@ -338,12 +338,16 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     def sphinx(self):
         """Generate Sphinx-formatted documentation for the Property"""
-        scls = self.sphinx_class()
-        sphinx_class = ' ({})'.format(scls) if scls else ''
+        try:
+            assert __IPYTHON__
+            classdoc = ''
+        except (NameError, AssertionError):
+            scls = self.sphinx_class()
+            classdoc = ' ({})'.format(scls) if scls else ''
 
         prop_doc = '**{name}**{cls}: {doc}{info}'.format(
             name=self.name,
-            cls=sphinx_class,
+            cls=classdoc,
             doc=self.doc,
             info=', {}'.format(self.info) if self.info else '',
         )
@@ -351,10 +355,12 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
-        return ':class:`{cls} <{pref}.{cls}>`'.format(
-            cls=self.__class__.__name__,
-            pref='properties'
-        )
+        classdoc = ':class:`{cls} <{pref}.{cls}>`'
+        if self.__module__.split('.')[0] == 'properties':
+            pref = 'properties'
+        else:
+            pref = text_type(self.__module__)
+        return classdoc.format(cls=self.__class__.__name__, pref=pref)
 
     def __call__(self, func):
         return DynamicProperty(self.doc, func=func, prop=self)
@@ -467,7 +473,7 @@ class DynamicProperty(GettableProperty):                                       #
     @property
     def info(self):
         """Info is obtained from prop"""
-        return self.prop.info
+        return self.prop.info + ' created dynamically'
 
     @property
     def serializer(self):
@@ -555,7 +561,7 @@ class DynamicProperty(GettableProperty):                                       #
                 raise AttributeError('cannot delete attribute')
             scope.del_func(self)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
     def equal(self, value_a, value_b):
         """Determine equality based on prop"""
@@ -653,7 +659,7 @@ class Property(GettableProperty):
             """Set value to utils.undefined on delete"""
             self._set(scope.name, undefined)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -675,15 +681,8 @@ class Property(GettableProperty):
         except TypeError:
             default_str = ', Default: {}'.format(default_str)
 
-        return (
-            '**{name}** ({cls}): {doc}{info}{default}'.format(
-                name=self.name,
-                doc=self.doc,
-                info=', {}'.format(self.info) if self.info else '',
-                default=default_str,
-                cls=self.sphinx_class(),
-            )
-        )
+        prop_doc = super(Property, self).sphinx()
+        return '{doc}{default}'.format(doc=prop_doc, default=default_str)
 
 
 class Bool(Property):
@@ -1332,7 +1331,7 @@ class File(Property):
             self._set(scope.name, undefined)
 
         new_prop = property(fget=prop.fget, fset=prop.fset,
-                            fdel=fdel, doc=scope.doc)
+                            fdel=fdel, doc=scope.sphinx())
         return new_prop
 
     def validate(self, instance, value):
@@ -1443,7 +1442,7 @@ class Renamed(GettableProperty):
             scope.warn()
             delattr(self, scope.new_name)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
 
 COLORS_20 = [
