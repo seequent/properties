@@ -446,7 +446,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         Equivalence is determined by checking if all Property values on
         two instances are equal, using :code:`Property.equal`.
         """
-        warn('HasProperties.equal has been depricated in favor of '
+        warn('HasProperties.equal has been deprecated in favor of '
              'properties.equal and will be removed in the next release',
              FutureWarning)
         return equal(self, other)
