@@ -78,7 +78,7 @@ class Array(Property):
     def dtype(self, value):
         if not isinstance(value, (list, tuple)):
             value = (value,)
-        if len(value) == 0:
+        if len(value) == 0:                                                    #pylint: disable=len-as-condition
             raise TypeError('No dtype specified - must be int, float, '
                             'and/or bool')
         if any([val not in TYPE_MAPPINGS for val in value]):
@@ -178,7 +178,7 @@ class Array(Property):
         nan values are converted to string 'nan', inf values to 'inf'.
         """
         def _recurse_list(val):
-            if len(val) > 0 and isinstance(val[0], list):
+            if val and isinstance(val[0], list):
                 return [_recurse_list(v) for v in val]
             return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]
         return _recurse_list(value.tolist())
