@@ -92,6 +92,12 @@ class TestMath(unittest.TestCase):
             np.array([1., 2., np.inf, np.nan])
         )
 
+        class DefaultArrayOpts(properties.HasProperties):
+            mydefaultarray = properties.Array(
+                'my array with default',
+                default=np.random.rand(10),
+            )
+
     def test_vector2(self):
 
         with self.assertRaises(TypeError):

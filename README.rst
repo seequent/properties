@@ -3,28 +3,24 @@ properties
 
 
 .. image:: https://img.shields.io/pypi/v/properties.svg
-    :target: https://pypi.python.org/pypi/properties
+    :target: https://pypi.org/project/properties
     :alt: Latest PyPI version
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://github.com/3ptscience/properties/blob/master/LICENSE
+    :target: https://github.com/aranzgeo/properties/blob/master/LICENSE
     :alt: MIT license
 
 .. image:: https://readthedocs.org/projects/propertiespy/badge/
     :target: http://propertiespy.readthedocs.io/en/latest/
     :alt: ReadTheDocs
 
-.. image:: https://travis-ci.org/3ptscience/properties.svg?branch=master
-    :target: https://travis-ci.org/3ptscience/properties
+.. image:: https://travis-ci.org/aranzgeo/properties.svg?branch=master
+    :target: https://travis-ci.org/aranzgeo/properties
     :alt: Travis tests
 
-.. image:: https://codecov.io/gh/3ptscience/properties/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/3ptscience/properties
+.. image:: https://codecov.io/gh/aranzgeo/properties/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/aranzgeo/properties
     :alt: Code coverage
-
-.. image:: https://www.quantifiedcode.com/api/v1/project/f79abeb2219a4a2d9b683f8d57bcdab5/badge.svg
-    :target: https://www.quantifiedcode.com/app/project/f79abeb2219a4a2d9b683f8d57bcdab5
-    :alt: Code issues
 
 
 Overview Video
@@ -72,7 +68,10 @@ Alternatives
   `traits <https://github.com/enthought/traits>`_ (Enthought) - These libraries
   are driven by GUI development (much of the Jupyter environment is built
   on traitlets; traits has automatic GUI generation) which leads to many
-  similar features to properties (strong typing, validation, and notifications).
+  similar features as properties such as strong typing, validation, and
+  notifications. Also, some Properties features and aspects of the API take
+  heavy inspiration from traitlets.
+
   However, There are a few key areas where properties differs:
 
     1. properties has a clean namespace - this (in addition to `?` docstrings)
@@ -90,20 +89,24 @@ Alternatives
        Validation then occurs when the user is ready and calls :code:`validate`
 
   Significant advantages of traitlets and traits over properties are
-  GUI interaction and the much larger suite of existing property types.
+  GUI interaction and larger suites of existing property types.
+  Besides numerous types built-in to these libraries, some other examples are
+  `trait types that support unit conversion <https://github.com/astrofrog/numtraits>`_
+  and `NumPy/SciPy trait types <https://github.com/jupyter-widgets/traittypes>`_
+  (note: properties has a NumPy array property type).
 
 * `param <https://github.com/ioam/param>`_ - This library also provides
   type-checking, validation, and notification. It has a few unique features
   and parameter types (possibly of note is the ability to provide dynamic
   values for parameters at any time, not just as the default). This was first
-  introduced before builtin Python properties, and current development is
+  introduced before built-in Python properties, and current development is
   very slow.
 
 * `mypy <https://github.com/python/mypy>`_ and `PEP0484 <https://www.python.org/dev/peps/pep-0484/>`_ -
   This provides static typing for Python without coersion, notifications, etc.
   It has a very different scope and implementation than traits-like libraries.
 
-* `builtin Python property <https://docs.python.org/3/library/functions.html#property>`_ -
+* `built-in Python property <https://docs.python.org/3/library/functions.html#property>`_ -
   properties/traits-like behavior can be mostly recreated using :code:`@property`.
   This requires significantly more work by the programmer, and results in
   not-declarative, difficult-to-read code.
@@ -111,8 +114,11 @@ Alternatives
 Connections
 -----------
 
-* `SimPEG <https://github.com/simpeg/simpeg>`_ Simulation and Parameter Estimation in Geophysics
-* `Steno3D <https://github.com/3ptscience/steno3dpy>`_ Python client for building and uploading 3D models
+* `casingSimulations <https://github.com/lheagy/casingSimulations>`_ - Research repository for
+  electromagnetic simulations in the presence of well casing
+* `OMF <https://github.com/GMSGDataExchange/omf>`_ - Open Mining Format API and file serialization
+* `SimPEG <https://github.com/simpeg/simpeg>`_ - Simulation and Parameter Estimation in Geophysics
+* `Steno3D <https://github.com/aranzgeo/steno3dpy>`_ - Python client for building and uploading 3D models
 
 Installation
 ------------
@@ -128,7 +134,7 @@ For the development version:
 
 .. code::
 
-    git clone https://github.com/3ptscience/properties.git
+    git clone https://github.com/aranzgeo/properties.git
     cd properties
     pip install -e .
 
