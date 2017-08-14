@@ -180,7 +180,6 @@ class Tuple(basic.Property):
     def __init__(self, doc, prop, **kwargs):
         self.prop = prop
         super(Tuple, self).__init__(doc, **kwargs)
-        # self._unused_default_warning()
 
     @property
     def prop(self):
@@ -551,3 +550,61 @@ class Dict(basic.Property):
                 if self.value_prop:
                     self.value_prop.assert_valid(instance, val)
         return True
+
+    def serialize(self, value, **kwargs):
+        """Return a serialized copy of the dict"""
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
+        if self.serializer is not None:
+            return self.serializer(value, **kwargs)
+        if value is None:
+            return None
+        serial_tuples = [
+            (
+                self.key_prop.serialize(key, **kwargs),
+                self.value_prop.serialize(val, **kwargs)
+            )
+            for key, val in iteritems(value)
+        ]
+        try:
+            serial_dict = {key: val for key, val in serial_tuples}
+        except TypeError as er:
+            raise TypeError('Dict property {} cannot be serialized. '
+                            'Serialized keys contain {}'.format(self.name, er))
+        return serial_dict
+
+    def deserialize(self, value, **kwargs):
+        """Return a deserialized copy of the dict"""
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
+        if self.deserializer is not None:
+            return self.deserializer(value, **kwargs)
+        if value is None:
+            return None
+        output_tuples = [
+            (
+                self.key_prop.deserialize(key, **kwargs),
+                self.value_prop.deserialize(val, **kwargs)
+            )
+            for key, val in iteritems(value)
+        ]
+        try:
+            output_dict = {key: val for key, val in output_tuples}
+        except TypeError as er:
+            raise TypeError('Dict property {} cannot be deserialized. '
+                            'Keys contain {}'.format(self.name, er))
+        return self._class_default(output_dict)
+
+    @staticmethod
+    def to_json(value, **kwargs):
+        """Return a copy of the dictionary
+
+        If the values are HasProperties instances, they are serialized
+        """
+        serial_dict = {
+            key: (
+                val.serialize(**kwargs) if isinstance(val, HasProperties)
+                else val
+            )
+            for key, val in iteritems(value)
+
+        }
+        return serial_dict
