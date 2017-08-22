@@ -192,6 +192,12 @@ class PropertyMetaclass(type):
         # Save the class in the registry
         newcls._REGISTRY[name] = newcls
 
+        # Save the original class inheritance graph
+        newcls._CLS_GRAPH[name] = set()
+        for cls in bases:
+            if cls.__name__ in newcls._REGISTRY:
+                newcls._CLS_GRAPH[name].add(cls.__name__)
+
         return newcls
 
     def __call__(cls, *args, **kwargs):
@@ -249,6 +255,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     _defaults = dict()
     _REGISTRY = dict()
+    _CLS_GRAPH = dict()
 
     def __init__(self, **kwargs):
         # Set the keyword arguments with change notifications
