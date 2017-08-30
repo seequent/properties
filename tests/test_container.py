@@ -770,5 +770,77 @@ class TestContainer(unittest.TestCase):
         assert hl._advanced_tic == 15
 
 
+    def test_dict(self):
+        self._test_dict(True)
+        self._test_dict(False)
+
+    def _test_dict(self, om):
+
+        with self.assertRaises(TypeError):
+            properties.Dict('bad string set', key_prop=str)
+        with self.assertRaises(TypeError):
+            properties.Dict('bad string set', value_prop=str)
+        with self.assertRaises(TypeError):
+            properties.Dict('bad observe', properties.Integer(''),
+                            observe_mutations=5)
+
+        class HasPropsDummy(properties.HasProperties):
+            pass
+
+        mydict = properties.Dict('dummy has properties set',
+                                key_prop=properties.String(''),
+                                value_prop=HasPropsDummy,
+                                observe_mutations=om)
+        assert isinstance(mydict.key_prop, properties.String)
+        assert isinstance(mydict.value_prop, properties.Instance)
+        assert mydict.value_prop.instance_class is HasPropsDummy
+
+        class HasDummyDict(properties.HasProperties):
+            mydict = properties.Dict('dummy has properties set',
+                                     key_prop=properties.String(''),
+                                     value_prop=HasPropsDummy,
+                                     observe_mutations=om)
+
+        assert HasDummyDict()._props['mydict'].name == 'mydict'
+        assert HasDummyDict()._props['mydict'].key_prop.name == 'mydict'
+        assert HasDummyDict()._props['mydict'].value_prop.name == 'mydict'
+
+        class HasDict(properties.HasProperties):
+            aaa = properties.Dict('dictionary')
+
+        li = HasDict()
+        li.aaa = {1: 2}
+        with self.assertRaises(ValueError):
+            li.aaa = (1, 2, 3)
+        li.aaa = {'hi': HasPropsDummy()}
+        with self.assertRaises(ValueError):
+            li.aaa = 4
+        with self.assertRaises(ValueError):
+            li.aaa = {'a', 'b', 'c'}
+
+        li1 = HasDict()
+        li2 = HasDict()
+        assert li1.aaa == li2.aaa
+        assert li1.aaa is not li2.aaa
+
+
+        class HasInt(properties.HasProperties):
+            myint = properties.Integer('my integer')
+
+
+        class HasFunnyDict(properties.HasProperties):
+            mydict = properties.Dict('my dict',
+                                     key_prop=properties.Color(''),
+                                     value_prop=HasInt,
+                                     observe_mutations=om)
+
+        hfd = HasFunnyDict()
+        hfd.mydict = {'red': HasInt(myint=5)}
+        hfd.mydict.update({'green': HasInt(myint=1)})
+
+        print(hfd.mydict)
+        hfd.validate()
+
+
 if __name__ == '__main__':
     unittest.main()

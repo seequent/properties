@@ -484,7 +484,7 @@ class Dict(basic.Property):
     @property
     def key_prop(self):
         """Property type allowed for keys"""
-        return getattr(self, '_key_prop', None)
+        return getattr(self, '_key_prop', basic.Property(''))
 
     @key_prop.setter
     def key_prop(self, value):
@@ -493,7 +493,7 @@ class Dict(basic.Property):
     @property
     def value_prop(self):
         """Property type allowed for values"""
-        return getattr(self, '_value_prop', None)
+        return getattr(self, '_value_prop', basic.Property(''))
 
     @value_prop.setter
     def value_prop(self, value):
@@ -511,6 +511,20 @@ class Dict(basic.Property):
             self.value_prop.name = value
         self._name = value
 
+    @property
+    def info(self):
+        """Supplemental description of the list, with length and type"""
+        itext = self.class_info
+        if self.key_prop.info and self.value_prop.info:
+            itext += ' (keys: {}; values: {})'.format(
+                self.key_prop.info, self.value_prop.info
+            )
+        elif self.key_prop.info:
+            itext += ' (keys: {})'.format(self.key_prop.info)
+        elif self.value_prop.info:
+            itext += ' (values: {})'.format(self.value_prop.info)
+        return itext
+
     def validate(self, instance, value):
         if not isinstance(value, dict):
             self.error(instance, value)
@@ -527,6 +541,7 @@ class Dict(basic.Property):
                 except ValueError:
                     self.error(instance, val, extra='This value is invalid.')
             out[key] = val
+        value = out
         if not self.observe_mutations:
             return value
         value = OBSERVABLE[self._class_default](value)
@@ -536,7 +551,7 @@ class Dict(basic.Property):
 
     def assert_valid(self, instance, value=None):
         """Check if dict and contained properties are valid"""
-        valid = super(Tuple, self).assert_valid(instance, value)
+        valid = super(Dict, self).assert_valid(instance, value)
         if not valid:
             return False
         if value is None:
@@ -592,6 +607,19 @@ class Dict(basic.Property):
             raise TypeError('Dict property {} cannot be deserialized. '
                             'Keys contain {}'.format(self.name, er))
         return self._class_default(output_dict)
+
+    def equal(self, value_a, value_b):
+        try:
+            if len(value_a) != len(value_b):
+                return False
+            copy_b = value_b.copy()
+            for key_a in value_a:
+                if self.value_prop.equal(value_a[key_a], value_b[key_a]):
+                    copy_b.pop(key_a)
+            return len(copy_b) == 0
+        except (KeyError, TypeError, AttributeError):
+            return False
+
 
     @staticmethod
     def to_json(value, **kwargs):
