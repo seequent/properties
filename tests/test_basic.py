@@ -27,9 +27,6 @@ class TestBasic(unittest.TestCase):
             properties.GettableProperty('bad kwarg', defualt=5)
         with self.assertRaises(TypeError):
             properties.Property('bad kwarg', required=5)
-        with self.assertRaises(AttributeError):
-            class PrivateProperty(properties.HasProperties):
-                _secret = properties.GettableProperty('secret prop')
 
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
@@ -102,7 +99,7 @@ class TestBasic(unittest.TestCase):
             myprop2 = properties.Property('empty property')
             myprop3 = properties.Property('empty property')
 
-        assert WithDocOrder().__doc__ == (
+        ordered_doc = (
             '\n\n**Required Properties:**\n\n'
             '* **myprop1** (:class:`Property <properties.Property>`): '
             'empty property\n'
@@ -111,6 +108,28 @@ class TestBasic(unittest.TestCase):
             '* **myprop2** (:class:`Property <properties.Property>`): '
             'empty property'
         )
+        assert WithDocOrder().__doc__ == ordered_doc
+
+        class SameDocOrder(WithDocOrder):
+            _my_private_prop = properties.Property('empty property')
+
+        assert SameDocOrder().__doc__ == ordered_doc
+
+        class DifferentDocOrder(WithDocOrder):
+            myprop4 = properties.Property('empty property')
+
+        unordered_doc = (
+            '\n\n**Required Properties:**\n\n'
+            '* **myprop1** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop2** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop3** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop4** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert DifferentDocOrder().__doc__ == unordered_doc
 
         class NoMoreDocOrder(WithDocOrder):
             _doc_order = None
