@@ -24,6 +24,14 @@ class TestMath(unittest.TestCase):
             properties.Array('bad shape', shape=5)
         with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=(5, 'any'))
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={5, 3, 4})
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={('*',), None})
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={('*',), (None,)})
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={('*',), 5})
 
         class ArrayOpts(properties.HasProperties):
             myarray = properties.Array('my array')
@@ -95,8 +103,28 @@ class TestMath(unittest.TestCase):
         class DefaultArrayOpts(properties.HasProperties):
             mydefaultarray = properties.Array(
                 'my array with default',
-                default=np.random.rand(10),
+                default=lambda: np.random.rand(10),
             )
+
+        class FlexArrays(properties.HasProperties):
+            any_array = properties.Array('any shape allowed', shape=None)
+            flex_array = properties.Array(
+                '1-, 2-, 3-D array',
+                shape={('*',), ('*', '*'), ('*', '*', '*')}
+            )
+
+        fa = FlexArrays()
+
+        fa.any_array = np.random.rand(3)
+        fa.any_array = np.random.rand(3, 3)
+        fa.any_array = np.random.rand(3, 3, 3)
+        fa.any_array = np.random.rand(3, 3, 3, 3)
+
+        fa.flex_array = np.random.rand(3)
+        fa.flex_array = np.random.rand(3, 3)
+        fa.flex_array = np.random.rand(3, 3, 3)
+        with self.assertRaises(ValueError):
+            fa.flex_array = np.random.rand(3, 3, 3, 3)
 
     def test_vector2(self):
 
