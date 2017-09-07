@@ -120,7 +120,7 @@ class PropertyMetaclass(type):
         for key, handler in iteritems(observer_dict):
             classdict[key] = handler.func
 
-        # Determine if private properties should be documented
+        # Determine if private properties should be documented or just public
         _doc_private = False
         for base in reversed(bases):
             _doc_private = getattr(base, '_doc_private', _doc_private)
@@ -135,7 +135,15 @@ class PropertyMetaclass(type):
             documented_props = sorted(p for p in _props if p[0] != '_')
 
         # Order the properties for the docs (default is alphabetical)
-        _doc_order = classdict.pop('_doc_order', None)
+        _doc_order = None
+        for base in reversed(bases):
+            _doc_order = getattr(base, '_doc_order', _doc_order)
+            if (
+                    not isinstance(_doc_order, (list, tuple)) or
+                    sorted(list(_doc_order)) != documented_props
+            ):
+                _doc_order = None
+        _doc_order = classdict.get('_doc_order', _doc_order)
         if _doc_order is None:
             _doc_order = documented_props
         elif not isinstance(_doc_order, (list, tuple)):
