@@ -21,6 +21,8 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.Array('bad dtype', dtype=tuple())
         with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape=['*'])
+        with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=5)
         with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=(5, 'any'))
