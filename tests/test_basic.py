@@ -84,6 +84,28 @@ class TestBasic(unittest.TestCase):
         assert not properties.equal(PropOpts(myprop=5), PropOpts())
         assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
 
+        assert properties.Property('').equal(5, 5)
+        assert not properties.Property('').equal(5, 'hi')
+        assert properties.Property('').equal(np.array([1., 2.]),
+                                             np.array([1., 2.]))
+        assert not properties.Property('').equal(np.array([1., 2.]),
+                                                 np.array([3., 4.]))
+
+        class NoAttributes(properties.HasProperties):
+            a = properties.Integer('a')
+
+            def __setattr__(self, attr, value):
+                if value is not properties.undefined:
+                    raise AttributeError()
+                return super(NoAttributes, self).__setattr__(attr, value)
+
+        na = NoAttributes()
+        with self.assertRaises(AttributeError):
+            na.a = 5
+
+
+    def test_docstrings(self):
+
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):
                 _doc_order = 5
@@ -134,24 +156,26 @@ class TestBasic(unittest.TestCase):
         class NoMoreDocOrder(WithDocOrder):
             _doc_order = None
 
-        assert properties.Property('').equal(5, 5)
-        assert not properties.Property('').equal(5, 'hi')
-        assert properties.Property('').equal(np.array([1., 2.]),
-                                             np.array([1., 2.]))
-        assert not properties.Property('').equal(np.array([1., 2.]),
-                                                 np.array([3., 4.]))
-
-        class NoAttributes(properties.HasProperties):
-            a = properties.Integer('a')
-
-            def __setattr__(self, attr, value):
-                if value is not properties.undefined:
-                    raise AttributeError()
-                return super(NoAttributes, self).__setattr__(attr, value)
-
-        na = NoAttributes()
         with self.assertRaises(AttributeError):
-            na.a = 5
+            class BadDocPrivate(properties.HasProperties):
+                _doc_private = 'yes'
+
+        class PrivateProperty(properties.HasProperties):
+            _doc_private = True
+
+            _something = properties.Property('empty property')
+
+        private_doc = (
+            '\n\n**Private Properties:**\n\n'
+            '* **_something** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert PrivateProperty().__doc__ == private_doc
+
+        class UndocPrivate(PrivateProperty):
+            _doc_private = False
+
+        assert UndocPrivate().__doc__ == ''
 
 
     def test_bool(self):
@@ -657,6 +681,10 @@ class TestBasic(unittest.TestCase):
             assert getattr(np, 'info', None) == 'new property'
 
     def test_renamed(self):
+
+        with self.assertRaises(TypeError):
+            class BadRenamed(properties.HasProperties):
+                new_prop = properties.Renamed('no_good')
 
         class MyHasProps(properties.HasProperties):
             my_int = properties.Integer('My integer')
