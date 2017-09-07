@@ -105,9 +105,9 @@ class Array(Property):
             shape_info = 'any shape'
         else:
             shape_info = 'shape {}'.format(' or '.join(
-                '(' + ', '.join(
-                    ['\*' if s == '*' else str(s) for s in self.shape]         #pylint: disable=anomalous-backslash-in-string
-                ) + ')'
+                '({})'.format(', '.join(
+                    '\*' if s == '*' else str(s) for s in shape                #pylint: disable=anomalous-backslash-in-string
+                )) for shape in self.shape
             ))
         return '{info} of {type} with {shp}'.format(
             info=self.class_info,
