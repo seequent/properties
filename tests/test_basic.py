@@ -226,6 +226,8 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(ValueError):
             opt.validate()
 
+        opt.mybool = np.True_
+
     def test_numbers(self):
 
         with self.assertRaises(TypeError):

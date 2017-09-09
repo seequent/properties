@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import numpy as np
 import properties
 
 
@@ -88,6 +89,9 @@ class TestContainer(unittest.TestCase):
         li.aaa = {1, 2, 3}
         assert isinstance(li.aaa, tuple)
         assert all(val in li.aaa for val in [1, 2, 3])
+
+        li.aaa = np.array([3, 2, 1])
+        assert li.aaa == (3, 2, 1)
 
         class HasConstrianedTuple(properties.HasProperties):
             aaa = properties.Tuple('tuple of ints', properties.Integer(''),
