@@ -27,9 +27,6 @@ class TestBasic(unittest.TestCase):
             properties.GettableProperty('bad kwarg', defualt=5)
         with self.assertRaises(TypeError):
             properties.Property('bad kwarg', required=5)
-        with self.assertRaises(AttributeError):
-            class PrivateProperty(properties.HasProperties):
-                _secret = properties.GettableProperty('secret prop')
 
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
@@ -77,8 +74,37 @@ class TestBasic(unittest.TestCase):
 
         assert PropOpts(myprop=5).validate()
 
-        assert PropOpts().equal(PropOpts())
-        assert not PropOpts(myprop=5).equal(PropOpts())
+        with warnings.catch_warnings(record=True) as w:
+            assert PropOpts().equal(PropOpts())
+            assert len(w) == 1
+            assert issubclass(w[0].category, FutureWarning)
+
+        assert properties.equal(PropOpts(), PropOpts())
+        assert properties.equal(PropOpts(myprop=5), PropOpts(myprop=5))
+        assert not properties.equal(PropOpts(myprop=5), PropOpts())
+        assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
+
+        assert properties.Property('').equal(5, 5)
+        assert not properties.Property('').equal(5, 'hi')
+        assert properties.Property('').equal(np.array([1., 2.]),
+                                             np.array([1., 2.]))
+        assert not properties.Property('').equal(np.array([1., 2.]),
+                                                 np.array([3., 4.]))
+
+        class NoAttributes(properties.HasProperties):
+            a = properties.Integer('a')
+
+            def __setattr__(self, attr, value):
+                if value is not properties.undefined:
+                    raise AttributeError()
+                return super(NoAttributes, self).__setattr__(attr, value)
+
+        na = NoAttributes()
+        with self.assertRaises(AttributeError):
+            na.a = 5
+
+
+    def test_docstrings(self):
 
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):
@@ -90,23 +116,67 @@ class TestBasic(unittest.TestCase):
                 myprop = properties.Property('empty property')
 
         class WithDocOrder(properties.HasProperties):
-            _doc_order = ['myprop1', 'myprop2', 'myprop3']
+            _doc_order = ['myprop1', 'myprop3', 'myprop2']
             myprop1 = properties.Property('empty property')
             myprop2 = properties.Property('empty property')
             myprop3 = properties.Property('empty property')
 
-        assert WithDocOrder().__doc__ == (
+        ordered_doc = (
             '\n\n**Required Properties:**\n\n'
-            '* **myprop1** (:class:`Property <properties.basic.Property>`): '
-            'empty property\n\n'
-            '* **myprop2** (:class:`Property <properties.basic.Property>`): '
-            'empty property\n\n'
-            '* **myprop3** (:class:`Property <properties.basic.Property>`): '
+            '* **myprop1** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop3** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop2** (:class:`Property <properties.Property>`): '
             'empty property'
         )
+        assert WithDocOrder().__doc__ == ordered_doc
+
+        class SameDocOrder(WithDocOrder):
+            _my_private_prop = properties.Property('empty property')
+
+        assert SameDocOrder().__doc__ == ordered_doc
+
+        class DifferentDocOrder(WithDocOrder):
+            myprop4 = properties.Property('empty property')
+
+        unordered_doc = (
+            '\n\n**Required Properties:**\n\n'
+            '* **myprop1** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop2** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop3** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop4** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert DifferentDocOrder().__doc__ == unordered_doc
 
         class NoMoreDocOrder(WithDocOrder):
             _doc_order = None
+
+        with self.assertRaises(AttributeError):
+            class BadDocPrivate(properties.HasProperties):
+                _doc_private = 'yes'
+
+        class PrivateProperty(properties.HasProperties):
+            _doc_private = True
+
+            _something = properties.Property('empty property')
+
+        private_doc = (
+            '\n\n**Private Properties:**\n\n'
+            '* **_something** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert PrivateProperty().__doc__ == private_doc
+
+        class UndocPrivate(PrivateProperty):
+            _doc_private = False
+
+        assert UndocPrivate().__doc__ == ''
+
 
     def test_bool(self):
 
@@ -155,6 +225,8 @@ class TestBasic(unittest.TestCase):
         opt._backend['mybool'] = 'true'
         with self.assertRaises(ValueError):
             opt.validate()
+
+        opt.mybool = np.True_
 
     def test_numbers(self):
 
@@ -612,6 +684,10 @@ class TestBasic(unittest.TestCase):
 
     def test_renamed(self):
 
+        with self.assertRaises(TypeError):
+            class BadRenamed(properties.HasProperties):
+                new_prop = properties.Renamed('no_good')
+
         class MyHasProps(properties.HasProperties):
             my_int = properties.Integer('My integer')
 
@@ -641,6 +717,33 @@ class TestBasic(unittest.TestCase):
 
         assert myp.my_int is None
 
+    def test_copy(self):
+
+        class HasProps2(properties.HasProperties):
+            my_list = properties.List('my list', properties.Bool(''))
+            five = properties.GettableProperty('five', default=5)
+            my_array = properties.Vector3Array('my array')
+
+        class HasProps1(properties.HasProperties):
+            my_hp2 = properties.Instance('my HasProps2', HasProps2)
+            my_union = properties.Union(
+                'string or int',
+                (properties.String(''), properties.Integer(''))
+            )
+
+        hp1 = HasProps1(
+            my_hp2=HasProps2(
+                my_list=[True, True, False],
+                my_array=[[1., 2., 3.], [4., 5., 6.]],
+            ),
+            my_union=10,
+        )
+        hp1_copy = properties.copy(hp1)
+        assert properties.equal(hp1, hp1_copy)
+        assert hp1 is not hp1_copy
+        assert hp1.my_hp2 is not hp1_copy.my_hp2
+        assert hp1.my_hp2.my_list is not hp1_copy.my_hp2.my_list
+        assert hp1.my_hp2.my_array is not hp1_copy.my_hp2.my_array
 
 if __name__ == '__main__':
     unittest.main()

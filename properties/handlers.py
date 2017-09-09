@@ -12,15 +12,16 @@ LISTENER_TYPES = {'validate', 'observe_set', 'observe_change'}
 
 
 class listeners_disabled(object):                                              #pylint: disable=invalid-name, too-few-public-methods
-    """Context manager for disabling all listener types
+    """Context manager for disabling all HasProperties listeners
 
-    Usage:
+    Code that runs inside this context manager will not fire HasProperties
+    methods decorated with :code:`@validator` or :code:`@observer`. This
+    context manager has no effect on Property validation.
+
+    .. code::
 
         with properties.listeners_disabled():
             self.quietly_update()
-
-    Note: this context manager only affects change notifications on a
-    HasProperties instance; it does not affect Property validation.
     """
 
     _quarantine = set()
@@ -63,14 +64,22 @@ class listeners_disabled(object):                                              #
 
 
 class validators_disabled(listeners_disabled):                                 #pylint: disable=invalid-name, too-few-public-methods
-    """Context manager for disabling all property change validators"""
+    """Context manager for disabling all property change validators
+
+    This context manager behaves like :class:`properties.listeners_disabled`,
+    but only affects HasProperties methods decorated with :code:`@validator`
+    """
 
     def __init__(self):
         super(validators_disabled, self).__init__({'validate'})
 
 
 class observers_disabled(listeners_disabled):                                  #pylint: disable=invalid-name, too-few-public-methods
-    """Context manager for disabling all property change observers"""
+    """Context manager for disabling all property change observers
+
+    This context manager behaves like :class:`properties.listeners_disabled`,
+    but only affects HasProperties methods decorated with :code:`@observer`
+    """
 
     def __init__(self):
         super(observers_disabled, self).__init__({'observe_set',
@@ -78,7 +87,7 @@ class observers_disabled(listeners_disabled):                                  #
 
 
 def _set_listener(instance, obs):
-    """Add listeners to a Properties class instance"""
+    """Add listeners to a HasProperties instance"""
     if obs.names is everything:
         names = list(instance._props)
     else:
@@ -90,7 +99,7 @@ def _set_listener(instance, obs):
 
 
 def _get_listeners(instance, change):
-    """Gets listeners of changed property"""
+    """Gets listeners of changed Property on a HasProperties instance"""
     if (
             change['mode'] not in listeners_disabled._quarantine and           #pylint: disable=protected-access
             change['name'] in instance._listeners
@@ -100,7 +109,11 @@ def _get_listeners(instance, change):
 
 
 class Observer(object):
-    """Acts as a listener on a properties instance"""
+    """Acts as a listener on a HasProperties instance
+
+    Observers are initialized by the :code:`observer` and :code:`validator`
+    method.
+    """
 
     def __init__(self, names, mode):
         self.names = names
@@ -112,7 +125,7 @@ class Observer(object):
 
     @property
     def names(self):
-        """Name of the property being observed"""
+        """Name of the Property being observed"""
         return getattr(self, '_names')
 
     @names.setter
@@ -120,7 +133,7 @@ class Observer(object):
         if value is everything:
             self._names = value
             return
-        if not isinstance(value, (tuple, list)):
+        if not isinstance(value, (tuple, list, set)):
             value = [value]
         for val in value:
             if not isinstance(val, string_types):
@@ -131,8 +144,12 @@ class Observer(object):
     def mode(self):
         """Observation mode
 
-        validate - acts on change before value is set
-        observe - acts on change after value is set
+        Valid modes include:
+
+        * validate - acts on change before value is set
+        * observe_set - acts on change after value is set
+        * observe_change - acts on change ofter value is set, only if the new
+          value is different
         """
         return getattr(self, '_mode')
 
@@ -146,32 +163,62 @@ class Observer(object):
 
 
 class ClassValidator(object):                                                  #pylint: disable=too-few-public-methods
-    """Acts as a listener on class validation"""
+    """Acts as a listener on class validation
+
+    Observers are initialized by the :code:`observer` and :code:`validator`
+    method.
+    """
 
     def __init__(self, func):
         self.func = func
 
 
 def observer(names_or_instance, names=None, func=None, change_only=False):
-    """Observe the result of a change in a named property
+    """Specify a callback function that will fire on Property value change
 
-        You can use this inside a class as a wrapper, which will
-        be applied to all class instances:
+    Observer functions on a HasProperties class fire after the observed
+    Property or Properties have been changed (unlike validator functions
+    that fire on set before the value is changed).
 
-        .. code::
+    You can use this method as a decorator inside a HasProperties class
 
-            @properties.observer('variable_x')
-            def class_method(self, change):
-                print(change)
+    .. code::
 
-        or you can use it for a single properties instance:
+        @properties.observer('variable_name')
+        def callback_function(self, change):
+            print(change)
 
-        .. code::
+    or you can use it to register a function to a single HasProperties
+    instance
 
-            properties.observer(my_props, 'variable_x', func)
+    .. code::
 
-        Where :code:`func` takes an instance and a change notification.
+        properties.observer(my_has_props, 'variable_name', callback_function)
 
+    The variable name must refer to a Property name on the HasProperties
+    class. A list of Property names may also be used; the same
+    callback function will fire when any of these Properties change. Also,
+    :class:`properties.everything <properties.utils.Sentinel>` may be
+    specified instead of the variable name. In that case, the callback
+    function will fire when any Property changes.
+
+    The callback function must take two arguments. The first is the
+    HasProperties instance; the second is the change notification dictionary.
+    This dictionary contains:
+
+    * 'name' - the name of the changed Property
+    * 'previous' - the value of the Property prior to change (this will be
+      :code:`properties.undefined` if the value was not previously set)
+    * 'value' - the new value of the Property (this will be
+      :code:`properties.undefined` if the value is deleted)
+    * 'mode' - the mode of the change; for observers, this is either
+      'observe_set' or 'observe_change'
+
+    Finally, the keyword argument **change_only** may be specified as a
+    boolean. If False (the default), the callback function will fire any
+    time the Property is set. If True, the callback function will only fire
+    if the new value is different than the previous value, determined by
+    the :code:`Property.equal` method.
     """
 
     mode = 'observe_change' if change_only else 'observe_set'
@@ -184,38 +231,72 @@ def observer(names_or_instance, names=None, func=None, change_only=False):
 
 
 def validator(names_or_instance, names=None, func=None):
-    """Observe a pending change in a named property OR class validation
+    """Specify a callback function to fire on class validation OR property set
 
-        Use this to register a function that will be called when validate
-        is called on a HasProperties instance:
+    This function has two modes of operation:
 
-        .. code::
+    1. Registering callback functions that validate Property values when
+       they are set, before the change is saved to the HasProperties instance.
+       This mode is very similar to the :code:`observer` function.
+    2. Registering callback functions that fire only when the HasProperties
+       :code:`validate` method is called. This allows for cross-validation
+       of Properties that should only fire when all required Properties are
+       set.
 
-            @properties.validator
-            def _validate_instance(self):
-                print('is valid')
+    **Mode 1:**
 
-        ---- OR ----
+    Validator functions on a HasProperties class fire on set but before the
+    observed Property or Properties have been changed (unlike observer
+    functions that fire after the value has been changed).
 
-        Call with arguments to validate a change in a named property.
+    You can use this method as a decorator inside a HasProperties class
 
-        You can use this inside a class as a wrapper, which will
-        be applied to all class instances:
+    .. code::
 
-        .. code::
+        @properties.validator('variable_name')
+        def callback_function(self, change):
+            print(change)
 
-            @properties.validator('variable_x')
-            def class_method(self, change):
-                print(change)
+    or you can use it to register a function to a single HasProperties
+    instance
 
-        or you can use it for a single properties instance:
+    .. code::
 
-        .. code::
+        properties.validator(my_has_props, 'variable_name', callback_function)
 
-            properties.validator(my_props, 'variable_x', func)
+    The variable name must refer to a Property name on the HasProperties
+    class. A list of Property names may also be used; the same
+    callback function will fire when any of these Properties change. Also,
+    :class:`properties.everything <properties.utils.Sentinel>` may be
+    specified instead of the variable name. In that case, the callback
+    function will fire when any Property changes.
 
-        Where :code:`func` takes an instance and a change notification.
+    The callback function must take two arguments. The first is the
+    HasProperties instance; the second is the change notification dictionary.
+    This dictionary contains:
 
+    * 'name' - the name of the changed Property
+    * 'previous' - the value of the Property prior to change (this will be
+      :code:`properties.undefined` if the value was not previously set)
+    * 'value' - the new value of the Property (this will be
+      :code:`properties.undefined` if the value is deleted)
+    * 'mode' - the mode of the change; for validators, this is 'validate'
+
+    **Mode 2:**
+
+    When used as a decorator without arguments (i.e. called directly on a
+    HasProperties method), the decorated method is registered as a class
+    validator. These methods execute only when :code:`validate()` is called
+    on the HasProperties instance.
+
+    .. code::
+
+        @properties.validator
+        def validation_method(self):
+            print('validating instance of {}'.format(self.__class__))
+
+    The decorated function must only take one argument, the HasProperties
+    instance.
     """
 
     if names is None and func is None:

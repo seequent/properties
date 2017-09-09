@@ -5,9 +5,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
+from warnings import warn
+
 from six import PY2
 
-from .base import HasProperties
+from .base import HasProperties, equal
 from .. import basic
 from .. import utils
 
@@ -19,16 +21,26 @@ else:
 
 
 class Instance(basic.Property):
-    """Instance property
+    """Property for instances of a specified class
 
-    Allowed keywords:
+    **Instance** Properties may be used for any type, but they gain additional
+    power with :ref:`hasproperties` types. The **Instance** Property may be
+    assigned a dictionary with valid HasProperties class keywords; this is
+    coerced to an instance of the HasProperties class. Also, HasProperties
+    methods behave recursively, so if the parent HasProperties class is
+    validated, serialized, etc., then HasProperties **Instance** Properties
+    on the class will also be validated, serialized, etc.
 
-    * **instance_class** - the allowed class for the property
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **auto_create** - if True, create an instance of the class as
-      default value. Note: auto_create passes no arguments.
-      auto_create cannot be true for an instance_class
-      that requires arguments.
+    * **instance_class** - The allowed class for the property.
+    * **auto_create** - DEPRECATED - set default to the instance_class
+      instead. If True, this Property is instantiated by default.
+      This is equivalent to setting the default keyword to the instance_class.
+      If False, the default value is undefined. Note: auto_create passes no
+      arguments, so it cannot be True if the instance_class requires
+      arguments.
     """
 
     class_info = 'an instance'
@@ -62,6 +74,9 @@ class Instance(basic.Property):
 
     @auto_create.setter
     def auto_create(self, value):
+        warn('Deprecation warning: auto_create will be removed in a future '
+             'release. Please set default to the instance_class instead',
+             FutureWarning)
         if not isinstance(value, bool):
             raise TypeError('auto_create must be a boolean')
         self._auto_create = value
@@ -101,40 +116,40 @@ class Instance(basic.Property):
         return True
 
 
-    def serialize(self, value, include_class=True, **kwargs):
+    def serialize(self, value, **kwargs):
         """Serialize instance to JSON
 
         If the value is a HasProperties instance, it is serialized with
         the include_class argument passed along. Otherwise, to_json is
         called.
         """
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
         if self.serializer is not None:
             return self.serializer(value, **kwargs)
         if value is None:
             return None
         if isinstance(value, HasProperties):
-            return value.serialize(include_class, **kwargs)
+            return value.serialize(**kwargs)
         return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, trusted=False, **kwargs):
+    def deserialize(self, value, **kwargs):
         """Deserialize instance from JSON value
 
         If a deserializer is registered, that is used. Otherwise, if the
         instance_class is a HasProperties subclass, an instance can be
         deserialized from a dictionary.
         """
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
         if issubclass(self.instance_class, HasProperties):
-            return self.instance_class.deserialize(value, trusted, **kwargs)
+            return self.instance_class.deserialize(value, **kwargs)
         return self.from_json(value, **kwargs)
 
     def equal(self, value_a, value_b):
-        if isinstance(value_a, HasProperties):
-            return value_a.equal(value_b)
-        return value_a is value_b
+        return equal(value_a, value_b)
 
     @staticmethod
     def to_json(value, **kwargs):
@@ -154,13 +169,15 @@ class Instance(basic.Property):
     def from_json(value, **kwargs):
         """Instance properties cannot statically convert from JSON"""
         raise TypeError("Instance properties cannot statically convert "
-                        "values from JSON. 'eserialize' must be used on an "
+                        "values from JSON. 'deserialize' must be used on an "
                         "instance of Instance Property instead, and if the "
                         "instance_class is not a HasProperties subclass a "
                         "custom deserializer must be registered")
 
     def sphinx_class(self):
         """Redefine sphinx class so documentation links to instance_class"""
-        return ':class:`{cls} <.{cls}>`'.format(
-            cls=self.instance_class.__name__
+        classdoc = ':class:`{cls} <{pref}.{cls}>`'.format(
+            cls=self.instance_class.__name__,
+            pref=self.instance_class.__module__,
         )
+        return classdoc

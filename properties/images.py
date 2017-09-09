@@ -18,10 +18,16 @@ PNG_PREAMBLE = 'data:image/png;base64,'
 class ImagePNG(File):
     """Property for PNG images
 
-    Available keyword:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **filename** - name associated with open copy of PNG image
-      (default is 'texture.png')
+    * **mode**: Opens the file in this mode. Must be a binary mode that
+      supports file reading. Default value is 'rb'.
+    * **valid_modes**: Tuple of valid modes for open files. This must
+      include **mode**. If nothing is specified, **valid_mode** is set
+      to **mode**.
+    * **filename** - Name associated with open copy of PNG image.
+      Default is 'texture.png'.
     """
     class_info = 'a PNG image file'
 
@@ -44,7 +50,7 @@ class ImagePNG(File):
             raise TypeError('Filename must be a string')
         self._filename = value
 
-    def validate(self, obj, value):
+    def validate(self, instance, value):
         """Checks if value is an open PNG file, valid filename, or png.Image
 
         Returns an open bytestream of the image
@@ -56,11 +62,11 @@ class ImagePNG(File):
         if isinstance(value, png.Image):
             pass
         else:
-            value = super(ImagePNG, self).validate(obj, value)
+            value = super(ImagePNG, self).validate(instance, value)
             try:
                 png.Reader(value).validate_signature()
             except png.FormatError:
-                self.error(obj, value, extra='Open file is not PNG.')
+                self.error(instance, value, extra='Open file is not PNG.')
             value.seek(0)
         # Write input to new bytestream
         output = BytesIO()

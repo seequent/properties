@@ -21,6 +21,8 @@ from .base import (
     Set,
     Tuple,
     Union,
+    copy,
+    equal,
 )
 
 from .basic import (
@@ -72,6 +74,10 @@ from .handlers import (
     validator,
     validators_disabled,
 )
+from .link import (
+    directional_link,
+    link,
+)
 from .utils import (
     everything,
     filter_props,
@@ -80,7 +86,13 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.1b2'
-__author__ = '3point Science'
+__version__ = '0.3.6b0'
+__author__ = 'ARANZ Geo Limited'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2017 3point Science,'
+__copyright__ = 'Copyright 2017 ARANZ Geo Limited'
+
+try:
+    del absolute_import, division, print_function, unicode_literals
+except NameError:
+    # Error cleaning namespace
+    pass

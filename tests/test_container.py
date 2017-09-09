@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import numpy as np
 import properties
 
 
@@ -89,6 +90,9 @@ class TestContainer(unittest.TestCase):
         assert isinstance(li.aaa, tuple)
         assert all(val in li.aaa for val in [1, 2, 3])
 
+        li.aaa = np.array([3, 2, 1])
+        assert li.aaa == (3, 2, 1)
+
         class HasConstrianedTuple(properties.HasProperties):
             aaa = properties.Tuple('tuple of ints', properties.Integer(''),
                                   min_length=2)
@@ -112,7 +116,8 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasColorTuple(properties.HasProperties):
-            ccc = properties.Tuple('tuple of colors', properties.Color(''))
+            ccc = properties.Tuple('tuple of colors', properties.Color(''),
+                                   min_length=2, max_length=2)
 
         li = HasColorTuple()
         li.ccc = ('red', '#00FF00')
@@ -464,22 +469,19 @@ class TestContainer(unittest.TestCase):
         class HasIntA(properties.HasProperties):
             a = properties.Integer('int a', required=True)
 
+        hia_json = properties.Set.to_json({HasIntA(a=5), HasIntA(a=10)})
         assert (
-            properties.Set.to_json(
-                {HasIntA(a=5), HasIntA(a=10)}
-            ) == [{'__class__': 'HasIntA', 'a': 5},
-                  {'__class__': 'HasIntA', 'a': 10}] or
-            properties.Set.to_json(
-                {HasIntA(a=5), HasIntA(a=10)}
-            ) == [{'__class__': 'HasIntA', 'a': 10},
-                  {'__class__': 'HasIntA', 'a': 5}]
+            hia_json == [{'__class__': 'HasIntA', 'a': 5},
+                         {'__class__': 'HasIntA', 'a': 10}] or
+            hia_json == [{'__class__': 'HasIntA', 'a': 10},
+                         {'__class__': 'HasIntA', 'a': 5}]
         )
 
-        assert li.serialize(include_class=False) == {
-            'ccc': [[255, 0, 0], [0, 255, 0]]
-        } or li.serialize(include_class=False) == {
-            'ccc': [[0, 255, 0], [255, 0, 0]]
-        }
+        li_ser = li.serialize(include_class=False)
+        assert (
+            li_ser == {'ccc': [[255, 0, 0], [0, 255, 0]]} or
+            li_ser == {'ccc': [[0, 255, 0], [255, 0, 0]]}
+        )
 
         class HasIntASet(properties.HasProperties):
             myset = properties.Set('set of HasIntA', HasIntA,

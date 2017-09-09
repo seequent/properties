@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 import collections
 import datetime
+from functools import wraps
 import math
 import random
 import re
@@ -18,6 +19,13 @@ from .utils import undefined
 
 TOL = 1e-9
 
+BOOLEAN_TYPES = (bool,)
+try:
+    import numpy as np
+    BOOLEAN_TYPES += (np.bool_,)
+except ImportError:
+    pass
+
 PropertyTerms = collections.namedtuple(
     'PropertyTerms',
     ('name', 'cls', 'args', 'kwargs', 'meta'),
@@ -25,7 +33,7 @@ PropertyTerms = collections.namedtuple(
 
 
 class ArgumentWrangler(type):
-    """Stores arguments to property initialization for later use"""
+    """Stores arguments to Property initialization for later use"""
 
     def __new__(mcs, name, bases, classdict):
 
@@ -53,40 +61,45 @@ class ArgumentWrangler(type):
 
 
 class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #pylint: disable=too-many-instance-attributes
-    """Base property class that establishes gettable property behavior
+    """Property with immutable value
 
-    Available keywords:
+    **GettableProperties** are assigned their default values upon
+    :ref:`hasproperties` instance construction, and cannot be modified after
+    that.
 
-    * **doc** - property's custom doc string
-    * **default** - property's default value
+    Keyword arguments match those available to :ref:`Property <property>`
+    with the exception of **required**.
     """
-    class_info = 'corrected'
+    class_info = ''
     _class_default = undefined
 
     def __init__(self, doc, **kwargs):
         self.doc = doc
         self._meta = {}
+        default = kwargs.pop('default', None)
         for key in kwargs:
+            if key == 'terms':
+                raise AttributeError('terms are set by Property metaclass')
             if key[0] == '_':
                 raise AttributeError(
-                    'Cannot set private property: "{}".'.format(key)
+                    'Cannot set private attribute: "{}".'.format(key)
                 )
             if not hasattr(self, key):
                 raise AttributeError(
-                    'Unknown key for property: "{}".'.format(key)
+                    'Unknown key for Property: "{}".'.format(key)
                 )
             try:
                 setattr(self, key, kwargs[key])
             except AttributeError:
                 raise AttributeError(
-                    'Cannot set property: "{}".'.format(key)
+                    'Cannot set attribute: "{}".'.format(key)
                 )
+        if default is not None:
+            self.default = default
 
     @property
     def name(self):
-        """The name of the property on a HasProperties class
-
-        This is set in the metaclass.
+        """The name of the Property on a HasProperties class
         """
         return getattr(self, '_name', '')
 
@@ -109,7 +122,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     @property
     def terms(self):
-        """Initialization terms & options for property"""
+        """Initialization terms and options for Property"""
         terms = PropertyTerms(
             self.name,
             self.__class__,
@@ -133,7 +146,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     @property
     def default(self):
-        """Default value of the property"""
+        """Default value of the Property"""
         return getattr(self, '_default', self._class_default)
 
     @default.setter
@@ -146,24 +159,42 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     @property
     def serializer(self):
-        """Callable to serialize the property"""
+        """Callable to serialize the Property"""
         return getattr(self, '_serializer', None)
 
     @serializer.setter
     def serializer(self, value):
         if not callable(value):
             raise TypeError('serializer must be a callable')
+        if hasattr(value, '__code__') and value.__code__.co_argcount == 1:
+            def ignore_kwargs(func):
+                """Wrap a function to allow unused kwargs"""
+                @wraps(func)
+                def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
+                    """Perform a function on a value, ignoring kwargs"""
+                    return func(val)
+                return wrapped
+            value = ignore_kwargs(value)
         self._serializer = value
 
     @property
     def deserializer(self):
-        """Callable to serialize the property"""
+        """Callable to serialize the Property"""
         return getattr(self, '_deserializer', None)
 
     @deserializer.setter
     def deserializer(self, value):
         if not callable(value):
             raise TypeError('deserializer must be a callable')
+        if hasattr(value, '__code__') and value.__code__.co_argcount == 1:
+            def ignore_kwargs(func):
+                """Wrap a function to allow unused kwargs"""
+                @wraps(func)
+                def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
+                    """Perform a function on a value, ignoring kwargs"""
+                    return func(val)
+                return wrapped
+            value = ignore_kwargs(value)
         self._deserializer = value
 
     @property
@@ -172,8 +203,8 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return self._meta
 
     def tag(self, *tag, **kwtags):
-        """Tag a Property instance with arbitrary metadata"""
-        if len(tag) == 0:
+        """Tag a Property instance with metadata dictionary"""
+        if not tag:
             pass
         elif len(tag) == 1 and isinstance(tag[0], dict):
             self._meta.update(tag[0])
@@ -185,15 +216,35 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     @property
     def info(self):
-        """Description of the property, supplemental to the base doc"""
+        """Description of the Property, supplemental to the base doc"""
         return self.class_info
 
     def validate(self, instance, value):                                       #pylint: disable=unused-argument,no-self-use
-        """Check if value is valid and possibly coerce it to new value"""
+        """Check if the value is valid for the Property
+
+        If valid, return the value, possibly coerced from the input value.
+        If invalid, a ValueError is raised.
+
+        .. warning::
+
+            Calling :code:`validate` again on a coerced value must not modify
+            the value further.
+
+        .. note::
+
+            This function should be able to handle :code:`instance=None`
+            since valid Property values are independent of containing
+            HasProperties class. However, the instance is passed to
+            :code:`error` for a more verbose error message, and it may be
+            used for additional optional validation.
+        """
         return value
 
     def assert_valid(self, instance, value=None):
-        """Check if the current state of a property is valid"""
+        """Returns True if the Property is valid on a HasProperties instance
+
+        Raises a ValueError if the value is invalid.
+        """
         if value is None:
             value = instance._get(self.name)
         if (
@@ -206,37 +257,51 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return True
 
     def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
-        """Test if two property values are equal"""
-        return value_a == value_b
+        """Check if two valid Property values are equal
+
+        .. note::
+
+            This method assumes that :code:`None` and
+            :code:`properties.undefined` are never passed in as values
+        """
+        equal = value_a == value_b
+        if hasattr(equal, '__iter__'):
+            return all(equal)
+        return equal
 
     def get_property(self):
         """Establishes access of GettableProperty values"""
 
-        # Scope is the containing HasProperties instance
         scope = self
 
         def fget(self):
             """Call the HasProperties _get method"""
             return self._get(scope.name)
 
-        return property(fget=fget, doc=scope.doc)
+        return property(fget=fget, doc=scope.sphinx())
 
-    def serialize(self, value, include_class=True, **kwargs):                  #pylint: disable=unused-argument
-        """Serialize the property value to JSON
+    def serialize(self, value, **kwargs):                                      #pylint: disable=unused-argument
+        """Serialize a valid Property value
 
-        If no serializer has been registered, this uses to_json
+        This method uses the Property :code:`serializer` if available.
+        Otherwise, it uses :code:`to_json`. Any keyword arguments are
+        passed through to these methods.
         """
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
         if self.serializer is not None:
             return self.serializer(value, **kwargs)
         if value is None:
             return None
         return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, trusted=False, **kwargs):                     #pylint: disable=unused-argument
-        """De-serialize the property value from JSON
+    def deserialize(self, value, **kwargs):                                    #pylint: disable=unused-argument
+        """Deserialize input value to valid Property value
 
-        If no deserializer has been registered, this uses from_json
+        This method uses the Property :code:`deserializer` if available.
+        Otherwise, it uses :code:`from_json`. Any keyword arguments are
+        passed through to these methods.
         """
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
         if self.deserializer is not None:
             return self.deserializer(value, **kwargs)
         if value is None:
@@ -245,35 +310,33 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     @staticmethod
     def to_json(value, **kwargs):                                              #pylint: disable=unused-argument
-        """Convert a value to JSON
-
-        to_json assumes that value has passed validation.
-        """
+        """Statically convert a valid Property value to JSON value"""
         return value
 
     @staticmethod
     def from_json(value, **kwargs):                                            #pylint: disable=unused-argument
-        """Load a value from JSON
-
-        to_json assumes that value read from JSON is valid
-        """
+        """Statically load a Property value from JSON value"""
         return value
 
-    def error(self, instance, value, error=None, extra=''):
-        """Generates a ValueError on setting property to an invalid value"""
-        error = error if error is not None else ValueError
-        if instance is None:
-            prefix = '{} property'.format(self.__class__.__name__)
-        else:
-            prefix = "The '{name}' property of a {cls} instance".format(
-                name=self.name,
+    def error(self, instance, value, error_class=None, extra=''):
+        """Generate a :code:`ValueError` for invalid value assignment
+
+        The instance is the containing HasProperties instance, but it may
+        be None if the error is raised outside a HasProperties class.
+        """
+        error_class = error_class if error_class is not None else ValueError
+        prefix = 'The {} property'.format(self.__class__.__name__)
+        if self.name != '':
+            prefix = prefix + " '{}'".format(self.name)
+        if instance is not None:
+            prefix = prefix + ' of a {cls} instance'.format(
                 cls=instance.__class__.__name__,
             )
-        raise error(
+        raise error_class(
             '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
             'specified. {extra}'.format(
                 prefix=prefix,
-                info=self.info,
+                info=self.info or 'corrected',
                 val=value,
                 vtype=type(value),
                 extra=extra,
@@ -281,24 +344,30 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         )
 
     def sphinx(self):
-        """Basic docstring formatted for Sphinx docs"""
-        scls = self.sphinx_class()
-        sphinx_class = ' ({})'.format(scls) if scls else ''
+        """Generate Sphinx-formatted documentation for the Property"""
+        try:
+            assert __IPYTHON__
+            classdoc = ''
+        except (NameError, AssertionError):
+            scls = self.sphinx_class()
+            classdoc = ' ({})'.format(scls) if scls else ''
 
         prop_doc = '**{name}**{cls}: {doc}{info}'.format(
             name=self.name,
-            cls=sphinx_class,
+            cls=classdoc,
             doc=self.doc,
-            info='' if self.info == 'corrected' else ', ' + self.info,
+            info=', {}'.format(self.info) if self.info else '',
         )
         return prop_doc
 
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
-        return ':class:`{cls} <{pref}.{cls}>`'.format(
-            cls=self.__class__.__name__,
-            pref=self.__module__
-        )
+        classdoc = ':class:`{cls} <{pref}.{cls}>`'
+        if self.__module__.split('.')[0] == 'properties':
+            pref = 'properties'
+        else:
+            pref = text_type(self.__module__)
+        return classdoc.format(cls=self.__class__.__name__, pref=pref)
 
     def __call__(self, func):
         return DynamicProperty(self.doc, func=func, prop=self)
@@ -307,28 +376,56 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 class DynamicProperty(GettableProperty):                                       #pylint: disable=too-many-instance-attributes
     """DynamicProperties are GettableProperties calculated dynamically
 
-    These allow for a similar behaviour to @property with additional
+    These allow for a similar behavior to :code:`@property` with additional
     documentation and validation built in. DynamicProperties are not
-    saved to the backend (and therefore are not serialized), do not fire
-    change notifications, and don't allow default values.
+    saved to the HasProperties instance (and therefore are not serialized),
+    do not fire change notifications, and don't allow default values.
 
-    These are created when properties are used like @property:
+    These are created by decorating a single-argument method with a Property
+    instance. This method is registered as the DynamicProperty getter.
+    Setters and deleters may also be registered.
+
     .. code::
 
-        @properties.Vector3('my dynamic vector')
-        def location(self):
-            return [self.x, self.y, self.z]
+        import properties
+        class SpatialInfo(properties.HasProperties):
+            x = properties.Float('x-location')
+            y = properties.Float('y-location')
+            z = properties.Float('z-location')
 
-        @location.setter
-        def location(self, value):
-            self.x, self.y, self.z = value
+            @properties.Vector3('my dynamic vector')
+            def location(self):
+                return [self.x, self.y, self.z]
 
-    Available keywords:
+            @location.setter
+            def location(self, value):
+                self.x, self.y, self.z = value
 
-    * **func** - the function used to calculate the dynamic value. The
-      output of this function is then passed through property validation.
-    * **prop** - the Property used to validate and document the dynamic
-      value
+            @location.deleter
+            def location(self):
+                del self.x, self.y, self.z
+
+    .. note::
+
+        DynamicProperties should not be directly instantiated; they should
+        be constructed with the above decorator method.
+
+    .. note::
+
+        Since DynamicProperties have no saved state, the decorating Property
+        is not allowed to have a :code:`default` value. Also, the
+        :code:`required` attribute will be ignored.
+
+    .. note::
+
+        When implementing a DynamicProperty getter, care should be taken
+        around when other properties do not yet have a value. In the example
+        above, if :code:`self.x`, :code:`self.y`, or :code:`self.z` is still
+        :code:`None` the :code:`location` vector will be invalid, so calling
+        :code:`self.location` will fail. However, if the getter method returns
+        :code:`None` it will be treated as :code:`properties.undefined` and
+        pass validation.
+
     """
 
     def __init__(self, doc, func, prop, **kwargs):
@@ -366,7 +463,7 @@ class DynamicProperty(GettableProperty):                                       #
 
     @property
     def name(self):
-        """The name of the property on a HasProperties class
+        """The name of the Property on a HasProperties class
 
         This is set in the metaclass. For DynamicProperties, prop inherits
         the name
@@ -379,6 +476,11 @@ class DynamicProperty(GettableProperty):                                       #
             raise TypeError('name must be a string')
         self.prop.name = value
         self._name = value
+
+    @property
+    def info(self):
+        """Info is obtained from prop"""
+        return self.prop.info + ' created dynamically'
 
     @property
     def serializer(self):
@@ -400,13 +502,14 @@ class DynamicProperty(GettableProperty):                                       #
         return self.prop.deserializer
 
     def validate(self, instance, value):
-        """Validate using self.prop"""
+        """Validate using prop validation"""
         return self.prop.validate(instance, value)
 
     def setter(self, func):
-        """Give dynamic properties a setter function
+        """Register a set function for the DynamicProperty
 
-        Input to the function is validated with prop validation prior to
+        This function must take two arguments, self and the new value.
+        Input value to the function is validated with prop validation prior to
         execution.
         """
         if not callable(func):
@@ -424,7 +527,10 @@ class DynamicProperty(GettableProperty):                                       #
         return getattr(self, '_set_func', None)
 
     def deleter(self, func):
-        """Give dynamic properties a deleter function"""
+        """Register a delete function for the DynamicProperty
+
+        This function may only take one argument, self.
+        """
         if not callable(func):
             raise TypeError('deleter must be callable function')
         if hasattr(func, '__code__') and func.__code__.co_argcount != 1:
@@ -440,11 +546,15 @@ class DynamicProperty(GettableProperty):                                       #
         return getattr(self, '_del_func', None)
 
     def get_property(self):
-        """Establishes the dynamic behaviour of Property values"""
+        """Establishes the dynamic behavior of Property values"""
         scope = self
+
         def fget(self):
             """Call dynamic function then validate output"""
-            return scope.validate(self, scope.func(self))
+            value = scope.func(self)
+            if value is None or value is undefined:
+                return None
+            return scope.validate(self, value)
 
         def fset(self, value):
             """Validate and call setter"""
@@ -458,9 +568,10 @@ class DynamicProperty(GettableProperty):                                       #
                 raise AttributeError('cannot delete attribute')
             scope.del_func(self)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
     def equal(self, value_a, value_b):
+        """Determine equality based on prop"""
         return self.prop.equal(value_a, value_b)
 
     def sphinx_class(self):
@@ -469,18 +580,37 @@ class DynamicProperty(GettableProperty):                                       #
 
 
 class Property(GettableProperty):
-    """Property class that establishes set and get property behavior
+    """Property class provides documentation, validation, and serialization
 
-    Available keywords:
+    When defined within a HasProperties class, each Property contributes to
+    class documentation, validation, and serialization while behaving for the
+    user just like :code:`@property` values on the class. For examples, see the
+    :ref:`HasProperties <hasproperties>` documentation and documentation
+    for specific :ref:`Property types <builtin>`.
 
-    * **required** - if True, property must be given a value for containing
-      HasProperties instance to be valid
+    **Available keywords**:
+
+    * **doc** - Docstring for the Property. Must be provided on instantiation.
+    * **default** - Default value for the Property. This may be a callable that
+      takes no arguments. Upon HasProperties instantiation, default value is
+      assigned to the Property. If no default is given, the Property value
+      will be undefined.
+    * **required** - If True, Property must be given a value for the containing
+      HasProperties instance to pass :code:`validate()`. If false, the Property
+      may remain undefined. By default, required is True.
+    * **serializer** - Function that will serialize the Property value when
+      the containing HasProperties instance is serialized. The serializer
+      must be a callable that takes the value to be serialized and possibly
+      keyword arguments passed to :code:`serialize`. By default, the
+      serializer writes to JSON.
+    * **deserializer** - Function that will deserialize an input value to
+      a valid Property value when a HasProperties instance is deserialized. The
+      deserializer must be a callable that takes the value to be deserialized
+      and possibly keyword arguments passed to :code:`deserialize`. By default,
+      the deserializer writes to JSON.
+    * **name** - Name of the Property. This is overwritten in the HasProperties
+      metaclass to correspond to the Property's assigned name.
     """
-
-    def __init__(self, doc, **kwargs):
-        if 'required' in kwargs:
-            self.required = kwargs.pop('required')
-        super(Property, self).__init__(doc, **kwargs)
 
     @property
     def required(self):
@@ -494,7 +624,16 @@ class Property(GettableProperty):
         self._required = value
 
     def assert_valid(self, instance, value=None):
-        """Check if required properties are set and ensure value is valid"""
+        """Returns True if the Property is valid on a HasProperties instance
+
+        Raises a ValueError if the value required and not set, not valid,
+        not correctly coerced, etc.
+
+        .. note::
+
+            Unlike :code:`validate`, this method requires instance to be
+            a HasProperties instance; it cannot be None.
+        """
         if value is None:
             value = instance._get(self.name)
         if value is None and self.required:
@@ -508,17 +647,11 @@ class Property(GettableProperty):
         valid = super(Property, self).assert_valid(instance, value)
         return valid
 
-    def validate(self, instance, value):
-        """Check if value is valid and possibly coerce it to new value"""
-        return value
-
     def get_property(self):
         """Establishes access of Property values"""
 
-        # scope is the Property instance
         scope = self
 
-        # in the following functions self is the HasProperties instance
         def fget(self):
             """Call the HasProperties _get method"""
             return self._get(scope.name)
@@ -533,7 +666,7 @@ class Property(GettableProperty):
             """Set value to utils.undefined on delete"""
             self._set(scope.name, undefined)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -544,36 +677,52 @@ class Property(GettableProperty):
             )
         else:
             default_val = self.default
-            default_str = str(self.default)                                    #pylint: disable=redefined-variable-type
+            default_str = '{}'.format(self.default)
         try:
             if default_val is None or default_val is undefined:
                 default_str = ''
-            elif len(default_val) == 0:
+            elif len(default_val) == 0:                                        #pylint: disable=len-as-condition
                 default_str = ''
             else:
                 default_str = ', Default: {}'.format(default_str)
         except TypeError:
             default_str = ', Default: {}'.format(default_str)
 
-        return (
-            '**{name}** ({cls}): {doc}{info}{default}'.format(
-                name=self.name,
-                doc=self.doc,
-                info='' if self.info == 'corrected' else ', ' + self.info,
-                default=default_str,
-                cls=self.sphinx_class(),
-            )
-        )
+        prop_doc = super(Property, self).sphinx()
+        return '{doc}{default}'.format(doc=prop_doc, default=default_str)
 
 
 class Bool(Property):
-    """Boolean property"""
+    """Property for True or False values
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **cast** - convert input value to boolean based on its truth value. By
+      default, cast is False.
+    """
 
     class_info = 'a boolean'
 
+    @property
+    def cast(self):
+        """Cast number to specified type"""
+        return getattr(self, '_cast', False)
+
+    @cast.setter
+    def cast(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'cast' property must be a boolean")
+        self._cast = value
+
     def validate(self, instance, value):
         """Checks if value is a boolean"""
-        if not isinstance(value, bool):
+        if self.cast:
+            try:
+                value = bool(value)
+            except ValueError:
+                self.error(instance, value)
+        if not isinstance(value, BOOLEAN_TYPES):
             self.error(instance, value)
         return value
 
@@ -603,12 +752,18 @@ def _in_bounds(prop, instance, value):
         prop.error(instance, value)
 
 
-class Integer(Property):
-    """Integer property
+class Integer(Bool):
+    """Property for integer values
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **min**/**max** - set valid bounds of property
+    * **min** - Minimum valid value, inclusive. If None (the default), there
+      is no minimum limit.
+    * **max** - Maximum valid value, inclusive. If None (the default), there
+      is no maximum limit.
+    * **cast** - Attempt to convert input value to integer. By default, cast
+      is False.
     """
 
     class_info = 'an integer'
@@ -639,12 +794,16 @@ class Integer(Property):
         """Checks that value is an integer and in min/max bounds"""
         try:
             intval = int(value)
-            if abs(value - intval) > TOL:
+            if not self.cast and abs(value - intval) > TOL:
                 self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
         _in_bounds(self, instance, intval)
         return intval
+
+    def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
+        """Check if two valid Property values are equal"""
+        return value_a == value_b
 
     @property
     def info(self):
@@ -663,7 +822,18 @@ class Integer(Property):
 
 
 class Float(Integer):
-    """Float property"""
+    """Property for float values
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **min** - Minimum valid value, inclusive. If None (the default), there
+      is no minimum limit.
+    * **max** - Maximum valid value, inclusive. If None (the default), there
+      is no maximum limit.
+    * **cast** - Attempt to convert input value to integer. By default, cast
+      is False.
+    """
 
     class_info = 'a float'
 
@@ -674,7 +844,7 @@ class Float(Integer):
         """
         try:
             floatval = float(value)
-            if abs(value - floatval) > TOL:
+            if not self.cast and abs(value - floatval) > TOL:
                 self.error(instance, value)
         except (TypeError, ValueError):
             self.error(instance, value)
@@ -698,8 +868,15 @@ class Float(Integer):
         return float(value)
 
 
-class Complex(Property):
-    """Complex number property"""
+class Complex(Bool):
+    """Property for complex numbers
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **cast** - Attempt to convert input value to integer. By default, cast
+      is False.
+    """
 
     class_info = 'a complex number'
 
@@ -710,7 +887,7 @@ class Complex(Property):
         """
         try:
             compval = complex(value)
-            if (
+            if not self.cast and (
                     abs(value.real - compval.real) > TOL or
                     abs(value.imag - compval.imag) > TOL
             ):
@@ -737,20 +914,21 @@ class Complex(Property):
 
 
 class String(Property):
-    """String property
+    """Property for string values
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **strip** - substring to strip off input
-
-    * **change_case** - forces 'lower', 'upper', or None
-
-    * **unicode** - if True, coerce strings to unicode. Default is True
-      to ensure consistent behaviour across Python 2/3.
-
-    * **regex** - regular expression (pattern or compiled expression) the
-      input string must match. Note: `search` is used to determine if
-      string is valid; to match the entire string, ensure '^' and '$' are
+    * **strip** - Substring to strip off input. By default, nothing is
+      stripped.
+    * **change_case** - If 'lower', coerces input to lowercase; if 'upper',
+      coerce input to uppercase. If None (the default), case is left
+      unchanged.
+    * **unicode** - If True, coerce strings to unicode. Default is True
+      to ensure consistent behavior across Python 2/3.
+    * **regex** - Regular expression (pattern or compiled expression) the
+      input string must match. Note: :code:`re.search` is used to determine
+      if string is valid; to match the entire string, ensure '^' and '$' are
       contained in the regex pattern.
     """
 
@@ -764,7 +942,7 @@ class String(Property):
     @strip.setter
     def strip(self, value):
         if not isinstance(value, string_types):
-            raise TypeError("'strip' property must be the string to strip")
+            raise TypeError('strip must be the string to strip')
         self._strip = value
 
     @property
@@ -779,7 +957,7 @@ class String(Property):
     @change_case.setter
     def change_case(self, value):
         if value not in (None, 'upper', 'lower'):
-            raise TypeError("'change_case' property must be 'upper', "
+            raise TypeError("change_case must be 'upper', "
                             "'lower' or None")
         self._change_case = value
 
@@ -791,7 +969,7 @@ class String(Property):
     @unicode.setter
     def unicode(self, value):
         if not isinstance(value, bool):
-            raise TypeError("'unicode' property must be a boolean")
+            raise TypeError('unicode must be a boolean')
         self._unicode = value
 
     @property
@@ -809,8 +987,8 @@ class String(Property):
         if hasattr(value, 'search') and callable(value.search):
             self._regex = value
         else:
-            raise TypeError("'regex' must be a string pattern or a compiled"
-                            "regular expression")
+            raise TypeError('regex must be a string pattern or a compiled'
+                            'regular expression')
 
     def validate(self, instance, value):
         """Check if value is a string, and strips it and changes case"""
@@ -841,17 +1019,19 @@ class String(Property):
 
 
 class StringChoice(Property):
-    """String property where only certain choices are allowed
+    """String Property where only certain choices are allowed
 
-    Available keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
-    * **choices** - either a list/tuple of allowed strings
+    * **choices** - Either a set/list/tuple of allowed strings
       OR a dictionary of string key and list-of-string value pairs,
-      where any string in the value list is coerced into the key string.
+      where any string in the value list is coerced to the key string.
     * **case_sensitive** - Determine if input must follow case in choices.
-      Default: False
-    * **descriptions** - dictionary of choice/description key/value
-      pairs. Must contain all choices.
+      If False (the default), the input value will be coerced to the case
+      in choices.
+    * **descriptions** - Dictionary of choice/description key/value
+      pairs. If specified, it must contain all choices.
     """
 
     class_info = 'a string choice'
@@ -877,22 +1057,17 @@ class StringChoice(Property):
 
     @property
     def choices(self):
-        """Available choices
-
-        This is either (1) a list/tuple of allowed strings
-        or (2) a dictionary of string key and list-of-string value pairs,
-        where any string in the value list is coerced into the key string.
-        """
+        """Available string choices"""
         return self._choices
 
     @choices.setter
     def choices(self, value):                                                  #pylint: disable=too-many-branches
         if isinstance(value, (set, list, tuple)):
             if len(value) != len(set(value)):
-                raise TypeError("'choices' must contain no duplicate strings")
+                raise TypeError('choices must contain no duplicate strings')
             value = collections.OrderedDict((v, []) for v in value)
         if not isinstance(value, dict):
-            raise TypeError("'choices' must be a set, list, tuple, or dict")
+            raise TypeError('choices must be a set, list, tuple, or dict')
         for key, val in value.items():
             if isinstance(val, (set, list, tuple)):
                 value[key] = list(val)
@@ -901,17 +1076,17 @@ class StringChoice(Property):
         all_items = []
         for key, val in value.items():
             if not isinstance(key, string_types):
-                raise TypeError("'choices' must be strings")
+                raise TypeError('choices must be strings')
             for sub_val in val:
                 if not isinstance(sub_val, string_types):
-                    raise TypeError("'choices' must be strings")
+                    raise TypeError('choices must be strings')
             all_items += [key] + val
         if self.case_sensitive:
             unique_length = len(set(all_items))
         else:
             unique_length = len(set(item.upper() for item in all_items))
         if len(all_items) != unique_length:
-            raise TypeError("'choices' must contain no duplicate strings")
+            raise TypeError('choices must contain no duplicate strings')
         self._choices = value
 
     @property
@@ -927,7 +1102,7 @@ class StringChoice(Property):
     @case_sensitive.setter
     def case_sensitive(self, value):
         if not isinstance(value, bool):
-            raise TypeError("'case_sensitive' must be True or False")
+            raise TypeError('case_sensitive must be True or False')
         self._case_sensitive = value
 
     @property
@@ -942,14 +1117,14 @@ class StringChoice(Property):
     @descriptions.setter
     def descriptions(self, value):
         if not isinstance(value, dict):
-            raise TypeError("'descriptions' must be a dictionary")
+            raise TypeError('descriptions must be a dictionary')
         if len(value) != len(self.choices):
-            raise TypeError("'descriptions' must contain all choices as keys")
+            raise TypeError('descriptions must contain all choices as keys')
         for key, val in value.items():
             if key not in self.choices:
-                raise TypeError("'descriptions' keys must be valid choices")
+                raise TypeError('descriptions keys must be valid choices')
             if not isinstance(val, string_types):
-                raise TypeError("'descriptions' values must be strings")
+                raise TypeError('descriptions values must be strings')
         self._descriptions = value
 
     def validate(self, instance, value):
@@ -966,15 +1141,14 @@ class StringChoice(Property):
 
 
 class Color(Property):
-    """Color property for RGB colors.
+    """Property for RGB colors.
 
-    Allowed inputs are RGB, hex, named color, or 'random' for random
-    color. All inputs are coerced into an RGB :code:`tuple` of
-    :code:`int` values between 0 and 255.
+    Valid inputs are length-3 RGB tuple/list with integer values between 0 and
+    255, 3 or 6 digit hex color, color name from standard web colors, or
+    'random'. All of these are coerced to RGB tuple.
 
-    For example, :code:`'red'` or :code:`'#FF0000'` or :code:`'#F00'` gets
-    coerced into :code:`(255, 0, 0)`. Color names can be selected from
-    standard `web-colors <https://en.wikipedia.org/wiki/Web_colors>`_.
+    No additional keywords are avalaible besides those those inherited from
+    :ref:`Property <property>`.
     """
 
     class_info = 'a color'
@@ -1023,11 +1197,14 @@ class Color(Property):
 
 
 class DateTime(Property):
-    """DateTime property using 'datetime.datetime'
+    """Property for DateTimes
 
-        Two string formats are available:
+    This property uses :code:`datetime.datetime`. The value may also be
+    specified as a string that uses either '1995/08/12' or
+    '1995-08-12T18:00:00Z' format; these are coerced to a datetime instance.
 
-            1995/08/12 and 1995-08-12T18:00:00Z
+    No additional keywords are avalaible besides those those inherited from
+    :ref:`Property <property>`.
     """
 
     class_info = 'a datetime object'
@@ -1056,7 +1233,14 @@ class DateTime(Property):
 
 
 class Uuid(GettableProperty):
-    """Unique identifier generated on startup using :code:`uuid.uuid4()`"""
+    """Immutable property for unique identifiers
+
+    Default value is generated on :ref:`hasproperties` class instantiation
+    using :code:`uuid.uuid4()`
+
+    No additional keywords are available besides those those inherited from
+    :class:`GettableProperty <properties.GettableProperty>`.
+    """
 
     class_info = 'a unique ID auto-generated with uuid.uuid4()'
 
@@ -1080,17 +1264,19 @@ class Uuid(GettableProperty):
 
 
 class File(Property):
-    """File property
+    """Property for files
 
     This may be a file or file-like object. If mode is provided, filenames
     are also allowed; these will be opened on validate.
-    Note: closed files may still pass validation.
+    Note: Validation rejects closed files, but nothing prevents the file
+    from being modified or closed once it is set.
 
-    Available Keywords:
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
 
     * **mode**: Opens the file in this mode. If 'r' or 'rb', the file must
       exist, otherwise the file will be created. If None, string filenames
-      will not be open (and therefore be invalid).
+      will not be open (and therefore be invalid). Default value is None.
     * **valid_modes**: Tuple of valid modes for open files. This must
       include **mode**. If nothing is specified, **valid_mode** is set
       to **mode**.
@@ -1152,7 +1338,7 @@ class File(Property):
             self._set(scope.name, undefined)
 
         new_prop = property(fget=prop.fget, fset=prop.fset,
-                            fdel=fdel, doc=scope.doc)
+                            fdel=fdel, doc=scope.sphinx())
         return new_prop
 
     def validate(self, instance, value):
@@ -1182,18 +1368,37 @@ class File(Property):
 
     @property
     def info(self):
-        """Help text for the File property, including valid modes"""
+        """Help text for the File Property, including valid modes"""
         info = '{}, valid modes include {}'.format(self.class_info,
                                                    self.valid_modes)
         return info
 
 
 class Renamed(GettableProperty):
-    """Property to aid maintaining backwards compatibility
+    """Property that allows renaming of other properties.
 
-    Simply assign the old name to a Renamed property that points to the
+    Assign the old name to a Renamed Property that points to the
     new name. Getting, setting, and deleting using the old name will warn
     the user then redirect to the new name.
+
+    For example, when updating this code for PEP8
+
+    .. code::
+
+        class MyClass(properties.HasProperties):
+            myStringProp = properties.String('My string property')
+
+    backwards compatibility can be maintained with
+
+    .. code::
+
+        class MyClass(properties.HasProperties):
+            my_string_prop = properties.String('My string property')
+            myStringProp = properties.Renamed('my_string_prop')
+
+    **Argument** (other Property keyword arguments are not available):
+
+    * **new_name** - the new name of the property that was renamed.
     """
 
     def __init__(self, new_name):
@@ -1218,17 +1423,17 @@ class Renamed(GettableProperty):
         return ''
 
     def warn(self):
-        """Display a FutureWarning about using a Renamed property"""
+        """Display a FutureWarning about using a Renamed Property"""
         warn(
             "\nProperty '{}' is deprecated and may be removed in the future. "
             "Please use '{}'.".format(self.name, self.new_name),
             FutureWarning, stacklevel=3
         )
 
-
     def get_property(self):
-        """Establishes the dynamic behaviour of Property values"""
+        """Establishes the dynamic behavior of Property values"""
         scope = self
+
         def fget(self):
             """Call dynamic function then validate output"""
             scope.warn()
@@ -1244,7 +1449,7 @@ class Renamed(GettableProperty):
             scope.warn()
             delattr(self, scope.new_name)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
 
 COLORS_20 = [
