@@ -27,9 +27,6 @@ class TestBasic(unittest.TestCase):
             properties.GettableProperty('bad kwarg', defualt=5)
         with self.assertRaises(TypeError):
             properties.Property('bad kwarg', required=5)
-        with self.assertRaises(AttributeError):
-            class PrivateProperty(properties.HasProperties):
-                _secret = properties.GettableProperty('secret prop')
 
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
@@ -87,34 +84,6 @@ class TestBasic(unittest.TestCase):
         assert not properties.equal(PropOpts(myprop=5), PropOpts())
         assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
 
-        with self.assertRaises(AttributeError):
-            class BadDocOrder(properties.HasProperties):
-                _doc_order = 5
-
-        with self.assertRaises(AttributeError):
-            class BadDocOrder(properties.HasProperties):
-                _doc_order = ['myprop', 'another_prop']
-                myprop = properties.Property('empty property')
-
-        class WithDocOrder(properties.HasProperties):
-            _doc_order = ['myprop1', 'myprop3', 'myprop2']
-            myprop1 = properties.Property('empty property')
-            myprop2 = properties.Property('empty property')
-            myprop3 = properties.Property('empty property')
-
-        assert WithDocOrder().__doc__ == (
-            '\n\n**Required Properties:**\n\n'
-            '* **myprop1** (:class:`Property <properties.Property>`): '
-            'empty property\n'
-            '* **myprop3** (:class:`Property <properties.Property>`): '
-            'empty property\n'
-            '* **myprop2** (:class:`Property <properties.Property>`): '
-            'empty property'
-        )
-
-        class NoMoreDocOrder(WithDocOrder):
-            _doc_order = None
-
         assert properties.Property('').equal(5, 5)
         assert not properties.Property('').equal(5, 'hi')
         assert properties.Property('').equal(np.array([1., 2.]),
@@ -133,6 +102,80 @@ class TestBasic(unittest.TestCase):
         na = NoAttributes()
         with self.assertRaises(AttributeError):
             na.a = 5
+
+
+    def test_docstrings(self):
+
+        with self.assertRaises(AttributeError):
+            class BadDocOrder(properties.HasProperties):
+                _doc_order = 5
+
+        with self.assertRaises(AttributeError):
+            class BadDocOrder(properties.HasProperties):
+                _doc_order = ['myprop', 'another_prop']
+                myprop = properties.Property('empty property')
+
+        class WithDocOrder(properties.HasProperties):
+            _doc_order = ['myprop1', 'myprop3', 'myprop2']
+            myprop1 = properties.Property('empty property')
+            myprop2 = properties.Property('empty property')
+            myprop3 = properties.Property('empty property')
+
+        ordered_doc = (
+            '\n\n**Required Properties:**\n\n'
+            '* **myprop1** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop3** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop2** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert WithDocOrder().__doc__ == ordered_doc
+
+        class SameDocOrder(WithDocOrder):
+            _my_private_prop = properties.Property('empty property')
+
+        assert SameDocOrder().__doc__ == ordered_doc
+
+        class DifferentDocOrder(WithDocOrder):
+            myprop4 = properties.Property('empty property')
+
+        unordered_doc = (
+            '\n\n**Required Properties:**\n\n'
+            '* **myprop1** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop2** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop3** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop4** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert DifferentDocOrder().__doc__ == unordered_doc
+
+        class NoMoreDocOrder(WithDocOrder):
+            _doc_order = None
+
+        with self.assertRaises(AttributeError):
+            class BadDocPrivate(properties.HasProperties):
+                _doc_private = 'yes'
+
+        class PrivateProperty(properties.HasProperties):
+            _doc_private = True
+
+            _something = properties.Property('empty property')
+
+        private_doc = (
+            '\n\n**Private Properties:**\n\n'
+            '* **_something** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert PrivateProperty().__doc__ == private_doc
+
+        class UndocPrivate(PrivateProperty):
+            _doc_private = False
+
+        assert UndocPrivate().__doc__ == ''
 
 
     def test_bool(self):
@@ -638,6 +681,10 @@ class TestBasic(unittest.TestCase):
             assert getattr(np, 'info', None) == 'new property'
 
     def test_renamed(self):
+
+        with self.assertRaises(TypeError):
+            class BadRenamed(properties.HasProperties):
+                new_prop = properties.Renamed('no_good')
 
         class MyHasProps(properties.HasProperties):
             my_int = properties.Integer('My integer')
