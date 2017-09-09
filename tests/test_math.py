@@ -240,6 +240,20 @@ class TestMath(unittest.TestCase):
             np.array([[5., 6.], [7., 8.]])
         )
 
+        with self.assertRaises(TypeError):
+            properties.Vector2Array('', shape=(2,))
+        with self.assertRaises(TypeError):
+            properties.Vector2Array('', shape=('*', '*'))
+
+        class HasShapeVec2Arr(properties.HasProperties):
+            vec2 = properties.Vector2Array('', shape={(2, 2), (3, 2)})
+
+        hv2 = HasShapeVec2Arr(vec2=[[1., 2.], [3., 4.]])
+        hv2.vec2 = [[1., 2.], [3., 4.], [5., 6.]]
+
+        with self.assertRaises(ValueError):
+            hv2.vec2 = [[1., 2.], [3., 4.], [5., 6.], [7., 8.]]
+
     def test_vector3array(self):
 
         class HasVec3Arr(properties.HasProperties):
@@ -284,6 +298,20 @@ class TestMath(unittest.TestCase):
             np.array([[4., 5., 6.], [7., 8., 9.]])
         )
         assert not properties.Vector3Array('').equal('hi', 'hi')
+
+        with self.assertRaises(TypeError):
+            properties.Vector3Array('', shape=(3,))
+        with self.assertRaises(TypeError):
+            properties.Vector3Array('', shape=('*', '*'))
+
+        class HasShapeVec3Arr(properties.HasProperties):
+            vec3 = properties.Vector3Array('', shape={(2, 3), (3, 3)})
+
+        hv3 = HasShapeVec3Arr(vec3=[[1., 2., 1.], [3., 4., 3.]])
+        hv3.vec3 = [[1., 2., 1.], [3., 4., 3.], [5., 6., 5.]]
+
+        with self.assertRaises(ValueError):
+            hv3.vec3 = [[1., 2., 1.], [3., 4., 3.], [5., 6., 5.], [7., 8., 7.]]
 
 
 if __name__ == '__main__':

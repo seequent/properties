@@ -55,13 +55,17 @@ class Array(Property):
         these tuples may also be provided if multiple shapes are valid.
         If any shape is valid, use None for shape.
         """
-        return getattr(self, '_shape', ('*',))
+        return getattr(self, '_shape', {('*',)})
 
     @shape.setter
     def shape(self, value):
         if value is None:
             self._shape = value
             return
+        self._shape = self._validate_shape(value)
+
+    @staticmethod
+    def _validate_shape(value):
         if not isinstance(value, set):
             try:
                 value = {value}
@@ -71,13 +75,13 @@ class Array(Property):
         for val in value:
             if not isinstance(val, tuple):
                 raise TypeError("{}: Invalid shape - must be a tuple "
-                                "(e.g. ('*',3) for an array of length-3 "
+                                "(e.g. ('*', 3) for an array of length-3 "
                                 "arrays)".format(val))
             for shp in val:
                 if shp != '*' and not isinstance(shp, integer_types):
                     raise TypeError("{}: Invalid shape - values "
                                     "must be '*' or int".format(val))
-        self._shape = value
+        return value
 
     @property
     def dtype(self):
@@ -380,7 +384,17 @@ class Vector3Array(BaseVector):
     @property
     def shape(self):
         """Vector3Array is shape n x 3"""
-        return {('*', 3)}
+        return getattr(self, '_shape', {('*', 3)})
+
+    @shape.setter
+    def shape(self, value):
+        value = self._validate_shape(value)
+        for val in value:
+            if len(val) != 2 or val[1] != 3:
+                raise TypeError('{}: Invalid shape - Vector3Array must '
+                                'have two dimensions, and the second '
+                                'must equal 3'.format(val))
+        self._shape = value
 
     def _length_array(self, value):
         return np.ones(value.shape[0])*self.length
@@ -432,7 +446,17 @@ class Vector2Array(BaseVector):
     @property
     def shape(self):
         """Vector2Array is shape n x 2"""
-        return {('*', 2)}
+        return getattr(self, '_shape', {('*', 2)})
+
+    @shape.setter
+    def shape(self, value):
+        value = self._validate_shape(value)
+        for val in value:
+            if len(val) != 2 or val[1] != 2:
+                raise TypeError('{}: Invalid shape - Vector2Array must '
+                                'have two dimensions, and the second '
+                                'must equal 2'.format(val))
+        self._shape = value
 
     def _length_array(self, value):
         return np.ones(value.shape[0])*self.length
