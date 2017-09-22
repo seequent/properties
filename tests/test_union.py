@@ -97,6 +97,16 @@ class TestUnion(unittest.TestCase):
         assert union_prop.equal(hdu, HasDummyUnion())
         assert not union_prop.equal(hdu, 'hi')
 
+        class HasOptionalUnion(properties.HasProperties):
+            mybc = properties.Union(
+                'union of bool or color',
+                props=[properties.Bool(''), properties.Color('')],
+                required=False,
+            )
+
+        hou = HasOptionalUnion()
+        hou.validate()
+
 
 
 if __name__ == '__main__':
