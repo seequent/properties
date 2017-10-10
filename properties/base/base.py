@@ -363,7 +363,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     raise ValueError(
                         'Invalid value for property {}: {}'.format(key, value)
                     )
-            prop.assert_valid(self)
+            if not prop.assert_valid(self):
+                raise ValueError(
+                    'Invalid value for property {}: {}'.format(key, value)
+                )
         return True
 
     @utils.stop_recursion_with(

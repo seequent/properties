@@ -107,6 +107,20 @@ class TestUnion(unittest.TestCase):
         hou = HasOptionalUnion()
         hou.validate()
 
+        class HasOptPropsUnion(properties.HasProperties):
+            mybc = properties.Union(
+                'union of bool or color',
+                props=[
+                    properties.Bool('', required=False),
+                    properties.Color('', required=False),
+                ],
+                required=True,
+            )
+
+        hou = HasOptionalUnion()
+        with self.assertRaises(ValueError):
+            hou.validate()
+
 
 
 if __name__ == '__main__':

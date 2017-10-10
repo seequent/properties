@@ -284,7 +284,8 @@ class Tuple(basic.Property):
         if self.max_length is not None and len(value) > self.max_length:
             self.error(instance, value)
         for val in value:
-            self.prop.assert_valid(instance, val)
+            if not self.prop.assert_valid(instance, val):
+                return False
         return True
 
     def serialize(self, value, **kwargs):

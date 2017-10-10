@@ -178,6 +178,30 @@ class TestContainer(unittest.TestCase):
         )
         assert not properties.Tuple('', properties.Integer('')).equal(5, 5)
 
+        class HasOptPropTuple(properties.HasProperties):
+            mytuple = properties.Tuple(
+                doc='',
+                prop=properties.Bool('', required=False),
+                default=properties.undefined,
+            )
+
+        hopt = HasOptPropTuple()
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (None,)
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (properties.undefined,)
+
+        hopt._backend = {'mytuple': (properties.undefined,)}
+
+        hopt.validate()
+
+
+
+
     def test_list(self):
         self._test_list(True)
         self._test_list(False)
