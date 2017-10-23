@@ -122,6 +122,5 @@ class TestUnion(unittest.TestCase):
             hou.validate()
 
 
-
 if __name__ == '__main__':
     unittest.main()

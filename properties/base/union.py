@@ -159,8 +159,8 @@ class Union(basic.Property):
             return False
         if value is None:
             value = instance._get(self.name)
-        if value is None:
-            return True
+            if value is None:
+                return True
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)

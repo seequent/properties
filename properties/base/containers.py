@@ -246,8 +246,10 @@ class Tuple(basic.Property):
         return '{} with {}'.format(itext, lentext)
 
     def _unused_default_warning(self):
-        if (self.prop.default is not utils.undefined and
-                self.prop.default != self.default):
+        if (
+                self.prop.default is not utils.undefined and
+                self.prop.default != self.default
+        ):
             warn('List prop default ignored: {}'.format(self.prop.default),
                  RuntimeWarning)
 
@@ -277,8 +279,8 @@ class Tuple(basic.Property):
             return False
         if value is None:
             value = instance._get(self.name)
-        if value is None:
-            return True
+            if value is None:
+                return True
         if self.min_length is not None and len(value) < self.min_length:
             self.error(instance, value)
         if self.max_length is not None and len(value) > self.max_length:
