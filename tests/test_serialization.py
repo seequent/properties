@@ -232,6 +232,34 @@ class TestSerialization(unittest.TestCase):
         assert many.mylist[0].a == 6
         assert many.myunion == '1PH'
 
+    def test_dynamic_serial(self):
+
+        class DynamicModel(properties.HasProperties):
+            a = properties.Integer('')
+            b = properties.Renamed('a')
+
+            @properties.Integer('')
+            def c(self):
+                return self.a
+
+        dm1 = DynamicModel()
+        dm1.a = 5
+        assert dm1.b == 5
+        assert dm1.c == 5
+
+        dm_save_dynamic = dm1.serialize(save_dynamic=True)
+        dm_skip_dynamic = dm1.serialize()
+
+        assert dm_skip_dynamic == {'__class__': 'DynamicModel', 'a': 5}
+        assert dm_save_dynamic == {'__class__': 'DynamicModel',
+                                  'a': 5, 'b': 5, 'c': 5}
+
+
+        dm2 = DynamicModel.deserialize(dm_skip_dynamic)
+        assert properties.equal(dm1, dm2)
+        dm3 = DynamicModel.deserialize(dm_save_dynamic)
+        assert properties.equal(dm1, dm3)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -369,7 +369,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     @utils.stop_recursion_with(
         utils.SelfReferenceError('Object contains unserializable self reference')
     )
-    def serialize(self, include_class=True, **kwargs):
+    def serialize(self, include_class=True, save_dynamic=False, **kwargs):
         """Serializes a **HasProperties** instance to dictionary
 
         This uses the Property serializers to serialize all Property values
@@ -382,13 +382,22 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         * **include_class** - If True (the default), the name of the class
           will also be saved to the serialized dictionary under key
           :code:`'__class__'`
+        * **save_dynamic** - If True, dynamic properties are written to
+          the serialized dict (default: False).
         * Any other keyword arguments will be passed through to the Property
           serializers.
         """
+        kwargs.update({
+            'include_class': include_class,
+            'save_dynamic': save_dynamic
+        })
+        if save_dynamic:
+            prop_source = self._props
+        else:
+            prop_source = self._backend
         data = (
-            (k, v.serialize(
-                self._get(v.name), include_class=include_class, **kwargs
-            )) for k, v in iteritems(self._props)
+            (key, self._props[key].serialize(getattr(self, key), **kwargs))
+            for key in prop_source
         )
         json_dict = {k: v for k, v in data if v is not None}
         if include_class:
@@ -431,6 +440,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         rcl=value['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
+        kwargs.update({'trusted': trusted, 'verbose': verbose})
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if unused and verbose:
@@ -439,9 +449,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             ), RuntimeWarning)
         newstate = {}
         for key, val in iteritems(state):
-            newstate[key] = cls._props[key].deserialize(
-                val, trusted=trusted, **kwargs
-            )
+            newstate[key] = cls._props[key].deserialize(val, **kwargs)
         mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
             newinst = cls(**mutable)
