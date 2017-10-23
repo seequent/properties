@@ -1397,9 +1397,13 @@ class Renamed(GettableProperty):
             my_string_prop = properties.String('My string property')
             myStringProp = properties.Renamed('my_string_prop')
 
-    **Argument** (other Property keyword arguments are not available):
+    **Argument**:
 
     * **new_name** - the new name of the property that was renamed.
+
+    **Available keywords**:
+
+    * **warn** - raise a warning when this property is used (default: True)
     """
 
     def __init__(self, new_name, **kwargs):
