@@ -117,7 +117,7 @@ class TestUnion(unittest.TestCase):
                 required=True,
             )
 
-        hou = HasOptionalUnion()
+        hou = HasOptPropsUnion()
         with self.assertRaises(ValueError):
             hou.validate()
 
