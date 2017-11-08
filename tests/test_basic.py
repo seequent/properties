@@ -717,6 +717,27 @@ class TestBasic(unittest.TestCase):
 
         assert myp.my_int is None
 
+        with self.assertRaises(TypeError):
+            class MyHasProps(properties.HasProperties):
+                my_int = properties.Integer('My integer')
+
+                not_my_int = properties.Renamed('my_int', warn='no')
+
+        class MyHasProps(properties.HasProperties):
+            my_int = properties.Integer('My integer')
+
+            not_my_int = properties.Renamed('my_int', warn=False)
+
+        myp = MyHasProps()
+
+        with warnings.catch_warnings(record=True) as w:
+
+            myp.not_my_int = 5
+            assert len(w) == 0
+
+        assert myp.my_int == 5
+
+
     def test_copy(self):
 
         class HasProps2(properties.HasProperties):
