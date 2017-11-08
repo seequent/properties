@@ -1426,6 +1426,7 @@ class Renamed(GettableProperty):
 
     @property
     def warn(self):
+        """Warn user about deprecation of renamed property"""
         return getattr(self, '_warn', True)
 
     @warn.setter
