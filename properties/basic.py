@@ -1408,10 +1408,12 @@ class Renamed(GettableProperty):
 
     def __init__(self, new_name, **kwargs):
         self.new_name = new_name
-        super(Renamed, self).__init__(
+        default_doc = (
             "This property has been renamed '{}' and may be removed in the "
-            "future.".format(new_name), **kwargs
+            "future.".format(new_name)
         )
+        kwargs['doc'] = kwargs.get('doc', default_doc)
+        super(Renamed, self).__init__(**kwargs)
 
     @property
     def new_name(self):

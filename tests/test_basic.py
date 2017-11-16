@@ -716,6 +716,10 @@ class TestBasic(unittest.TestCase):
             assert issubclass(w[0].category, FutureWarning)
 
         assert myp.my_int is None
+        assert MyHasProps._props['not_my_int'].doc == (
+            "This property has been renamed 'my_int' and may be removed "
+            "in the future."
+        )
 
         with self.assertRaises(TypeError):
             class MyHasProps(properties.HasProperties):
@@ -726,7 +730,7 @@ class TestBasic(unittest.TestCase):
         class MyHasProps(properties.HasProperties):
             my_int = properties.Integer('My integer')
 
-            not_my_int = properties.Renamed('my_int', warn=False)
+            not_my_int = properties.Renamed('my_int', warn=False, doc='')
 
         myp = MyHasProps()
 
@@ -736,6 +740,7 @@ class TestBasic(unittest.TestCase):
             assert len(w) == 0
 
         assert myp.my_int == 5
+        assert MyHasProps._props['not_my_int'].doc == ''
 
 
     def test_copy(self):
