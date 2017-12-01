@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import numpy as np
 import properties
 
 
@@ -88,6 +89,9 @@ class TestContainer(unittest.TestCase):
         li.aaa = {1, 2, 3}
         assert isinstance(li.aaa, tuple)
         assert all(val in li.aaa for val in [1, 2, 3])
+
+        li.aaa = np.array([3, 2, 1])
+        assert li.aaa == (3, 2, 1)
 
         class HasConstrianedTuple(properties.HasProperties):
             aaa = properties.Tuple('tuple of ints', properties.Integer(''),
@@ -173,6 +177,37 @@ class TestContainer(unittest.TestCase):
             (HasIntA(a=1), HasIntA(a=2)), (HasIntA(a=1), HasIntA(a=3))
         )
         assert not properties.Tuple('', properties.Integer('')).equal(5, 5)
+
+        class HasOptPropTuple(properties.HasProperties):
+            mytuple = properties.Tuple(
+                doc='',
+                prop=properties.Bool('', required=False),
+                default=properties.undefined,
+            )
+
+        hopt = HasOptPropTuple()
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (None,)
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (properties.undefined,)
+
+        hopt._backend = {'mytuple': (properties.undefined,)}
+
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        hopt.mytuple = (True,)
+
+        del hopt.mytuple
+
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+
 
     def test_list(self):
         self._test_list(True)
@@ -345,6 +380,38 @@ class TestContainer(unittest.TestCase):
         )
         assert not properties.List('', properties.Integer(''),
                                    observe_mutations=om).equal(5, 5)
+
+        class HasOptPropList(properties.HasProperties):
+            mylist = properties.List(
+                doc='',
+                prop=properties.Bool('', required=False),
+                default=properties.undefined,
+            )
+
+        hopl = HasOptPropList()
+        with self.assertRaises(ValueError):
+            hopl.validate()
+
+        with self.assertRaises(ValueError):
+            hopl.mylist = [None,]
+
+        with self.assertRaises(ValueError):
+            hopl.mylist = [properties.undefined,]
+
+        hopl._backend = {'mylist': [properties.undefined,]}
+
+        with self.assertRaises(ValueError):
+            hopl.validate()
+
+        hopl.mylist = [True,]
+
+        del hopl.mylist[0]
+        hopl.validate()
+
+        del hopl.mylist
+
+        with self.assertRaises(ValueError):
+            hopl.validate()
 
     def test_set(self):
         self._test_set(True)

@@ -99,10 +99,6 @@ class PropertyMetaclass(type):
 
         # Ensure prop names are valid and overwrite properties with @property
         for key, prop in iteritems(prop_dict):
-            if key[0] == '_':
-                raise AttributeError(
-                    'Property names cannot be private: {}'.format(key)
-                )
             if isinstance(prop, basic.Renamed) and prop.new_name not in _props:
                 raise TypeError('Invalid new name for renamed property: '
                                 '{}'.format(prop.new_name))
@@ -124,15 +120,37 @@ class PropertyMetaclass(type):
         for key, handler in iteritems(observer_dict):
             classdict[key] = handler.func
 
+        # Determine if private properties should be documented or just public
+        _doc_private = False
+        for base in reversed(bases):
+            _doc_private = getattr(base, '_doc_private', _doc_private)
+        _doc_private = classdict.get('_doc_private', _doc_private)
+
+        if not isinstance(_doc_private, bool):
+            raise AttributeError('_doc_private must be a boolean')
+
+        if _doc_private:
+            documented_props = sorted(_props)
+        else:
+            documented_props = sorted(p for p in _props if p[0] != '_')
+
         # Order the properties for the docs (default is alphabetical)
-        _doc_order = classdict.pop('_doc_order', None)
+        _doc_order = None
+        for base in reversed(bases):
+            _doc_order = getattr(base, '_doc_order', _doc_order)
+            if (
+                    not isinstance(_doc_order, (list, tuple)) or
+                    sorted(list(_doc_order)) != documented_props
+            ):
+                _doc_order = None
+        _doc_order = classdict.get('_doc_order', _doc_order)
         if _doc_order is None:
-            _doc_order = sorted(_props)
+            _doc_order = documented_props
         elif not isinstance(_doc_order, (list, tuple)):
             raise AttributeError(
                 '_doc_order must be a list of property names'
             )
-        elif sorted(list(_doc_order)) != sorted(_props):
+        elif sorted(list(_doc_order)) != documented_props:
             raise AttributeError(
                 '_doc_order must be unspecified or contain ALL property names'
             )
@@ -140,11 +158,13 @@ class PropertyMetaclass(type):
         # Sort props into required, optional, and immutable
         doc_str = classdict.get('__doc__', '')
         req = [key for key in _doc_order
-               if getattr(_props[key], 'required', False)]
+               if key[0] != '_' and getattr(_props[key], 'required', False)]
         opt = [key for key in _doc_order
-               if not getattr(_props[key], 'required', True)]
+               if key[0] != '_' and not getattr(_props[key], 'required', True)]
         imm = [key for key in _doc_order
-               if not hasattr(_props[key], 'required')]
+               if key[0] != '_' and not hasattr(_props[key], 'required')]
+        priv = [key for key in _doc_order
+                if key[0] == '_']
 
         # Build the documentation based on above sorting
         if req:
@@ -158,6 +178,10 @@ class PropertyMetaclass(type):
         if imm:
             doc_str += '\n\n**Other Properties:**\n\n' + '\n'.join(
                 ('* ' + _props[key].sphinx() for key in imm)
+            )
+        if priv:
+            doc_str += '\n\n**Private Properties:**\n\n' + '\n'.join(
+                ('* ' + _props[key].sphinx() for key in priv)
             )
         classdict['__doc__'] = doc_str
 
@@ -339,13 +363,16 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     raise ValueError(
                         'Invalid value for property {}: {}'.format(key, value)
                     )
-            prop.assert_valid(self)
+            if not prop.assert_valid(self):
+                raise ValueError(
+                    'Invalid value for property {}: {}'.format(key, value)
+                )
         return True
 
     @utils.stop_recursion_with(
         utils.SelfReferenceError('Object contains unserializable self reference')
     )
-    def serialize(self, include_class=True, **kwargs):
+    def serialize(self, include_class=True, save_dynamic=False, **kwargs):
         """Serializes a **HasProperties** instance to dictionary
 
         This uses the Property serializers to serialize all Property values
@@ -358,13 +385,22 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         * **include_class** - If True (the default), the name of the class
           will also be saved to the serialized dictionary under key
           :code:`'__class__'`
+        * **save_dynamic** - If True, dynamic properties are written to
+          the serialized dict (default: False).
         * Any other keyword arguments will be passed through to the Property
           serializers.
         """
+        kwargs.update({
+            'include_class': include_class,
+            'save_dynamic': save_dynamic
+        })
+        if save_dynamic:
+            prop_source = self._props
+        else:
+            prop_source = self._backend
         data = (
-            (k, v.serialize(
-                self._get(v.name), include_class=include_class, **kwargs
-            )) for k, v in iteritems(self._props)
+            (key, self._props[key].serialize(getattr(self, key), **kwargs))
+            for key in prop_source
         )
         json_dict = {k: v for k, v in data if v is not None}
         if include_class:
@@ -407,6 +443,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         rcl=value['__class__'], cl=cls.__name__
                     ), RuntimeWarning
                 )
+        kwargs.update({'trusted': trusted, 'verbose': verbose})
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if unused and verbose:
@@ -415,9 +452,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             ), RuntimeWarning)
         newstate = {}
         for key, val in iteritems(state):
-            newstate[key] = cls._props[key].deserialize(
-                val, trusted=trusted, **kwargs
-            )
+            newstate[key] = cls._props[key].deserialize(val, **kwargs)
         mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
             newinst = cls(**mutable)

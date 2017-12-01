@@ -19,6 +19,13 @@ if PY2:
 else:
     CLASS_TYPES = (type,)
 
+CONTAINERS = (list, tuple, set)
+try:
+    import numpy as np
+    CONTAINERS += (np.ndarray,)
+except ImportError:
+    pass
+
 
 def add_properties_callbacks(cls):
     """Class decorator to add change notifications to builtin containers"""
@@ -267,7 +274,7 @@ class Tuple(basic.Property):
         """
         if not self.coerce and not isinstance(value, self._class_default):
             self.error(instance, value)
-        if self.coerce and not isinstance(value, (list, tuple, set)):
+        if self.coerce and not isinstance(value, CONTAINERS):
             value = [value]
         out = []
         for val in value:
@@ -284,14 +291,15 @@ class Tuple(basic.Property):
             return False
         if value is None:
             value = instance._get(self.name)
-        if value is None:
-            return True
+            if value is None:
+                return True
         if self.min_length is not None and len(value) < self.min_length:
             self.error(instance, value)
         if self.max_length is not None and len(value) > self.max_length:
             self.error(instance, value)
         for val in value:
-            self.prop.assert_valid(instance, val)
+            if not self.prop.assert_valid(instance, val):
+                return False
         return True
 
     def serialize(self, value, **kwargs):

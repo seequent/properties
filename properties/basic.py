@@ -11,13 +11,20 @@ import math
 import random
 import re
 import uuid
-from warnings import warn
+import warnings
 
 from six import integer_types, string_types, text_type, with_metaclass
 
 from .utils import undefined
 
 TOL = 1e-9
+
+BOOLEAN_TYPES = (bool,)
+try:
+    import numpy as np
+    BOOLEAN_TYPES += (np.bool_,)
+except ImportError:
+    pass
 
 PropertyTerms = collections.namedtuple(
     'PropertyTerms',
@@ -32,13 +39,14 @@ class ArgumentWrangler(type):
 
         # Backward compatibility:
         if 'info_text' in classdict:
-            warn('Deprecation warning: info_text has been renamed class_info. '
-                 'Consider updating class {} '.format(name), FutureWarning)
+            warnings.warn('Deprecation warning: info_text has been renamed '
+                          'class_info. Consider updating class '
+                          '{} '.format(name), FutureWarning)
             classdict['class_info'] = classdict['info_text']
         if 'info' in classdict and callable(classdict['info']):
-            warn('Deprecation warning: info is now a @property, not a '
-                 'callable. Consider updating class {}'.format(name),
-                 FutureWarning)
+            warnings.warn('Deprecation warning: info is now a @property, not '
+                          'a callable. Consider updating class '
+                          '{}'.format(name), FutureWarning)
             classdict['info'] = property(fget=classdict['info'])
 
         newcls = super(ArgumentWrangler, mcs).__new__(
@@ -715,7 +723,7 @@ class Bool(Property):
                 value = bool(value)
             except ValueError:
                 self.error(instance, value)
-        if not isinstance(value, bool):
+        if not isinstance(value, BOOLEAN_TYPES):
             self.error(instance, value)
         return value
 
@@ -1389,17 +1397,23 @@ class Renamed(GettableProperty):
             my_string_prop = properties.String('My string property')
             myStringProp = properties.Renamed('my_string_prop')
 
-    **Argument** (other Property keyword arguments are not available):
+    **Argument**:
 
     * **new_name** - the new name of the property that was renamed.
+
+    **Available keywords**:
+
+    * **warn** - raise a warning when this property is used (default: True)
     """
 
-    def __init__(self, new_name):
+    def __init__(self, new_name, **kwargs):
         self.new_name = new_name
-        super(Renamed, self).__init__(
+        default_doc = (
             "This property has been renamed '{}' and may be removed in the "
             "future.".format(new_name)
         )
+        kwargs['doc'] = kwargs.get('doc', default_doc)
+        super(Renamed, self).__init__(**kwargs)
 
     @property
     def new_name(self):
@@ -1412,16 +1426,29 @@ class Renamed(GettableProperty):
             raise TypeError('new_name must be name of another property')
         self._new_name = value
 
+    @property
+    def warn(self):
+        """Warn user about deprecation of renamed property"""
+        return getattr(self, '_warn', True)
+
+    @warn.setter
+    def warn(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'warn' property must be a boolean")
+        self._warn = value
+
+
     def sphinx_class(self):
         return ''
 
-    def warn(self):
+    def display_warning(self):
         """Display a FutureWarning about using a Renamed Property"""
-        warn(
-            "\nProperty '{}' is deprecated and may be removed in the future. "
-            "Please use '{}'.".format(self.name, self.new_name),
-            FutureWarning, stacklevel=3
-        )
+        if self.warn:
+            warnings.warn(
+                "\nProperty '{}' is deprecated and may be removed in the "
+                "future. Please use '{}'.".format(self.name, self.new_name),
+                FutureWarning, stacklevel=3
+            )
 
     def get_property(self):
         """Establishes the dynamic behavior of Property values"""
@@ -1429,17 +1456,17 @@ class Renamed(GettableProperty):
 
         def fget(self):
             """Call dynamic function then validate output"""
-            scope.warn()
+            scope.display_warning()
             return getattr(self, scope.new_name)
 
         def fset(self, value):
             """Validate and call setter"""
-            scope.warn()
+            scope.display_warning()
             setattr(self, scope.new_name, value)
 
         def fdel(self):
             """call deleter"""
-            scope.warn()
+            scope.display_warning()
             delattr(self, scope.new_name)
 
         return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
