@@ -473,7 +473,7 @@ class Set(List):
         return set(value)
 
 
-class Dict(basic.Property):
+class Dictionary(basic.Property):
 
     class_info = 'a dictionary'
     _class_default = dict
@@ -641,6 +641,5 @@ class Dict(basic.Property):
                 else val
             )
             for key, val in iteritems(value)
-
         }
         return serial_dict
