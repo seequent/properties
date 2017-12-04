@@ -905,8 +905,11 @@ class TestContainer(unittest.TestCase):
         hfd.mydict = {'red': HasInt(myint=5)}
         hfd.mydict.update({'green': HasInt(myint=1)})
 
-        print(hfd.mydict)
         hfd.validate()
+
+        with self.assertRaises(ValueError):
+            hfd.mydict.update({1: HasInt(myint=1)})
+            hfd.validate()
 
 
 if __name__ == '__main__':
