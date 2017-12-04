@@ -106,6 +106,19 @@ class TestHandlers(unittest.TestCase):
         assert hand.c == 12
         assert hand.d == 0
 
+        hand = ConsiderItHandled()
+
+        hand._backend['d'] = 1
+        assert hand.d == 1
+        hand.validate()
+        assert hand.d == 5
+
+        hand._backend['a'] = 5
+        with self.assertRaises(ValueError):
+            hand.validate()
+
+
+
     def test_everything(self):
         class HandleEverything(ConsiderItHandled):
             @properties.observer(properties.everything)

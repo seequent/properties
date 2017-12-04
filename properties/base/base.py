@@ -353,16 +353,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     @handlers.validator
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
+        with handlers.listeners_disabled({'observe_set'}):
+            for key, prop in iteritems(self._props):
+                if not isinstance(prop, basic.Property):
+                    continue
+                value = self._get(key)
+                if value is not None:
+                    setattr(self, key, value)
         for key, prop in iteritems(self._props):
             value = self._get(key)
-            if value is not None:
-                change = dict(name=key, previous=value, value=value,
-                              mode='validate')
-                self._notify(change)
-                if not prop.equal(value, change['value']):
-                    raise ValueError(
-                        'Invalid value for property {}: {}'.format(key, value)
-                    )
             if not prop.assert_valid(self):
                 raise ValueError(
                     'Invalid value for property {}: {}'.format(key, value)
