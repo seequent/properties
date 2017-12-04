@@ -351,7 +351,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         try:
             for val in itervalues(self._class_validators):
                 valid = val.func(self)
-                if valid == False:
+                if valid is False:
                     raise ValueError('Validation failed')
             return True
         finally:
@@ -515,7 +515,7 @@ def equal(value_a, value_b):
         return value_a == value_b
     if getattr(value_a, '_testing_equality', False):
         return False
-    value_a._testing_equality = True
+    value_a._testing_equality = True                                           #pylint: disable=protected-access
     try:
         if value_a is value_b:
             return True
@@ -526,15 +526,16 @@ def equal(value_a, value_b):
             prop_b = getattr(value_b, prop.name)
             if prop_a is None and prop_b is None:
                 continue
-            if prop_a is None or prop_b is None:
-                return False
-            if prop.equal(getattr(value_a, prop.name),
-                          getattr(value_b, prop.name)):
+            if (
+                    prop_a is not None and
+                    prop_b is not None and
+                    prop.equal(prop_a, prop_b)
+            ):
                 continue
             return False
         return True
     finally:
-        value_a._testing_equality = False
+        value_a._testing_equality = False                                      #pylint: disable=protected-access
 
 
 def copy(value, **kwargs):
