@@ -844,17 +844,17 @@ class TestContainer(unittest.TestCase):
     def _test_dict(self, om):
 
         with self.assertRaises(TypeError):
-            properties.Dict('bad string set', key_prop=str)
+            properties.Dictionary('bad string set', key_prop=str)
         with self.assertRaises(TypeError):
-            properties.Dict('bad string set', value_prop=str)
+            properties.Dictionary('bad string set', value_prop=str)
         with self.assertRaises(TypeError):
-            properties.Dict('bad observe', properties.Integer(''),
+            properties.Dictionary('bad observe', properties.Integer(''),
                             observe_mutations=5)
 
         class HasPropsDummy(properties.HasProperties):
             pass
 
-        mydict = properties.Dict('dummy has properties set',
+        mydict = properties.Dictionary('dummy has properties set',
                                 key_prop=properties.String(''),
                                 value_prop=HasPropsDummy,
                                 observe_mutations=om)
@@ -863,7 +863,7 @@ class TestContainer(unittest.TestCase):
         assert mydict.value_prop.instance_class is HasPropsDummy
 
         class HasDummyDict(properties.HasProperties):
-            mydict = properties.Dict('dummy has properties set',
+            mydict = properties.Dictionary('dummy has properties set',
                                      key_prop=properties.String(''),
                                      value_prop=HasPropsDummy,
                                      observe_mutations=om)
@@ -873,7 +873,7 @@ class TestContainer(unittest.TestCase):
         assert HasDummyDict()._props['mydict'].value_prop.name == 'mydict'
 
         class HasDict(properties.HasProperties):
-            aaa = properties.Dict('dictionary')
+            aaa = properties.Dictionary('dictionary')
 
         li = HasDict()
         li.aaa = {1: 2}
@@ -896,7 +896,7 @@ class TestContainer(unittest.TestCase):
 
 
         class HasFunnyDict(properties.HasProperties):
-            mydict = properties.Dict('my dict',
+            mydict = properties.Dictionary('my dict',
                                      key_prop=properties.Color(''),
                                      value_prop=HasInt,
                                      observe_mutations=om)

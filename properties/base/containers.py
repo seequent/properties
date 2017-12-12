@@ -559,7 +559,7 @@ class Dictionary(basic.Property):
 
     def assert_valid(self, instance, value=None):
         """Check if dict and contained properties are valid"""
-        valid = super(Dict, self).assert_valid(instance, value)
+        valid = super(Dictionary, self).assert_valid(instance, value)
         if not valid:
             return False
         if value is None:
@@ -591,7 +591,7 @@ class Dictionary(basic.Property):
         try:
             serial_dict = {key: val for key, val in serial_tuples}
         except TypeError as er:
-            raise TypeError('Dict property {} cannot be serialized. '
+            raise TypeError('Dictionary property {} cannot be serialized. '
                             'Serialized keys contain {}'.format(self.name, er))
         return serial_dict
 
@@ -612,7 +612,7 @@ class Dictionary(basic.Property):
         try:
             output_dict = {key: val for key, val in output_tuples}
         except TypeError as er:
-            raise TypeError('Dict property {} cannot be deserialized. '
+            raise TypeError('Dictionary property {} cannot be deserialized. '
                             'Keys contain {}'.format(self.name, er))
         return self._class_default(output_dict)
 
