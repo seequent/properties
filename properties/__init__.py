@@ -27,6 +27,7 @@ from .base import (
 
 from .basic import (
     Bool,
+    Boolean,
     Color,
     Complex,
     DateTime,

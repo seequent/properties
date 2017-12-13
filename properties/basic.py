@@ -693,7 +693,7 @@ class Property(GettableProperty):
         return '{doc}{default}'.format(doc=prop_doc, default=default_str)
 
 
-class Bool(Property):
+class Boolean(Property):
     """Property for True or False values
 
     **Available keywords** (in addition to those inherited from
@@ -744,6 +744,11 @@ class Bool(Property):
         raise ValueError('Could not load boolean from JSON: {}'.format(value))
 
 
+# Alias Bool for backwards compatibility - this will be removed in a future
+# release
+Bool = Boolean
+
+
 def _in_bounds(prop, instance, value):
     """Checks if the value is in the range (min, max)"""
     if (
@@ -753,7 +758,7 @@ def _in_bounds(prop, instance, value):
         prop.error(instance, value)
 
 
-class Integer(Bool):
+class Integer(Boolean):
     """Property for integer values
 
     **Available keywords** (in addition to those inherited from
@@ -869,7 +874,7 @@ class Float(Integer):
         return float(value)
 
 
-class Complex(Bool):
+class Complex(Boolean):
     """Property for complex numbers
 
     **Available keywords** (in addition to those inherited from

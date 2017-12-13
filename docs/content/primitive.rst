@@ -6,6 +6,8 @@ Primitive Properties
 Bool
 ----
 
+.. autoclass:: properties.Boolean
+
 .. autoclass:: properties.Bool
 
 Integer
