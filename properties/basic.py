@@ -995,6 +995,14 @@ class String(Property):
             info += ' "{}"'.format(self.regex.pattern)                         #pylint: disable=no-member
         return info
 
+    @staticmethod
+    def from_json(value, **kwargs):
+        return value.decode('utf-8')
+
+    @staticmethod
+    def to_json(value, **kwargs):
+        return value.encode('utf-8')
+
 
 class StringChoice(Property):
     """String Property where only certain choices are allowed
