@@ -22,10 +22,6 @@ properties
     :target: https://codecov.io/gh/aranzgeo/properties
     :alt: Code coverage
 
-.. image:: https://www.quantifiedcode.com/api/v1/project/f79abeb2219a4a2d9b683f8d57bcdab5/badge.svg
-    :target: https://www.quantifiedcode.com/app/project/f79abeb2219a4a2d9b683f8d57bcdab5
-    :alt: Code issues
-
 
 Overview Video
 --------------
