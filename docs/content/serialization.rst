@@ -22,3 +22,21 @@ that take a Property value into and out of any arbitrary serialized state;
 this state could be anything from an alternative JSON form to a saved file
 to a web request.
 
+Validation and Serialization
+----------------------------
+
+**Validation** and coercion happen on input of Property values and on 
+:code:`validate()`. This is taking "human-accessible" user input and 
+ensuring it is the "valid" type.
+
+**Serialization** takes the *valid* :code:`HasProperties` class and converts it to 
+something that can be saved to a file. Deserialization is the reverse 
+of that process, and should be used only on serialization's output.
+
+With simple properties like strings, validation and serialization 
+almost identical. User input, valid value, and saveable-to-file value 
+are all just the same string. However, the differences are apparent with 
+more complicated properties like Array - in that case, user input may be 
+a list or a numpy array, valid type is a numpy array, and serialized 
+value may be a binary file or something. Validate needs to deal with the 
+user input whereas deserialize needs to deal with the binary file.
