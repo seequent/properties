@@ -31,6 +31,7 @@ class TestMath(unittest.TestCase):
             myarrayfloat = properties.Array('my float array', dtype=float)
             myarrayint = properties.Array('my int array', dtype=int)
             myarraybool = properties.Array('my bool array', dtype=bool)
+            myarraycomplex = properties.Array('my complex array', dtype=complex)
 
         arrays = ArrayOpts()
         arrays.myarray = [0., 1., 2.]
@@ -51,6 +52,8 @@ class TestMath(unittest.TestCase):
             arrays.myarrayint = np.array([0, 1, 0]).astype(bool)
         with self.assertRaises(ValueError):
             arrays.myarraybool = np.array(['a', 'b', 'c'])
+        with self.assertRaises(ValueError):
+            arrays.myarraycomplex = np.array([0, 1, 2])
         with self.assertRaises(ValueError):
             properties.Array('').validate(None, [[1., 2.]])
 
