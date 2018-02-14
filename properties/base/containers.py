@@ -536,7 +536,7 @@ class Dictionary(basic.Property):
     def validate(self, instance, value):
         if not isinstance(value, dict):
             self.error(instance, value)
-        out = {}
+        out = self._class_default()
         for key, val in iteritems(value):
             if self.key_prop:
                 try:
