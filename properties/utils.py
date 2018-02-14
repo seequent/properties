@@ -47,8 +47,13 @@ def filter_props(has_props_cls, input_dict, include_immutable=True):
     """
     props_dict = {
         k: v for k, v in iter(input_dict.items()) if (
-            k in has_props_cls._props and
-            (include_immutable or hasattr(has_props_cls._props[k], 'required'))
+            k in has_props_cls._props and (
+                include_immutable or
+                any(
+                    hasattr(has_props_cls._props[k], att)
+                    for att in ('required', 'new_name')
+                )
+            )
         )
     }
     others_dict = {k: v for k, v in iter(input_dict.items())
