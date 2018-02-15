@@ -275,6 +275,12 @@ class TestDefault(unittest.TestCase):
             assert len(w) == 1
             assert issubclass(w[0].category, RuntimeWarning)
 
+        class HasDefaultIntList(properties.HasProperties):
+            intlist = properties.List('list of ints', properties.Integer('', default=5))
+
+        hdil = HasDefaultIntList()
+        assert hdil.intlist is None
+
     def test_reset(self):
 
         class HasInts(properties.HasProperties):
