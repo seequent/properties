@@ -4,11 +4,19 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import numpy as np
-from six import integer_types, string_types
-import vectormath as vmath
+try:
+    import numpy as np
+except ImportError:
+    np = None
+try:
+    import vectormath as vmath
+except ImportError:
+    vmath = None
 
-from .basic import Property, TOL
+from six import integer_types, string_types
+
+from .base import List, Union
+from .basic import Bool, Float, Integer, Property, TOL
 
 TYPE_MAPPINGS = {
     int: 'i',
@@ -16,6 +24,59 @@ TYPE_MAPPINGS = {
     bool: 'b',
     complex: 'c',
 }
+
+PROP_MAPPINGS = {
+    int: Integer,
+    float: Float,
+    bool: Bool,
+}
+
+VECTOR_DIRECTIONS = {
+    'ZERO': [0, 0, 0],
+    'X': [1, 0, 0],
+    'Y': [0, 1, 0],
+    'Z': [0, 0, 1],
+    '-X': [-1, 0, 0],
+    '-Y': [0, -1, 0],
+    '-Z': [0, 0, -1],
+    'EAST': [1, 0, 0],
+    'WEST': [-1, 0, 0],
+    'NORTH': [0, 1, 0],
+    'SOUTH': [0, -1, 0],
+    'UP': [0, 0, 1],
+    'DOWN': [0, 0, -1],
+}
+
+
+def _validate_shape(value):
+    if not isinstance(value, set):
+        try:
+            value = {value}
+        except TypeError:
+            # Valid shapes are hashable - we are just deferring errors
+            value = [value]
+    for val in value:
+        if not isinstance(val, tuple):
+            raise TypeError("{}: Invalid shape - must be a tuple "
+                            "(e.g. ('*', 3) for an array of length-3 "
+                            "arrays)".format(val))
+        for shp in val:
+            if shp != '*' and not isinstance(shp, integer_types):
+                raise TypeError("{}: Invalid shape - values "
+                                "must be '*' or int".format(val))
+    return value
+
+
+def _validate_dtype(value):
+    if not isinstance(value, (list, tuple)):
+        value = (value,)
+    if not value:
+        raise TypeError('No dtype specified - must be int, float, '
+                        'and/or bool')
+    if any([val not in TYPE_MAPPINGS for val in value]):
+        raise TypeError('{}: Invalid dtype - must be int, float, '
+                        'and/or bool'.format(value))
+    return value
 
 
 class Array(Property):
@@ -63,26 +124,7 @@ class Array(Property):
         if value is None:
             self._shape = value
             return
-        self._shape = self._validate_shape(value)
-
-    @staticmethod
-    def _validate_shape(value):
-        if not isinstance(value, set):
-            try:
-                value = {value}
-            except TypeError:
-                # Valid shapes are hashable - we are just deferring errors
-                value = [value]
-        for val in value:
-            if not isinstance(val, tuple):
-                raise TypeError("{}: Invalid shape - must be a tuple "
-                                "(e.g. ('*', 3) for an array of length-3 "
-                                "arrays)".format(val))
-            for shp in val:
-                if shp != '*' and not isinstance(shp, integer_types):
-                    raise TypeError("{}: Invalid shape - values "
-                                    "must be '*' or int".format(val))
-        return value
+        self._shape = _validate_shape(value)
 
     @property
     def dtype(self):
@@ -94,15 +136,7 @@ class Array(Property):
 
     @dtype.setter
     def dtype(self, value):
-        if not isinstance(value, (list, tuple)):
-            value = (value,)
-        if len(value) == 0:                                                    #pylint: disable=len-as-condition
-            raise TypeError('No dtype specified - must be int, float, '
-                            'and/or bool')
-        if any([val not in TYPE_MAPPINGS for val in value]):
-            raise TypeError('{}: Invalid dtype - must be int, float, '
-                            'and/or bool'.format(value))
-        self._dtype = value
+        self._dtype = _validate_dtype(value)
 
     @property
     def info(self):
@@ -127,10 +161,10 @@ class Array(Property):
         value = self.wrapper(value)
         if not isinstance(value, np.ndarray):
             raise NotImplementedError(
-                'Array validation is only implmented for wrappers that are '
-                'subclasses of numpy.ndarray'
+                'Array validation is only implemented for wrappers that are '
+                'subclasses of numpy.ndarray or list'
             )
-        if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
+        if value.dtype.kind not in (TYPE_MAPPINGS[t] for t in self.dtype):
             self.error(instance, value)
         if self.shape is None:
             return value
@@ -154,7 +188,6 @@ class Array(Property):
             return np.allclose(value_a[nan_mask], value_b[nan_mask], atol=TOL)
         except TypeError:
             return False
-
 
     def error(self, instance, value, error_class=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
@@ -487,18 +520,58 @@ class Vector2Array(BaseVector):
         return vmath.Vector2Array(value)
 
 
-VECTOR_DIRECTIONS = {
-    'ZERO': [0, 0, 0],
-    'X': [1, 0, 0],
-    'Y': [0, 1, 0],
-    'Z': [0, 0, 1],
-    '-X': [-1, 0, 0],
-    '-Y': [0, -1, 0],
-    '-Z': [0, 0, -1],
-    'EAST': [1, 0, 0],
-    'WEST': [-1, 0, 0],
-    'NORTH': [0, 1, 0],
-    'SOUTH': [0, -1, 0],
-    'UP': [0, 0, 1],
-    'DOWN': [0, 0, -1],
-}
+# The following are aliases for Array and Vector classes if library
+# dependencies are not available. This is especially useful for using
+# properties in lightweight environments without numpy.
+if not np:
+
+    def Array(*args, **kwargs):                                                #pylint: disable=invalid-name,function-redefined
+        """If numpy not available, Array is replaced with equivalent List"""
+        shape = _validate_shape(kwargs.pop('shape', ('*',)))
+        dtype = _validate_dtype(kwargs.pop('dtype', (float, int)))
+        kwargs['coerce'] = True
+
+        def _get_list_prop(list_kw, ind=0):
+            if ind + 1 == len(shape):
+                list_kw['prop'] = Union(
+                    doc='',
+                    props=[PROP_MAPPINGS[t]('') for t in dtype],
+                )
+            else:
+                list_kw['prop'] = _get_list_prop(kwargs.copy(), ind+1)
+            if shape[ind] != '*':
+                list_kw['min_length'] = list_kw['max_length'] = shape[ind]
+            return List(*args, **list_kw)
+
+        return _get_list_prop(kwargs.copy())
+
+
+if not vmath:
+
+    def Vector3(*args, **kwargs):                                              #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector3 is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = (3,)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
+
+    def Vector2(*args, **kwargs):                                              #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector2 is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = (2,)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
+
+    def Vector3Array(*args, **kwargs):                                         #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector3Array is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = ('*', 3)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
+
+    def Vector2Array(*args, **kwargs):                                         #pylint: disable=invalid-name,function-redefined
+        """If vmath not available, Vector2Array is replaced with Array"""
+        kwargs.pop('length', None)
+        kwargs['shape'] = ('*', 2)
+        kwargs['dtype'] = (float,)
+        return Array(*args, **kwargs)
