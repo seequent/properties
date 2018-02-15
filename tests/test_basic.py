@@ -68,6 +68,7 @@ class TestBasic(unittest.TestCase):
 
         class PropOpts(properties.HasProperties):
             myprop = properties.Property('empty property')
+            maybe_none = properties.Property('maybe None', required=False)
 
         with self.assertRaises(ValueError):
             PropOpts().validate()
@@ -81,8 +82,15 @@ class TestBasic(unittest.TestCase):
 
         assert properties.equal(PropOpts(), PropOpts())
         assert properties.equal(PropOpts(myprop=5), PropOpts(myprop=5))
+        assert not properties.equal(PropOpts(myprop=5, maybe_none=3),
+                                    PropOpts(myprop=5))
+        assert properties.equal(PropOpts(myprop=5, maybe_none=3),
+                                PropOpts(myprop=5, maybe_none=3))
         assert not properties.equal(PropOpts(myprop=5), PropOpts())
         assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
+        assert not properties.equal(None, PropOpts(myprop=6))
+        assert not properties.equal(PropOpts(myprop=5), None)
+        assert properties.equal(None, None)
 
         assert properties.Property('').equal(5, 5)
         assert not properties.Property('').equal(5, 'hi')

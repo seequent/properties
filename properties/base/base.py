@@ -339,16 +339,23 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             val = val()
         setattr(self, name, val)
 
-    @utils.stop_recursion_with(True)
     def validate(self):
         """Call all registered class validator methods
 
         These are all methods decorated with :code:`@properties.validator`.
         Validator methods are expected to raise an error if they fail.
         """
-        for val in itervalues(self._class_validators):
-            val.func(self)
-        return True
+        if getattr(self, '_getting_validated', False):
+            return True
+        self._getting_validated = True
+        try:
+            for val in itervalues(self._class_validators):
+                valid = val.func(self)
+                if valid is False:
+                    raise ValueError('Validation failed')
+            return True
+        finally:
+            self._getting_validated = False
 
     @handlers.validator
     def _validate_props(self):
@@ -369,9 +376,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 )
         return True
 
-    @utils.stop_recursion_with(
-        utils.SelfReferenceError('Object contains unserializable self reference')
-    )
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
         """Serializes a **HasProperties** instance to dictionary
 
@@ -390,22 +394,29 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         * Any other keyword arguments will be passed through to the Property
           serializers.
         """
-        kwargs.update({
-            'include_class': include_class,
-            'save_dynamic': save_dynamic
-        })
-        if save_dynamic:
-            prop_source = self._props
-        else:
-            prop_source = self._backend
-        data = (
-            (key, self._props[key].serialize(getattr(self, key), **kwargs))
-            for key in prop_source
-        )
-        json_dict = {k: v for k, v in data if v is not None}
-        if include_class:
-            json_dict.update({'__class__': self.__class__.__name__})
-        return json_dict
+        if getattr(self, '_getting_serialized', False):
+            raise utils.SelfReferenceError('Object contains unserializable '
+                                           'self reference')
+        self._getting_serialized = True
+        try:
+            kwargs.update({
+                'include_class': include_class,
+                'save_dynamic': save_dynamic
+            })
+            if save_dynamic:
+                prop_source = self._props
+            else:
+                prop_source = self._backend
+            data = (
+                (key, self._props[key].serialize(getattr(self, key), **kwargs))
+                for key in prop_source
+            )
+            json_dict = {k: v for k, v in data if v is not None}
+            if include_class:
+                json_dict.update({'__class__': self.__class__.__name__})
+            return json_dict
+        finally:
+            self._getting_serialized = False
 
     @classmethod
     def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
@@ -466,15 +477,20 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             valid_val = self._props[key].validate(self, pickle.loads(val))
             self._backend[key] = valid_val
 
-    @utils.stop_recursion_with(
-        utils.SelfReferenceError('Object contains unpicklable self reference')
-    )
     def __reduce__(self):
-        data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
-        pickle_dict = {k: pickle.dumps(v) for k, v in data if v is not None}
-        return (self.__class__, (), pickle_dict)
+        if getattr(self, '_getting_pickled', False):
+            raise utils.SelfReferenceError('Object contains unpicklable self '
+                                           'reference')
+        self._getting_pickled = True
+        try:
+            data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
+            pickle_dict = {
+                k: pickle.dumps(v) for k, v in data if v is not None
+            }
+            return (self.__class__, (), pickle_dict)
+        finally:
+            self._getting_pickled = False
 
-    @utils.stop_recursion_with(False)
     def equal(self, other):
         """Determine if two **HasProperties** instances are equivalent
 
@@ -487,7 +503,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return equal(self, other)
 
 
-@utils.stop_recursion_with(False)
 def equal(value_a, value_b):
     """Determine if two **HasProperties** instances are equivalent
 
@@ -509,22 +524,29 @@ def equal(value_a, value_b):
             not isinstance(value_b, HasProperties)
     ):
         return value_a == value_b
-    if value_a is value_b:
-        return True
-    if value_a.__class__ is not value_b.__class__:
+    if getattr(value_a, '_testing_equality', False):
         return False
-    for prop in itervalues(value_a._props):
-        prop_a = getattr(value_a, prop.name)
-        prop_b = getattr(value_b, prop.name)
-        if prop_a is None and prop_b is None:
-            continue
-        if prop_a is None or prop_b is None:
+    value_a._testing_equality = True                                           #pylint: disable=protected-access
+    try:
+        if value_a is value_b:
+            return True
+        if value_a.__class__ is not value_b.__class__:
             return False
-        if prop.equal(getattr(value_a, prop.name),
-                      getattr(value_b, prop.name)):
-            continue
-        return False
-    return True
+        for prop in itervalues(value_a._props):
+            prop_a = getattr(value_a, prop.name)
+            prop_b = getattr(value_b, prop.name)
+            if prop_a is None and prop_b is None:
+                continue
+            if (
+                    prop_a is not None and
+                    prop_b is not None and
+                    prop.equal(prop_a, prop_b)
+            ):
+                continue
+            return False
+        return True
+    finally:
+        value_a._testing_equality = False                                      #pylint: disable=protected-access
 
 
 def copy(value, **kwargs):
