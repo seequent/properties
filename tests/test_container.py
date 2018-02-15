@@ -207,6 +207,11 @@ class TestContainer(unittest.TestCase):
         with self.assertRaises(ValueError):
             hopt.validate()
 
+        class UntypedTuple(properties.HasProperties):
+            mytuple = properties.Tuple('no type')
+
+        ut = UntypedTuple(mytuple=(1, 'hi', UntypedTuple))
+        ut.validate()
 
 
     def test_list(self):

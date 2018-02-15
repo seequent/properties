@@ -194,14 +194,15 @@ class Tuple(basic.Property):
     class_info = 'a tuple'
     _class_default = tuple
 
-    def __init__(self, doc, prop, **kwargs):
-        self.prop = prop
+    def __init__(self, doc, prop=None, **kwargs):
+        if prop is not None:
+            self.prop = prop
         super(Tuple, self).__init__(doc, **kwargs)
 
     @property
     def prop(self):
         """Property instance or HasProperties class allowed in the list"""
-        return self._prop
+        return getattr(self, '_prop', basic.Property(''))
 
     @prop.setter
     def prop(self, value):
