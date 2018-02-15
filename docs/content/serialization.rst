@@ -22,8 +22,13 @@ that take a Property value into and out of any arbitrary serialized state;
 this state could be anything from an alternative JSON form to a saved file
 to a web request.
 
-Validation and Serialization
+Validation vs. Serialization/Deserialization
 ----------------------------
+
+For some Property types, validation and serialization/deserialization
+look very similar; they both convert between an invalid-but-understood
+value and a valid Property value. However, they remain separate because
+they serve different purposes:
 
 **Validation** and coercion happen on input of Property values and on 
 :code:`validate()`. This is taking "human-accessible" user input and 
