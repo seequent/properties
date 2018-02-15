@@ -1128,7 +1128,7 @@ class StringChoice(Property):
                 raise TypeError('descriptions values must be strings')
         self._descriptions = value
 
-    def validate(self, instance, value):
+    def validate(self, instance, value):                                       #pylint: disable=inconsistent-return-statements
         """Check if input is a valid string based on the choices"""
         if not isinstance(value, string_types):
             self.error(instance, value)
