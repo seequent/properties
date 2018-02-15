@@ -68,6 +68,7 @@ class TestBasic(unittest.TestCase):
 
         class PropOpts(properties.HasProperties):
             myprop = properties.Property('empty property')
+            maybe_none = properties.Property('maybe None', required=False)
 
         with self.assertRaises(ValueError):
             PropOpts().validate()
@@ -81,8 +82,15 @@ class TestBasic(unittest.TestCase):
 
         assert properties.equal(PropOpts(), PropOpts())
         assert properties.equal(PropOpts(myprop=5), PropOpts(myprop=5))
+        assert not properties.equal(PropOpts(myprop=5, maybe_none=3),
+                                    PropOpts(myprop=5))
+        assert properties.equal(PropOpts(myprop=5, maybe_none=3),
+                                PropOpts(myprop=5, maybe_none=3))
         assert not properties.equal(PropOpts(myprop=5), PropOpts())
         assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
+        assert not properties.equal(None, PropOpts(myprop=6))
+        assert not properties.equal(PropOpts(myprop=5), None)
+        assert properties.equal(None, None)
 
         assert properties.Property('').equal(5, 5)
         assert not properties.Property('').equal(5, 'hi')
@@ -180,8 +188,13 @@ class TestBasic(unittest.TestCase):
 
     def test_bool(self):
 
+        for boolean in (properties.Bool, properties.Boolean):
+            self._test_bool_with(boolean)
+
+    def _test_bool_with(self, boolean):
+
         class BoolOpts(properties.HasProperties):
-            mybool = properties.Bool('My bool')
+            mybool = boolean('My bool')
 
         opt = BoolOpts(mybool=True)
         assert opt.mybool is True
@@ -189,34 +202,34 @@ class TestBasic(unittest.TestCase):
         opt.mybool = False
         assert opt.mybool is False
 
-        assert properties.Bool('').equal(True, True)
-        assert not properties.Bool('').equal(True, 1)
-        assert not properties.Bool('').equal(True, 'true')
+        assert boolean('').equal(True, True)
+        assert not boolean('').equal(True, 1)
+        assert not boolean('').equal(True, 'true')
 
-        json = properties.Bool.to_json(opt.mybool)
+        json = boolean.to_json(opt.mybool)
         assert not json
-        assert not properties.Bool.from_json(json)
+        assert not boolean.from_json(json)
         with self.assertRaises(ValueError):
-            properties.Bool.from_json({})
+            boolean.from_json({})
         with self.assertRaises(ValueError):
-            properties.Bool.from_json('nope')
-        assert properties.Bool.from_json('true')
-        assert properties.Bool.from_json('y')
-        assert properties.Bool.from_json('Yes')
-        assert properties.Bool.from_json('ON')
-        assert not properties.Bool.from_json('false')
-        assert not properties.Bool.from_json('N')
-        assert not properties.Bool.from_json('no')
-        assert not properties.Bool.from_json('OFF')
+            boolean.from_json('nope')
+        assert boolean.from_json('true')
+        assert boolean.from_json('y')
+        assert boolean.from_json('Yes')
+        assert boolean.from_json('ON')
+        assert not boolean.from_json('false')
+        assert not boolean.from_json('N')
+        assert not boolean.from_json('no')
+        assert not boolean.from_json('OFF')
 
         self.assertEqual(opt.serialize(include_class=False), {'mybool': False})
 
         assert BoolOpts.deserialize({'mybool': 'Y'}).mybool
         assert BoolOpts._props['mybool'].deserialize(None) is None
 
-        assert properties.Bool('').equal(True, True)
-        assert not properties.Bool('').equal(True, 1)
-        assert not properties.Bool('').equal(True, 'true')
+        assert boolean('').equal(True, True)
+        assert not boolean('').equal(True, 1)
+        assert not boolean('').equal(True, 'true')
 
         with self.assertRaises(ValueError):
             BoolOpts._props['mybool'].assert_valid(opt, 'true')
@@ -741,7 +754,10 @@ class TestBasic(unittest.TestCase):
 
         assert myp.my_int == 5
         assert MyHasProps._props['not_my_int'].doc == ''
-
+        assert properties.equal(
+            MyHasProps.deserialize({'my_int': 5}),
+            MyHasProps.deserialize({'not_my_int': 5})
+        )
 
     def test_copy(self):
 
