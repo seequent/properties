@@ -58,7 +58,7 @@ class TestContainer(unittest.TestCase):
         assert HasDummyTuple()._props['mytuple'].prop.name == 'mytuple'
 
         class HasIntTuple(properties.HasProperties):
-            aaa = properties.Tuple('tuple of ints', properties.Integer(''))
+            aaa = properties.Tuple('tuple of ints', properties.Integer(''), default=tuple)
 
         li = HasIntTuple()
         li.aaa = (1, 2, 3)
@@ -266,7 +266,7 @@ class TestContainer(unittest.TestCase):
 
         class HasIntList(properties.HasProperties):
             aaa = properties.List('list of ints', properties.Integer(''),
-                                  observe_mutations=om)
+                                  observe_mutations=om, default=list)
 
         li = HasIntList()
         li.aaa = [1, 2, 3]
@@ -477,7 +477,7 @@ class TestContainer(unittest.TestCase):
 
         class HasIntSet(properties.HasProperties):
             aaa = properties.Set('set of ints', properties.Integer(''),
-                                  observe_mutations=om)
+                                  observe_mutations=om, default=set)
 
         li = HasIntSet()
         li.aaa = {1, 2, 3}
@@ -885,7 +885,7 @@ class TestContainer(unittest.TestCase):
         assert HasDummyDict()._props['mydict'].value_prop.name == 'mydict'
 
         class HasDict(properties.HasProperties):
-            aaa = properties.Dictionary('dictionary')
+            aaa = properties.Dictionary('dictionary', default=dict)
 
         li = HasDict()
         li.aaa = {1: 2}
