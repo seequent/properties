@@ -746,7 +746,10 @@ class TestBasic(unittest.TestCase):
 
         assert myp.my_int == 5
         assert MyHasProps._props['not_my_int'].doc == ''
-
+        assert properties.equal(
+            MyHasProps.deserialize({'my_int': 5}),
+            MyHasProps.deserialize({'not_my_int': 5})
+        )
 
     def test_copy(self):
 
