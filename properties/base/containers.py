@@ -134,6 +134,16 @@ class PropertiesSet(set):
 
 @add_properties_callbacks
 class PropertiesDict(dict):
+    """Dict for :class:`Dictionary <properties.Dictionary>` Property with notifications
+
+    This class keeps track of the Property and HasProperties
+    instance it is held by. When the dict is modified, it is set again
+    rather than mutating. This decreases performance but allows notifications
+    to fire on the HasProperties instance.
+
+    If a **PropertiesDict** is not part of a HasProperties
+    class, its behavior is identical to a built-in :code:`dict`.
+    """
 
     _mutators = ['clear', 'pop', 'popitem', 'setdefault', 'update',
                  '__delitem__', '__setitem__']
@@ -474,6 +484,26 @@ class Set(List):
 
 
 class Dictionary(basic.Property):
+    """Property for dicts, where each key and value is another Property type
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **key_prop** - Property instance that specifies the Property type of
+      each key in the **Dictionary**. A HasProperties class may also be
+      specified; this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
+    * **value_prop** - Property instance that specifies the Property type of
+      each value in the **Dictionary**. A HasProperties class may also be
+      specified; this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
+    * **observe_mutations** - If False, the underlying storage class is
+      a built-in :code:`dict`. If True, the underlying storage class will be
+      :class:`PropertiesDict <properties.base.containers.PropertiesDict>`.
+      The benefit of PropertiesDict is that all mutations
+      will trigger HasProperties change notifications. The drawback is
+      slower performance as copies of the dict are made on every operation.
+    """
 
     class_info = 'a dictionary'
     _class_default = dict
@@ -590,9 +620,9 @@ class Dictionary(basic.Property):
         ]
         try:
             serial_dict = {key: val for key, val in serial_tuples}
-        except TypeError as er:
-            raise TypeError('Dictionary property {} cannot be serialized. '
-                            'Serialized keys contain {}'.format(self.name, er))
+        except TypeError as err:
+            raise TypeError('Dictionary property {} cannot be serialized - '
+                            'keys contain {}'.format(self.name, err))
         return serial_dict
 
     def deserialize(self, value, **kwargs):
@@ -611,9 +641,9 @@ class Dictionary(basic.Property):
         ]
         try:
             output_dict = {key: val for key, val in output_tuples}
-        except TypeError as er:
-            raise TypeError('Dictionary property {} cannot be deserialized. '
-                            'Keys contain {}'.format(self.name, er))
+        except TypeError as err:
+            raise TypeError('Dictionary property {} cannot be deserialized - '
+                            'keys contain {}'.format(self.name, err))
         return self._class_default(output_dict)
 
     def equal(self, value_a, value_b):
