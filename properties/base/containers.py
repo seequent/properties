@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 from warnings import warn
 
-from six import integer_types, PY2
+from six import integer_types, iteritems, PY2
 
 from .base import HasProperties
 from .instance import Instance
@@ -126,13 +126,50 @@ class PropertiesSet(set):
                  'intersection_update', 'pop', 'remove',
                  'symmetric_difference_update', 'update']
     _operators = ['__and__', '__or__', '__sub__', '__xor__',
-                  '__rand__', '__ror__', '__rsub__', '__rxor__',
+                  '__rand__', '__ror__', '__rsub__', '__rxor__', 'copy',
                   'difference', 'intersection', 'symmetric_difference',
                   'union']
     _ioperators = ['__iand__', '__ior__', '__isub__', '__ixor__']
 
 
-OBSERVABLE = {list: PropertiesList, set: PropertiesSet}
+@add_properties_callbacks
+class PropertiesDict(dict):
+    """Dict for :class:`Dictionary <properties.Dictionary>` Property with notifications
+
+    This class keeps track of the Property and HasProperties
+    instance it is held by. When the dict is modified, it is set again
+    rather than mutating. This decreases performance but allows notifications
+    to fire on the HasProperties instance.
+
+    If a **PropertiesDict** is not part of a HasProperties
+    class, its behavior is identical to a built-in :code:`dict`.
+    """
+
+    _mutators = ['clear', 'pop', 'popitem', 'setdefault', 'update',
+                 '__delitem__', '__setitem__']
+    _operators = ['copy', 'fromkeys']
+    _ioperators = []
+
+OBSERVABLE = {
+    list: PropertiesList,
+    set: PropertiesSet,
+    dict: PropertiesDict,
+}
+
+def validate_prop(value):
+    """Validate Property instance for container items"""
+    if (
+            isinstance(value, CLASS_TYPES) and
+            issubclass(value, HasProperties)
+    ):
+        value = Instance('', value)
+    if not isinstance(value, basic.Property):
+        raise TypeError('Contained prop must be a Property instance or '
+                        'HasProperties class')
+    if value.default is not utils.undefined:
+        warn('Contained prop default ignored: {}'.format(value.default),
+             RuntimeWarning)
+    return value
 
 
 class Tuple(basic.Property):
@@ -157,24 +194,19 @@ class Tuple(basic.Property):
     class_info = 'a tuple'
     _class_default = tuple
 
-    def __init__(self, doc, prop, **kwargs):
-        self.prop = prop
+    def __init__(self, doc, prop=None, **kwargs):
+        if prop is not None:
+            self.prop = prop
         super(Tuple, self).__init__(doc, **kwargs)
-        self._unused_default_warning()
 
     @property
     def prop(self):
         """Property instance or HasProperties class allowed in the list"""
-        return self._prop
+        return getattr(self, '_prop', basic.Property(''))
 
     @prop.setter
     def prop(self, value):
-        if (isinstance(value, CLASS_TYPES) and
-                issubclass(value, HasProperties)):
-            value = Instance('', value)
-        if not isinstance(value, basic.Property):
-            raise TypeError('prop must be a Property or HasProperties class')
-        self._prop = value
+        self._prop = validate_prop(value)
 
     @property
     def name(self):
@@ -245,14 +277,6 @@ class Tuple(basic.Property):
             )
         return '{} with {}'.format(itext, lentext)
 
-    def _unused_default_warning(self):
-        if (
-                self.prop.default is not utils.undefined and
-                self.prop.default != self.default
-        ):
-            warn('List prop default ignored: {}'.format(self.prop.default),
-                 RuntimeWarning)
-
     def validate(self, instance, value):
         """Check the class of the container and validate each element
 
@@ -268,8 +292,7 @@ class Tuple(basic.Property):
             try:
                 out += [self.prop.validate(instance, val)]
             except ValueError:
-                self.error(instance, val,
-                           extra='This is an invalid list item.')
+                self.error(instance, val, extra='This item is invalid.')
         return self._class_default(out)
 
     def assert_valid(self, instance, value=None):
@@ -459,3 +482,195 @@ class Set(List):
         set's prop type is unknown.
         """
         return set(value)
+
+
+class Dictionary(basic.Property):
+    """Property for dicts, where each key and value is another Property type
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Property <property>`):
+
+    * **key_prop** - Property instance that specifies the Property type of
+      each key in the **Dictionary**. A HasProperties class may also be
+      specified; this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
+    * **value_prop** - Property instance that specifies the Property type of
+      each value in the **Dictionary**. A HasProperties class may also be
+      specified; this is simply coerced to an
+      :ref:`Instance Property <instance>` of that class.
+    * **observe_mutations** - If False, the underlying storage class is
+      a built-in :code:`dict`. If True, the underlying storage class will be
+      :class:`PropertiesDict <properties.base.containers.PropertiesDict>`.
+      The benefit of PropertiesDict is that all mutations
+      will trigger HasProperties change notifications. The drawback is
+      slower performance as copies of the dict are made on every operation.
+    """
+
+    class_info = 'a dictionary'
+    _class_default = dict
+
+    @property
+    def observe_mutations(self):
+        """observe_mutations makes all mutations fire change notifications"""
+        return getattr(self, '_observe_mutations', False)
+
+    @observe_mutations.setter
+    def observe_mutations(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('observe_mutations must be a boolean')
+        self._observe_mutations = value
+
+    @property
+    def key_prop(self):
+        """Property type allowed for keys"""
+        return getattr(self, '_key_prop', basic.Property(''))
+
+    @key_prop.setter
+    def key_prop(self, value):
+        self._key_prop = validate_prop(value)
+
+    @property
+    def value_prop(self):
+        """Property type allowed for values"""
+        return getattr(self, '_value_prop', basic.Property(''))
+
+    @value_prop.setter
+    def value_prop(self, value):
+        self._value_prop = validate_prop(value)
+
+    @property
+    def name(self):
+        return getattr(self, '_name', '')
+
+    @name.setter
+    def name(self, value):
+        if self.key_prop:
+            self.key_prop.name = value
+        if self.value_prop:
+            self.value_prop.name = value
+        self._name = value
+
+    @property
+    def info(self):
+        """Supplemental description of the list, with length and type"""
+        itext = self.class_info
+        if self.key_prop.info and self.value_prop.info:
+            itext += ' (keys: {}; values: {})'.format(
+                self.key_prop.info, self.value_prop.info
+            )
+        elif self.key_prop.info:
+            itext += ' (keys: {})'.format(self.key_prop.info)
+        elif self.value_prop.info:
+            itext += ' (values: {})'.format(self.value_prop.info)
+        return itext
+
+    def validate(self, instance, value):
+        if not isinstance(value, dict):
+            self.error(instance, value)
+        out = self._class_default()
+        for key, val in iteritems(value):
+            if self.key_prop:
+                try:
+                    key = self.key_prop.validate(instance, key)
+                except ValueError:
+                    self.error(instance, key, extra='This key is invalid.')
+            if self.value_prop:
+                try:
+                    val = self.value_prop.validate(instance, val)
+                except ValueError:
+                    self.error(instance, val, extra='This value is invalid.')
+            out[key] = val
+        value = out
+        if not self.observe_mutations:
+            return value
+        value = OBSERVABLE[self._class_default](value)
+        value._name = self.name
+        value._instance = instance
+        return value
+
+    def assert_valid(self, instance, value=None):
+        """Check if dict and contained properties are valid"""
+        valid = super(Dictionary, self).assert_valid(instance, value)
+        if not valid:
+            return False
+        if value is None:
+            value = instance._get(self.name)
+        if value is None:
+            return True
+        if self.key_prop or self.value_prop:
+            for key, val in iteritems(value):
+                if self.key_prop:
+                    self.key_prop.assert_valid(instance, key)
+                if self.value_prop:
+                    self.value_prop.assert_valid(instance, val)
+        return True
+
+    def serialize(self, value, **kwargs):
+        """Return a serialized copy of the dict"""
+        kwargs.update({'include_class': kwargs.get('include_class', True)})
+        if self.serializer is not None:
+            return self.serializer(value, **kwargs)
+        if value is None:
+            return None
+        serial_tuples = [
+            (
+                self.key_prop.serialize(key, **kwargs),
+                self.value_prop.serialize(val, **kwargs)
+            )
+            for key, val in iteritems(value)
+        ]
+        try:
+            serial_dict = {key: val for key, val in serial_tuples}
+        except TypeError as err:
+            raise TypeError('Dictionary property {} cannot be serialized - '
+                            'keys contain {}'.format(self.name, err))
+        return serial_dict
+
+    def deserialize(self, value, **kwargs):
+        """Return a deserialized copy of the dict"""
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
+        if self.deserializer is not None:
+            return self.deserializer(value, **kwargs)
+        if value is None:
+            return None
+        output_tuples = [
+            (
+                self.key_prop.deserialize(key, **kwargs),
+                self.value_prop.deserialize(val, **kwargs)
+            )
+            for key, val in iteritems(value)
+        ]
+        try:
+            output_dict = {key: val for key, val in output_tuples}
+        except TypeError as err:
+            raise TypeError('Dictionary property {} cannot be deserialized - '
+                            'keys contain {}'.format(self.name, err))
+        return self._class_default(output_dict)
+
+    def equal(self, value_a, value_b):
+        try:
+            if len(value_a) != len(value_b):
+                return False
+            copy_b = value_b.copy()
+            for key_a in value_a:
+                if self.value_prop.equal(value_a[key_a], value_b[key_a]):
+                    copy_b.pop(key_a)
+            return len(copy_b) == 0
+        except (KeyError, TypeError, AttributeError):
+            return False
+
+
+    @staticmethod
+    def to_json(value, **kwargs):
+        """Return a copy of the dictionary
+
+        If the values are HasProperties instances, they are serialized
+        """
+        serial_dict = {
+            key: (
+                val.serialize(**kwargs) if isinstance(val, HasProperties)
+                else val
+            )
+            for key, val in iteritems(value)
+        }
+        return serial_dict
