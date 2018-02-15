@@ -15,6 +15,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from .base import (
+    Dictionary,
     HasProperties,
     Instance,
     List,
@@ -27,6 +28,7 @@ from .base import (
 
 from .basic import (
     Bool,
+    Boolean,
     Color,
     Complex,
     DateTime,
@@ -74,6 +76,10 @@ from .handlers import (
     validator,
     validators_disabled,
 )
+from .link import (
+    directional_link,
+    link,
+)
 from .utils import (
     everything,
     filter_props,
@@ -82,7 +88,7 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.4'
+__version__ = '0.3.6b1'
 __author__ = 'ARANZ Geo Limited'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2017 ARANZ Geo Limited'

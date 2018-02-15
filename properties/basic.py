@@ -11,7 +11,7 @@ import math
 import random
 import re
 import uuid
-from warnings import warn
+import warnings
 
 from six import integer_types, string_types, text_type, with_metaclass
 
@@ -39,13 +39,14 @@ class ArgumentWrangler(type):
 
         # Backward compatibility:
         if 'info_text' in classdict:
-            warn('Deprecation warning: info_text has been renamed class_info. '
-                 'Consider updating class {} '.format(name), FutureWarning)
+            warnings.warn('Deprecation warning: info_text has been renamed '
+                          'class_info. Consider updating class '
+                          '{} '.format(name), FutureWarning)
             classdict['class_info'] = classdict['info_text']
         if 'info' in classdict and callable(classdict['info']):
-            warn('Deprecation warning: info is now a @property, not a '
-                 'callable. Consider updating class {}'.format(name),
-                 FutureWarning)
+            warnings.warn('Deprecation warning: info is now a @property, not '
+                          'a callable. Consider updating class '
+                          '{}'.format(name), FutureWarning)
             classdict['info'] = property(fget=classdict['info'])
 
         newcls = super(ArgumentWrangler, mcs).__new__(
@@ -76,6 +77,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def __init__(self, doc, **kwargs):
         self.doc = doc
         self._meta = {}
+        default = kwargs.pop('default', None)
         for key in kwargs:
             if key == 'terms':
                 raise AttributeError('terms are set by Property metaclass')
@@ -93,6 +95,8 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 raise AttributeError(
                     'Cannot set attribute: "{}".'.format(key)
                 )
+        if default is not None:
+            self.default = default
 
     @property
     def name(self):
@@ -275,7 +279,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             """Call the HasProperties _get method"""
             return self._get(scope.name)
 
-        return property(fget=fget, doc=scope.doc)
+        return property(fget=fget, doc=scope.sphinx())
 
     def serialize(self, value, **kwargs):                                      #pylint: disable=unused-argument
         """Serialize a valid Property value
@@ -342,12 +346,16 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     def sphinx(self):
         """Generate Sphinx-formatted documentation for the Property"""
-        scls = self.sphinx_class()
-        sphinx_class = ' ({})'.format(scls) if scls else ''
+        try:
+            assert __IPYTHON__
+            classdoc = ''
+        except (NameError, AssertionError):
+            scls = self.sphinx_class()
+            classdoc = ' ({})'.format(scls) if scls else ''
 
         prop_doc = '**{name}**{cls}: {doc}{info}'.format(
             name=self.name,
-            cls=sphinx_class,
+            cls=classdoc,
             doc=self.doc,
             info=', {}'.format(self.info) if self.info else '',
         )
@@ -355,10 +363,12 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
     def sphinx_class(self):
         """Property class name formatted for Sphinx doc linking"""
-        return ':class:`{cls} <{pref}.{cls}>`'.format(
-            cls=self.__class__.__name__,
-            pref='properties'
-        )
+        classdoc = ':class:`{cls} <{pref}.{cls}>`'
+        if self.__module__.split('.')[0] == 'properties':
+            pref = 'properties'
+        else:
+            pref = text_type(self.__module__)
+        return classdoc.format(cls=self.__class__.__name__, pref=pref)
 
     def __call__(self, func):
         return DynamicProperty(self.doc, func=func, prop=self)
@@ -406,6 +416,16 @@ class DynamicProperty(GettableProperty):                                       #
         Since DynamicProperties have no saved state, the decorating Property
         is not allowed to have a :code:`default` value. Also, the
         :code:`required` attribute will be ignored.
+
+    .. note::
+
+        When implementing a DynamicProperty getter, care should be taken
+        around when other properties do not yet have a value. In the example
+        above, if :code:`self.x`, :code:`self.y`, or :code:`self.z` is still
+        :code:`None` the :code:`location` vector will be invalid, so calling
+        :code:`self.location` will fail. However, if the getter method returns
+        :code:`None` it will be treated as :code:`properties.undefined` and
+        pass validation.
 
     """
 
@@ -461,7 +481,7 @@ class DynamicProperty(GettableProperty):                                       #
     @property
     def info(self):
         """Info is obtained from prop"""
-        return self.prop.info
+        return self.prop.info + ' created dynamically'
 
     @property
     def serializer(self):
@@ -532,7 +552,10 @@ class DynamicProperty(GettableProperty):                                       #
 
         def fget(self):
             """Call dynamic function then validate output"""
-            return scope.validate(self, scope.func(self))
+            value = scope.func(self)
+            if value is None or value is undefined:
+                return None
+            return scope.validate(self, value)
 
         def fset(self, value):
             """Validate and call setter"""
@@ -546,7 +569,7 @@ class DynamicProperty(GettableProperty):                                       #
                 raise AttributeError('cannot delete attribute')
             scope.del_func(self)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
     def equal(self, value_a, value_b):
         """Determine equality based on prop"""
@@ -644,7 +667,7 @@ class Property(GettableProperty):
             """Set value to utils.undefined on delete"""
             self._set(scope.name, undefined)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
     def sphinx(self):
         """Basic docstring formatted for Sphinx docs"""
@@ -657,25 +680,20 @@ class Property(GettableProperty):
             default_val = self.default
             default_str = '{}'.format(self.default)
         try:
-            if not default_val or default_val is undefined:
+            if default_val is None or default_val is undefined:
+                default_str = ''
+            elif len(default_val) == 0:                                        #pylint: disable=len-as-condition
                 default_str = ''
             else:
                 default_str = ', Default: {}'.format(default_str)
         except TypeError:
             default_str = ', Default: {}'.format(default_str)
 
-        return (
-            '**{name}** ({cls}): {doc}{info}{default}'.format(
-                name=self.name,
-                doc=self.doc,
-                info=', {}'.format(self.info) if self.info else '',
-                default=default_str,
-                cls=self.sphinx_class(),
-            )
-        )
+        prop_doc = super(Property, self).sphinx()
+        return '{doc}{default}'.format(doc=prop_doc, default=default_str)
 
 
-class Bool(Property):
+class Boolean(Property):
     """Property for True or False values
 
     **Available keywords** (in addition to those inherited from
@@ -726,6 +744,11 @@ class Bool(Property):
         raise ValueError('Could not load boolean from JSON: {}'.format(value))
 
 
+# Alias Bool for backwards compatibility - this will be removed in a future
+# release
+Bool = Boolean
+
+
 def _in_bounds(prop, instance, value):
     """Checks if the value is in the range (min, max)"""
     if (
@@ -735,7 +758,7 @@ def _in_bounds(prop, instance, value):
         prop.error(instance, value)
 
 
-class Integer(Bool):
+class Integer(Boolean):
     """Property for integer values
 
     **Available keywords** (in addition to those inherited from
@@ -851,7 +874,7 @@ class Float(Integer):
         return float(value)
 
 
-class Complex(Bool):
+class Complex(Boolean):
     """Property for complex numbers
 
     **Available keywords** (in addition to those inherited from
@@ -1110,7 +1133,7 @@ class StringChoice(Property):
                 raise TypeError('descriptions values must be strings')
         self._descriptions = value
 
-    def validate(self, instance, value):
+    def validate(self, instance, value):                                       #pylint: disable=inconsistent-return-statements
         """Check if input is a valid string based on the choices"""
         if not isinstance(value, string_types):
             self.error(instance, value)
@@ -1321,7 +1344,7 @@ class File(Property):
             self._set(scope.name, undefined)
 
         new_prop = property(fget=prop.fget, fset=prop.fset,
-                            fdel=fdel, doc=scope.doc)
+                            fdel=fdel, doc=scope.sphinx())
         return new_prop
 
     def validate(self, instance, value):
@@ -1379,17 +1402,23 @@ class Renamed(GettableProperty):
             my_string_prop = properties.String('My string property')
             myStringProp = properties.Renamed('my_string_prop')
 
-    **Argument** (other Property keyword arguments are not available):
+    **Argument**:
 
     * **new_name** - the new name of the property that was renamed.
+
+    **Available keywords**:
+
+    * **warn** - raise a warning when this property is used (default: True)
     """
 
-    def __init__(self, new_name):
+    def __init__(self, new_name, **kwargs):
         self.new_name = new_name
-        super(Renamed, self).__init__(
+        default_doc = (
             "This property has been renamed '{}' and may be removed in the "
             "future.".format(new_name)
         )
+        kwargs['doc'] = kwargs.get('doc', default_doc)
+        super(Renamed, self).__init__(**kwargs)
 
     @property
     def new_name(self):
@@ -1402,16 +1431,29 @@ class Renamed(GettableProperty):
             raise TypeError('new_name must be name of another property')
         self._new_name = value
 
+    @property
+    def warn(self):
+        """Warn user about deprecation of renamed property"""
+        return getattr(self, '_warn', True)
+
+    @warn.setter
+    def warn(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'warn' property must be a boolean")
+        self._warn = value
+
+
     def sphinx_class(self):
         return ''
 
-    def warn(self):
+    def display_warning(self):
         """Display a FutureWarning about using a Renamed Property"""
-        warn(
-            "\nProperty '{}' is deprecated and may be removed in the future. "
-            "Please use '{}'.".format(self.name, self.new_name),
-            FutureWarning, stacklevel=3
-        )
+        if self.warn:
+            warnings.warn(
+                "\nProperty '{}' is deprecated and may be removed in the "
+                "future. Please use '{}'.".format(self.name, self.new_name),
+                FutureWarning, stacklevel=3
+            )
 
     def get_property(self):
         """Establishes the dynamic behavior of Property values"""
@@ -1419,20 +1461,20 @@ class Renamed(GettableProperty):
 
         def fget(self):
             """Call dynamic function then validate output"""
-            scope.warn()
+            scope.display_warning()
             return getattr(self, scope.new_name)
 
         def fset(self, value):
             """Validate and call setter"""
-            scope.warn()
+            scope.display_warning()
             setattr(self, scope.new_name, value)
 
         def fdel(self):
             """call deleter"""
-            scope.warn()
+            scope.display_warning()
             delattr(self, scope.new_name)
 
-        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.doc)
+        return property(fget=fget, fset=fset, fdel=fdel, doc=scope.sphinx())
 
 
 COLORS_20 = [

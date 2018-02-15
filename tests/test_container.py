@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import numpy as np
 import properties
 
 
@@ -89,6 +90,9 @@ class TestContainer(unittest.TestCase):
         assert isinstance(li.aaa, tuple)
         assert all(val in li.aaa for val in [1, 2, 3])
 
+        li.aaa = np.array([3, 2, 1])
+        assert li.aaa == (3, 2, 1)
+
         class HasConstrianedTuple(properties.HasProperties):
             aaa = properties.Tuple('tuple of ints', properties.Integer(''),
                                   min_length=2)
@@ -112,7 +116,8 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasColorTuple(properties.HasProperties):
-            ccc = properties.Tuple('tuple of colors', properties.Color(''))
+            ccc = properties.Tuple('tuple of colors', properties.Color(''),
+                                   min_length=2, max_length=2)
 
         li = HasColorTuple()
         li.ccc = ('red', '#00FF00')
@@ -172,6 +177,42 @@ class TestContainer(unittest.TestCase):
             (HasIntA(a=1), HasIntA(a=2)), (HasIntA(a=1), HasIntA(a=3))
         )
         assert not properties.Tuple('', properties.Integer('')).equal(5, 5)
+
+        class HasOptPropTuple(properties.HasProperties):
+            mytuple = properties.Tuple(
+                doc='',
+                prop=properties.Bool('', required=False),
+                default=properties.undefined,
+            )
+
+        hopt = HasOptPropTuple()
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (None,)
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (properties.undefined,)
+
+        hopt._backend = {'mytuple': (properties.undefined,)}
+
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        hopt.mytuple = (True,)
+
+        del hopt.mytuple
+
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        class UntypedTuple(properties.HasProperties):
+            mytuple = properties.Tuple('no type')
+
+        ut = UntypedTuple(mytuple=(1, 'hi', UntypedTuple))
+        ut.validate()
+
 
     def test_list(self):
         self._test_list(True)
@@ -304,6 +345,13 @@ class TestContainer(unittest.TestCase):
             'ccc': [[255, 0, 0], [0, 255, 0]]
         }
 
+        li.ccc.append('blue')
+        if om:
+            li.validate()
+        else:
+            with self.assertRaises(ValueError):
+                li.validate()
+
         class HasIntAList(properties.HasProperties):
             mylist = properties.List('list of HasIntA', HasIntA,
                                      observe_mutations=om)
@@ -344,6 +392,38 @@ class TestContainer(unittest.TestCase):
         )
         assert not properties.List('', properties.Integer(''),
                                    observe_mutations=om).equal(5, 5)
+
+        class HasOptPropList(properties.HasProperties):
+            mylist = properties.List(
+                doc='',
+                prop=properties.Bool('', required=False),
+                default=properties.undefined,
+            )
+
+        hopl = HasOptPropList()
+        with self.assertRaises(ValueError):
+            hopl.validate()
+
+        with self.assertRaises(ValueError):
+            hopl.mylist = [None,]
+
+        with self.assertRaises(ValueError):
+            hopl.mylist = [properties.undefined,]
+
+        hopl._backend = {'mylist': [properties.undefined,]}
+
+        with self.assertRaises(ValueError):
+            hopl.validate()
+
+        hopl.mylist = [True,]
+
+        del hopl.mylist[0]
+        hopl.validate()
+
+        del hopl.mylist
+
+        with self.assertRaises(ValueError):
+            hopl.validate()
 
     def test_set(self):
         self._test_set(True)
@@ -767,6 +847,85 @@ class TestContainer(unittest.TestCase):
         hl.advanced -= {4, 5}
         assert hl.advanced == {1, 2}
         assert hl._advanced_tic == 15
+
+
+    def test_dict(self):
+        self._test_dict(True)
+        self._test_dict(False)
+
+    def _test_dict(self, om):
+
+        with self.assertRaises(TypeError):
+            properties.Dictionary('bad string set', key_prop=str)
+        with self.assertRaises(TypeError):
+            properties.Dictionary('bad string set', value_prop=str)
+        with self.assertRaises(TypeError):
+            properties.Dictionary('bad observe', properties.Integer(''),
+                            observe_mutations=5)
+
+        class HasPropsDummy(properties.HasProperties):
+            pass
+
+        mydict = properties.Dictionary('dummy has properties set',
+                                key_prop=properties.String(''),
+                                value_prop=HasPropsDummy,
+                                observe_mutations=om)
+        assert isinstance(mydict.key_prop, properties.String)
+        assert isinstance(mydict.value_prop, properties.Instance)
+        assert mydict.value_prop.instance_class is HasPropsDummy
+
+        class HasDummyDict(properties.HasProperties):
+            mydict = properties.Dictionary('dummy has properties set',
+                                     key_prop=properties.String(''),
+                                     value_prop=HasPropsDummy,
+                                     observe_mutations=om)
+
+        assert HasDummyDict()._props['mydict'].name == 'mydict'
+        assert HasDummyDict()._props['mydict'].key_prop.name == 'mydict'
+        assert HasDummyDict()._props['mydict'].value_prop.name == 'mydict'
+
+        class HasDict(properties.HasProperties):
+            aaa = properties.Dictionary('dictionary')
+
+        li = HasDict()
+        li.aaa = {1: 2}
+        with self.assertRaises(ValueError):
+            li.aaa = (1, 2, 3)
+        li.aaa = {'hi': HasPropsDummy()}
+        with self.assertRaises(ValueError):
+            li.aaa = 4
+        with self.assertRaises(ValueError):
+            li.aaa = {'a', 'b', 'c'}
+
+        li1 = HasDict()
+        li2 = HasDict()
+        assert li1.aaa == li2.aaa
+        assert li1.aaa is not li2.aaa
+
+
+        class HasInt(properties.HasProperties):
+            myint = properties.Integer('my integer')
+
+
+        class HasFunnyDict(properties.HasProperties):
+            mydict = properties.Dictionary('my dict',
+                                     key_prop=properties.Color(''),
+                                     value_prop=HasInt,
+                                     observe_mutations=om)
+
+        hfd = HasFunnyDict()
+        hfd.mydict = {'red': HasInt(myint=5)}
+        hfd.mydict.update({'green': HasInt(myint=1)})
+
+        if om:
+            hfd.validate()
+        else:
+            with self.assertRaises(ValueError):
+                hfd.validate()
+
+        with self.assertRaises(ValueError):
+            hfd.mydict.update({1: HasInt(myint=1)})
+            hfd.validate()
 
 
 if __name__ == '__main__':

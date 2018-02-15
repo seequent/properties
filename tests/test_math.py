@@ -21,9 +21,19 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.Array('bad dtype', dtype=tuple())
         with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape=['*'])
+        with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=5)
         with self.assertRaises(TypeError):
             properties.Array('bad shape', shape=(5, 'any'))
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={5, 3, 4})
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={('*',), None})
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={('*',), (None,)})
+        with self.assertRaises(TypeError):
+            properties.Array('bad shape', shape={('*',), 5})
 
         class ArrayOpts(properties.HasProperties):
             myarray = properties.Array('my array')
@@ -31,6 +41,7 @@ class TestMath(unittest.TestCase):
             myarrayfloat = properties.Array('my float array', dtype=float)
             myarrayint = properties.Array('my int array', dtype=int)
             myarraybool = properties.Array('my bool array', dtype=bool)
+            myarraycomplex = properties.Array('my complex array', dtype=complex)
 
         arrays = ArrayOpts()
         arrays.myarray = [0., 1., 2.]
@@ -51,6 +62,8 @@ class TestMath(unittest.TestCase):
             arrays.myarrayint = np.array([0, 1, 0]).astype(bool)
         with self.assertRaises(ValueError):
             arrays.myarraybool = np.array(['a', 'b', 'c'])
+        with self.assertRaises(ValueError):
+            arrays.myarraycomplex = np.array([0, 1, 2])
         with self.assertRaises(ValueError):
             properties.Array('').validate(None, [[1., 2.]])
 
@@ -91,6 +104,32 @@ class TestMath(unittest.TestCase):
             np.array([1., 2., np.nan, np.nan]),
             np.array([1., 2., np.inf, np.nan])
         )
+
+        class DefaultArrayOpts(properties.HasProperties):
+            mydefaultarray = properties.Array(
+                'my array with default',
+                default=lambda: np.random.rand(10),
+            )
+
+        class FlexArrays(properties.HasProperties):
+            any_array = properties.Array('any shape allowed', shape=None)
+            flex_array = properties.Array(
+                '1-, 2-, 3-D array',
+                shape={('*',), ('*', '*'), ('*', '*', '*')}
+            )
+
+        fa = FlexArrays()
+
+        fa.any_array = np.random.rand(3)
+        fa.any_array = np.random.rand(3, 3)
+        fa.any_array = np.random.rand(3, 3, 3)
+        fa.any_array = np.random.rand(3, 3, 3, 3)
+
+        fa.flex_array = np.random.rand(3)
+        fa.flex_array = np.random.rand(3, 3)
+        fa.flex_array = np.random.rand(3, 3, 3)
+        with self.assertRaises(ValueError):
+            fa.flex_array = np.random.rand(3, 3, 3, 3)
 
     def test_vector2(self):
 
@@ -204,6 +243,20 @@ class TestMath(unittest.TestCase):
             np.array([[5., 6.], [7., 8.]])
         )
 
+        with self.assertRaises(TypeError):
+            properties.Vector2Array('', shape=(2,))
+        with self.assertRaises(TypeError):
+            properties.Vector2Array('', shape=('*', '*'))
+
+        class HasShapeVec2Arr(properties.HasProperties):
+            vec2 = properties.Vector2Array('', shape={(2, 2), (3, 2)})
+
+        hv2 = HasShapeVec2Arr(vec2=[[1., 2.], [3., 4.]])
+        hv2.vec2 = [[1., 2.], [3., 4.], [5., 6.]]
+
+        with self.assertRaises(ValueError):
+            hv2.vec2 = [[1., 2.], [3., 4.], [5., 6.], [7., 8.]]
+
     def test_vector3array(self):
 
         class HasVec3Arr(properties.HasProperties):
@@ -248,6 +301,20 @@ class TestMath(unittest.TestCase):
             np.array([[4., 5., 6.], [7., 8., 9.]])
         )
         assert not properties.Vector3Array('').equal('hi', 'hi')
+
+        with self.assertRaises(TypeError):
+            properties.Vector3Array('', shape=(3,))
+        with self.assertRaises(TypeError):
+            properties.Vector3Array('', shape=('*', '*'))
+
+        class HasShapeVec3Arr(properties.HasProperties):
+            vec3 = properties.Vector3Array('', shape={(2, 3), (3, 3)})
+
+        hv3 = HasShapeVec3Arr(vec3=[[1., 2., 1.], [3., 4., 3.]])
+        hv3.vec3 = [[1., 2., 1.], [3., 4., 3.], [5., 6., 5.]]
+
+        with self.assertRaises(ValueError):
+            hv3.vec3 = [[1., 2., 1.], [3., 4., 3.], [5., 6., 5.], [7., 8., 7.]]
 
 
 if __name__ == '__main__':

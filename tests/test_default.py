@@ -341,6 +341,15 @@ class TestDefault(unittest.TestCase):
         hi = HasNewInt()
         assert hi.a == 3
 
+    def test_default_validation(self):
+
+        class HasMatrix(properties.HasProperties):
+            matrix = properties.Array(
+                '2x2 matrix',
+                shape=(2, 2),
+                default=lambda: [[1., 2.], [3., 4.]],
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

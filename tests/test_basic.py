@@ -27,9 +27,6 @@ class TestBasic(unittest.TestCase):
             properties.GettableProperty('bad kwarg', defualt=5)
         with self.assertRaises(TypeError):
             properties.Property('bad kwarg', required=5)
-        with self.assertRaises(AttributeError):
-            class PrivateProperty(properties.HasProperties):
-                _secret = properties.GettableProperty('secret prop')
 
         class GettablePropOpt(properties.HasProperties):
             mygp = properties.GettableProperty('gettable prop')
@@ -71,6 +68,7 @@ class TestBasic(unittest.TestCase):
 
         class PropOpts(properties.HasProperties):
             myprop = properties.Property('empty property')
+            maybe_none = properties.Property('maybe None', required=False)
 
         with self.assertRaises(ValueError):
             PropOpts().validate()
@@ -84,8 +82,37 @@ class TestBasic(unittest.TestCase):
 
         assert properties.equal(PropOpts(), PropOpts())
         assert properties.equal(PropOpts(myprop=5), PropOpts(myprop=5))
+        assert not properties.equal(PropOpts(myprop=5, maybe_none=3),
+                                    PropOpts(myprop=5))
+        assert properties.equal(PropOpts(myprop=5, maybe_none=3),
+                                PropOpts(myprop=5, maybe_none=3))
         assert not properties.equal(PropOpts(myprop=5), PropOpts())
         assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
+        assert not properties.equal(None, PropOpts(myprop=6))
+        assert not properties.equal(PropOpts(myprop=5), None)
+        assert properties.equal(None, None)
+
+        assert properties.Property('').equal(5, 5)
+        assert not properties.Property('').equal(5, 'hi')
+        assert properties.Property('').equal(np.array([1., 2.]),
+                                             np.array([1., 2.]))
+        assert not properties.Property('').equal(np.array([1., 2.]),
+                                                 np.array([3., 4.]))
+
+        class NoAttributes(properties.HasProperties):
+            a = properties.Integer('a')
+
+            def __setattr__(self, attr, value):
+                if value is not properties.undefined:
+                    raise AttributeError()
+                return super(NoAttributes, self).__setattr__(attr, value)
+
+        na = NoAttributes()
+        with self.assertRaises(AttributeError):
+            na.a = 5
+
+
+    def test_docstrings(self):
 
         with self.assertRaises(AttributeError):
             class BadDocOrder(properties.HasProperties):
@@ -102,7 +129,7 @@ class TestBasic(unittest.TestCase):
             myprop2 = properties.Property('empty property')
             myprop3 = properties.Property('empty property')
 
-        assert WithDocOrder().__doc__ == (
+        ordered_doc = (
             '\n\n**Required Properties:**\n\n'
             '* **myprop1** (:class:`Property <properties.Property>`): '
             'empty property\n'
@@ -111,21 +138,63 @@ class TestBasic(unittest.TestCase):
             '* **myprop2** (:class:`Property <properties.Property>`): '
             'empty property'
         )
+        assert WithDocOrder().__doc__ == ordered_doc
+
+        class SameDocOrder(WithDocOrder):
+            _my_private_prop = properties.Property('empty property')
+
+        assert SameDocOrder().__doc__ == ordered_doc
+
+        class DifferentDocOrder(WithDocOrder):
+            myprop4 = properties.Property('empty property')
+
+        unordered_doc = (
+            '\n\n**Required Properties:**\n\n'
+            '* **myprop1** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop2** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop3** (:class:`Property <properties.Property>`): '
+            'empty property\n'
+            '* **myprop4** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert DifferentDocOrder().__doc__ == unordered_doc
 
         class NoMoreDocOrder(WithDocOrder):
             _doc_order = None
 
-        assert properties.Property('').equal(5, 5)
-        assert not properties.Property('').equal(5, 'hi')
-        assert properties.Property('').equal(np.array([1., 2.]),
-                                             np.array([1., 2.]))
-        assert not properties.Property('').equal(np.array([1., 2.]),
-                                                 np.array([3., 4.]))
+        with self.assertRaises(AttributeError):
+            class BadDocPrivate(properties.HasProperties):
+                _doc_private = 'yes'
+
+        class PrivateProperty(properties.HasProperties):
+            _doc_private = True
+
+            _something = properties.Property('empty property')
+
+        private_doc = (
+            '\n\n**Private Properties:**\n\n'
+            '* **_something** (:class:`Property <properties.Property>`): '
+            'empty property'
+        )
+        assert PrivateProperty().__doc__ == private_doc
+
+        class UndocPrivate(PrivateProperty):
+            _doc_private = False
+
+        assert UndocPrivate().__doc__ == ''
+
 
     def test_bool(self):
 
+        for boolean in (properties.Bool, properties.Boolean):
+            self._test_bool_with(boolean)
+
+    def _test_bool_with(self, boolean):
+
         class BoolOpts(properties.HasProperties):
-            mybool = properties.Bool('My bool')
+            mybool = boolean('My bool')
 
         opt = BoolOpts(mybool=True)
         assert opt.mybool is True
@@ -133,34 +202,34 @@ class TestBasic(unittest.TestCase):
         opt.mybool = False
         assert opt.mybool is False
 
-        assert properties.Bool('').equal(True, True)
-        assert not properties.Bool('').equal(True, 1)
-        assert not properties.Bool('').equal(True, 'true')
+        assert boolean('').equal(True, True)
+        assert not boolean('').equal(True, 1)
+        assert not boolean('').equal(True, 'true')
 
-        json = properties.Bool.to_json(opt.mybool)
+        json = boolean.to_json(opt.mybool)
         assert not json
-        assert not properties.Bool.from_json(json)
+        assert not boolean.from_json(json)
         with self.assertRaises(ValueError):
-            properties.Bool.from_json({})
+            boolean.from_json({})
         with self.assertRaises(ValueError):
-            properties.Bool.from_json('nope')
-        assert properties.Bool.from_json('true')
-        assert properties.Bool.from_json('y')
-        assert properties.Bool.from_json('Yes')
-        assert properties.Bool.from_json('ON')
-        assert not properties.Bool.from_json('false')
-        assert not properties.Bool.from_json('N')
-        assert not properties.Bool.from_json('no')
-        assert not properties.Bool.from_json('OFF')
+            boolean.from_json('nope')
+        assert boolean.from_json('true')
+        assert boolean.from_json('y')
+        assert boolean.from_json('Yes')
+        assert boolean.from_json('ON')
+        assert not boolean.from_json('false')
+        assert not boolean.from_json('N')
+        assert not boolean.from_json('no')
+        assert not boolean.from_json('OFF')
 
         self.assertEqual(opt.serialize(include_class=False), {'mybool': False})
 
         assert BoolOpts.deserialize({'mybool': 'Y'}).mybool
         assert BoolOpts._props['mybool'].deserialize(None) is None
 
-        assert properties.Bool('').equal(True, True)
-        assert not properties.Bool('').equal(True, 1)
-        assert not properties.Bool('').equal(True, 'true')
+        assert boolean('').equal(True, True)
+        assert not boolean('').equal(True, 1)
+        assert not boolean('').equal(True, 'true')
 
         with self.assertRaises(ValueError):
             BoolOpts._props['mybool'].assert_valid(opt, 'true')
@@ -169,6 +238,8 @@ class TestBasic(unittest.TestCase):
         opt._backend['mybool'] = 'true'
         with self.assertRaises(ValueError):
             opt.validate()
+
+        opt.mybool = np.True_
 
     def test_numbers(self):
 
@@ -626,6 +697,10 @@ class TestBasic(unittest.TestCase):
 
     def test_renamed(self):
 
+        with self.assertRaises(TypeError):
+            class BadRenamed(properties.HasProperties):
+                new_prop = properties.Renamed('no_good')
+
         class MyHasProps(properties.HasProperties):
             my_int = properties.Integer('My integer')
 
@@ -654,6 +729,35 @@ class TestBasic(unittest.TestCase):
             assert issubclass(w[0].category, FutureWarning)
 
         assert myp.my_int is None
+        assert MyHasProps._props['not_my_int'].doc == (
+            "This property has been renamed 'my_int' and may be removed "
+            "in the future."
+        )
+
+        with self.assertRaises(TypeError):
+            class MyHasProps(properties.HasProperties):
+                my_int = properties.Integer('My integer')
+
+                not_my_int = properties.Renamed('my_int', warn='no')
+
+        class MyHasProps(properties.HasProperties):
+            my_int = properties.Integer('My integer')
+
+            not_my_int = properties.Renamed('my_int', warn=False, doc='')
+
+        myp = MyHasProps()
+
+        with warnings.catch_warnings(record=True) as w:
+
+            myp.not_my_int = 5
+            assert len(w) == 0
+
+        assert myp.my_int == 5
+        assert MyHasProps._props['not_my_int'].doc == ''
+        assert properties.equal(
+            MyHasProps.deserialize({'my_int': 5}),
+            MyHasProps.deserialize({'not_my_int': 5})
+        )
 
     def test_copy(self):
 

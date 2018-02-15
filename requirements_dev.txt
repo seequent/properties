@@ -1,5 +1,5 @@
-sphinx
-sphinxcontrib-pyexec
 nose-cov
 pylint
+sphinx
+traitlets
 -r requirements.txt

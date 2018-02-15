@@ -18,9 +18,16 @@ Set
 
 .. autoclass:: properties.Set
 
+Dictionary
+----------
+
+.. autoclass:: properties.Dictionary
+
 Custom Containers
 -----------------
 
 .. autoclass:: properties.base.containers.PropertiesList
 
 .. autoclass:: properties.base.containers.PropertiesSet
+
+.. autoclass:: properties.base.containers.PropertiesDict
