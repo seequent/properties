@@ -340,6 +340,13 @@ class TestContainer(unittest.TestCase):
             'ccc': [[255, 0, 0], [0, 255, 0]]
         }
 
+        li.ccc.append('blue')
+        if om:
+            li.validate()
+        else:
+            with self.assertRaises(ValueError):
+                li.validate()
+
         class HasIntAList(properties.HasProperties):
             mylist = properties.List('list of HasIntA', HasIntA,
                                      observe_mutations=om)
@@ -905,7 +912,11 @@ class TestContainer(unittest.TestCase):
         hfd.mydict = {'red': HasInt(myint=5)}
         hfd.mydict.update({'green': HasInt(myint=1)})
 
-        hfd.validate()
+        if om:
+            hfd.validate()
+        else:
+            with self.assertRaises(ValueError):
+                hfd.validate()
 
         with self.assertRaises(ValueError):
             hfd.mydict.update({1: HasInt(myint=1)})
