@@ -3,12 +3,10 @@
 Primitive Properties
 ====================
 
-Bool
-----
+Boolean
+-------
 
 .. autoclass:: properties.Boolean
-
-.. autoclass:: properties.Bool
 
 Integer
 -------
