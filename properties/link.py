@@ -189,7 +189,7 @@ class link(object):                                                            #
             for j, item_j in enumerate(items):
                 if i == j:
                     continue
-                self._dlinks += directional_link(item_i, item_j, **kwargs),
+                self._dlinks += (directional_link(item_i, item_j, **kwargs),)
 
     @property
     def dlinks(self):

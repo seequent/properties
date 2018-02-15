@@ -27,6 +27,7 @@ from .base import (
 
 from .basic import (
     Bool,
+    Boolean,
     Color,
     Complex,
     DateTime,
@@ -86,7 +87,7 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.6b0'
+__version__ = '0.3.6b1'
 __author__ = 'ARANZ Geo Limited'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2017 ARANZ Geo Limited'
