@@ -192,7 +192,7 @@ class Tuple(basic.Property):
     """
 
     class_info = 'a tuple'
-    _class_default = tuple
+    _class_container = tuple
 
     def __init__(self, doc, prop=None, **kwargs):
         if prop is not None:
@@ -283,7 +283,7 @@ class Tuple(basic.Property):
         This returns a copy of the container to prevent unwanted sharing of
         pointers.
         """
-        if not self.coerce and not isinstance(value, self._class_default):
+        if not self.coerce and not isinstance(value, self._class_container):
             self.error(instance, value)
         if self.coerce and not isinstance(value, CONTAINERS):
             value = [value]
@@ -293,7 +293,7 @@ class Tuple(basic.Property):
                 out += [self.prop.validate(instance, val)]
             except ValueError:
                 self.error(instance, val, extra='This item is invalid.')
-        return self._class_default(out)
+        return self._class_container(out)
 
     def assert_valid(self, instance, value=None):
         """Check if tuple and contained properties are valid"""
@@ -333,7 +333,7 @@ class Tuple(basic.Property):
             return None
         output_list = [self.prop.deserialize(val, **kwargs)
                        for val in value]
-        return self._class_default(output_list)
+        return self._class_container(output_list)
 
     def equal(self, value_a, value_b):
         try:
@@ -400,7 +400,7 @@ class List(Tuple):
     """
 
     class_info = 'a list'
-    _class_default = list
+    _class_container = list
 
     @property
     def observe_mutations(self):
@@ -417,7 +417,7 @@ class List(Tuple):
         value = super(List, self).validate(instance, value)
         if not self.observe_mutations:
             return value
-        value = OBSERVABLE[self._class_default](value)
+        value = OBSERVABLE[self._class_container](value)
         value._name = self.name
         value._instance = instance
         return value
@@ -458,7 +458,7 @@ class Set(List):
     """
 
     class_info = 'a set'
-    _class_default = set
+    _class_container = set
 
     def equal(self, value_a, value_b):
         try:
@@ -507,7 +507,7 @@ class Dictionary(basic.Property):
     """
 
     class_info = 'a dictionary'
-    _class_default = dict
+    _class_container = dict
 
     @property
     def observe_mutations(self):
@@ -567,7 +567,7 @@ class Dictionary(basic.Property):
     def validate(self, instance, value):
         if not isinstance(value, dict):
             self.error(instance, value)
-        out = self._class_default()
+        out = self._class_container()
         for key, val in iteritems(value):
             if self.key_prop:
                 try:
@@ -583,7 +583,7 @@ class Dictionary(basic.Property):
         value = out
         if not self.observe_mutations:
             return value
-        value = OBSERVABLE[self._class_default](value)
+        value = OBSERVABLE[self._class_container](value)
         value._name = self.name
         value._instance = instance
         return value
@@ -645,7 +645,7 @@ class Dictionary(basic.Property):
         except TypeError as err:
             raise TypeError('Dictionary property {} cannot be deserialized - '
                             'keys contain {}'.format(self.name, err))
-        return self._class_default(output_dict)
+        return self._class_container(output_dict)
 
     def equal(self, value_a, value_b):
         try:

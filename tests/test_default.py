@@ -246,7 +246,7 @@ class TestDefault(unittest.TestCase):
         assert isinstance(hi2.inst, HasIntSubclass)
 
         class HasList(properties.HasProperties):
-            z = properties.List('z list', HasInstance)
+            z = properties.List('z list', HasInstance, default=list)
 
         hl0 = HasList()
         hl1 = HasList()
@@ -256,8 +256,12 @@ class TestDefault(unittest.TestCase):
         assert hl0.z is not hl1.z
 
     def test_list_default(self):
+
+        class ListDefault(properties.List):
+            _class_default = list
+
         class HasIntList(properties.HasProperties):
-            intlist = properties.List('list of ints', properties.Integer(''))
+            intlist = ListDefault('list of ints', properties.Integer(''))
 
         hil = HasIntList()
 
