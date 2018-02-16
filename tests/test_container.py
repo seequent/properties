@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 import unittest
 
 import numpy as np
@@ -927,6 +928,94 @@ class TestContainer(unittest.TestCase):
             hfd.mydict.update({1: HasInt(myint=1)})
             hfd.validate()
 
+        class HasCoercedDict(properties.HasProperties):
+            my_coerced_dict = properties.Dictionary('my dict', coerce=True)
+            my_uncoerced_dict = properties.Dictionary('my dict')
+
+        key_val_list = [('a', 1), ('b', 2), ('c', 3)]
+
+        hcd = HasCoercedDict()
+        with self.assertRaises(ValueError):
+            hcd.my_uncoerced_dict = key_val_list
+
+        hcd.my_coerced_dict = key_val_list
+        assert hcd.my_coerced_dict == {'a': 1, 'b': 2, 'c': 3}
+
+    def test_nested_observed(self):
+        self._test_nested_observed(True)
+        self._test_nested_observed(False)
+
+    def _test_nested_observed(self, om):
+
+        class HasNestedList(properties.HasProperties):
+
+            nested_list = properties.List(
+                'This is not a great idea...',
+                properties.List('',
+                    properties.Integer(''),
+                    observe_mutations=True
+                ),
+                observe_mutations=om,
+            )
+
+        hnl = HasNestedList()
+
+        hnl.nested_list = [[1, 2, 3], [4, 5, 6]]
+        assert hnl.nested_list == [[1, 2, 3], [4, 5, 6]]
+        hnl.nested_list[0][0] = 10
+        assert hnl.nested_list == [[10, 2, 3], [4, 5, 6]]
+        hnl.nested_list += [[7, 8, 9]]
+        assert hnl.nested_list == [[10, 2, 3], [4, 5, 6], [7, 8, 9]]
+        hnl.nested_list[0] += [0]
+        assert hnl.nested_list == [[10, 2, 3, 0], [4, 5, 6], [7, 8, 9]]
+
+    def test_container_class_retention(self):
+
+        class HasCollections(properties.HasProperties):
+            tuple_unobs = properties.Tuple('')
+            dict_unobs = properties.Dictionary('')
+            dict_obs = properties.Dictionary('', observe_mutations=True)
+            list_unobs = properties.List('')
+            list_obs = properties.List('', observe_mutations=True)
+            set_unobs = properties.Set('')
+            set_obs = properties.Set('', observe_mutations=True)
+
+        class SillyTuple(tuple):
+            pass
+
+        class SillyList(list):
+            pass
+
+        class SillySet(set):
+            pass
+
+        hc = HasCollections()
+        hc.tuple_unobs = SillyTuple([1, 2, 3])
+        assert isinstance(hc.tuple_unobs, SillyTuple)
+        hc.dict_unobs = OrderedDict()
+        assert isinstance(hc.dict_unobs, OrderedDict)
+        hc.dict_unobs['a'] = 1
+        assert isinstance(hc.dict_unobs, OrderedDict)
+        hc.dict_obs = OrderedDict()
+        assert isinstance(hc.dict_obs, OrderedDict)
+        hc.dict_obs['a'] = 1
+        assert isinstance(hc.dict_obs, OrderedDict)
+        hc.list_unobs = SillyList()
+        assert isinstance(hc.list_unobs, SillyList)
+        hc.list_unobs += [1]
+        assert isinstance(hc.list_unobs, SillyList)
+        hc.list_obs = SillyList([1])
+        assert isinstance(hc.list_obs, SillyList)
+        hc.list_obs[0] = 0
+        assert isinstance(hc.list_obs, SillyList)
+        hc.set_unobs = SillySet([0])
+        assert isinstance(hc.set_unobs, SillySet)
+        hc.set_unobs |= set([1])
+        assert isinstance(hc.set_unobs, SillySet)
+        hc.set_obs = SillySet()
+        assert isinstance(hc.set_obs, SillySet)
+        hc.set_obs.add(1)
+        assert isinstance(hc.set_obs, SillySet)
 
 if __name__ == '__main__':
     unittest.main()
