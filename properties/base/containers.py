@@ -380,7 +380,7 @@ class List(Tuple):
     * **observe_mutations** - If False, the underlying storage class is
       a :code:`list` (or subclass thereof). If True, the underlying storage
       class will be an
-      :function:`observable_copy <properties.base.containers.observable_copy>`
+      :func:`observable_copy <properties.base.containers.observable_copy>`
       of the list. The benefit of observing mutations is that all mutations
       and operations will trigger HasProperties change notifications. The
       drawback is slower performance as copies of the list are made on
@@ -437,7 +437,7 @@ class Set(List):
     * **observe_mutations** - If False, the underlying storage class is
       a :code:`set` (or subclass thereof). If True, the underlying storage
       class will be an
-      :function:`observable_copy <properties.base.containers.observable_copy>`
+      :func:`observable_copy <properties.base.containers.observable_copy>`
       of the set. The benefit of observing mutations is that all mutations
       and operations will trigger HasProperties change notifications. The
       drawback is slower performance as copies of the set are made on
@@ -488,7 +488,7 @@ class Dictionary(basic.Property):
     * **observe_mutations** - If False, the underlying storage class is
       a :code:`dict` (or subclass thereof). If True, the underlying storage
       class will be an
-      :function:`observable_copy <properties.base.containers.observable_copy>`
+      :func:`observable_copy <properties.base.containers.observable_copy>`
       of the dict. The benefit of observing mutations is that all mutations
       and operations will trigger HasProperties change notifications. The
       drawback is slower performance as copies of the dict are made on
