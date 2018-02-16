@@ -693,7 +693,7 @@ class Property(GettableProperty):
         return '{doc}{default}'.format(doc=prop_doc, default=default_str)
 
 
-class Bool(Property):
+class Boolean(Property):
     """Property for True or False values
 
     **Available keywords** (in addition to those inherited from
@@ -744,6 +744,11 @@ class Bool(Property):
         raise ValueError('Could not load boolean from JSON: {}'.format(value))
 
 
+# Alias Bool for backwards compatibility - this will be removed in a future
+# release
+Bool = Boolean
+
+
 def _in_bounds(prop, instance, value):
     """Checks if the value is in the range (min, max)"""
     if (
@@ -753,7 +758,7 @@ def _in_bounds(prop, instance, value):
         prop.error(instance, value)
 
 
-class Integer(Bool):
+class Integer(Boolean):
     """Property for integer values
 
     **Available keywords** (in addition to those inherited from
@@ -869,7 +874,7 @@ class Float(Integer):
         return float(value)
 
 
-class Complex(Bool):
+class Complex(Boolean):
     """Property for complex numbers
 
     **Available keywords** (in addition to those inherited from
@@ -1128,7 +1133,7 @@ class StringChoice(Property):
                 raise TypeError('descriptions values must be strings')
         self._descriptions = value
 
-    def validate(self, instance, value):
+    def validate(self, instance, value):                                       #pylint: disable=inconsistent-return-statements
         """Check if input is a valid string based on the choices"""
         if not isinstance(value, string_types):
             self.error(instance, value)
@@ -1408,10 +1413,12 @@ class Renamed(GettableProperty):
 
     def __init__(self, new_name, **kwargs):
         self.new_name = new_name
-        super(Renamed, self).__init__(
+        default_doc = (
             "This property has been renamed '{}' and may be removed in the "
-            "future.".format(new_name), **kwargs
+            "future.".format(new_name)
         )
+        kwargs['doc'] = kwargs.get('doc', default_doc)
+        super(Renamed, self).__init__(**kwargs)
 
     @property
     def new_name(self):

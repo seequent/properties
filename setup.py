@@ -29,12 +29,12 @@ EXTRAS = {
 EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
     name='properties',
-    version='0.3.6b1',
+    version='0.4.0b1',
     packages=find_packages(exclude=('tests',)),
     install_requires=['six'],
     extras_require=EXTRAS,
-    author='ARANZ Geo Limited',
-    author_email='it@aranzgeo.com',
+    author='Seequent',
+    author_email='it@seequent.com',
     description=('properties: an organizational aid and wrapper for '
                  'validation and tab completion of class properties'),
     long_description=LONG_DESCRIPTION,

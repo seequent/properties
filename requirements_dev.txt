@@ -1,6 +1,5 @@
 nose-cov
 pylint
 sphinx
-sphinxcontrib-pyexec
 traitlets
 -r requirements.txt

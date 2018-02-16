@@ -15,6 +15,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from .base import (
+    Dictionary,
     HasProperties,
     Instance,
     List,
@@ -27,6 +28,7 @@ from .base import (
 
 from .basic import (
     Bool,
+    Boolean,
     Color,
     Complex,
     DateTime,
@@ -86,10 +88,10 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.3.6b1'
-__author__ = 'ARANZ Geo Limited'
+__version__ = '0.4.0b1'
+__author__ = 'Seequent'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2017 ARANZ Geo Limited'
+__copyright__ = 'Copyright 2018 Seequent'
 
 try:
     del absolute_import, division, print_function, unicode_literals

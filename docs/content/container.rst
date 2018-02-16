@@ -18,9 +18,12 @@ Set
 
 .. autoclass:: properties.Set
 
-Custom Containers
------------------
+Dictionary
+----------
 
-.. autoclass:: properties.base.containers.PropertiesList
+.. autoclass:: properties.Dictionary
 
-.. autoclass:: properties.base.containers.PropertiesSet
+Observable Container Creation
+-----------------------------
+
+.. autofunction:: properties.base.containers.observable_copy

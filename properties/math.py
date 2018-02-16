@@ -14,6 +14,7 @@ TYPE_MAPPINGS = {
     int: 'i',
     float: 'f',
     bool: 'b',
+    complex: 'c',
 }
 
 
@@ -99,8 +100,9 @@ class Array(Property):
             raise TypeError('No dtype specified - must be int, float, '
                             'and/or bool')
         if any([val not in TYPE_MAPPINGS for val in value]):
-            raise TypeError('{}: Invalid dtype - must be int, float, '
-                            'and/or bool'.format(value))
+            raise TypeError('{}: Invalid dtype - must be {}'.format(
+                value, ', '.join(v.__name__ for v in TYPE_MAPPINGS)
+            ))
         self._dtype = value
 
     @property
