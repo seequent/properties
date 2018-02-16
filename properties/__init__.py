@@ -88,7 +88,7 @@ from .utils import (
     undefined,
 )
 
-__version__ = '0.4.0b0'
+__version__ = '0.4.0b1'
 __author__ = 'Seequent'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2018 Seequent'
