@@ -928,6 +928,19 @@ class TestContainer(unittest.TestCase):
             hfd.mydict.update({1: HasInt(myint=1)})
             hfd.validate()
 
+        class HasCoercedDict(properties.HasProperties):
+            my_coerced_dict = properties.Dictionary('my dict', coerce=True)
+            my_uncoerced_dict = properties.Dictionary('my dict')
+
+        key_val_list = [('a', 1), ('b', 2), ('c', 3)]
+
+        hcd = HasCoercedDict()
+        with self.assertRaises(ValueError):
+            hcd.my_uncoerced_dict = key_val_list
+
+        hcd.my_coerced_dict = key_val_list
+        assert hcd.my_coerced_dict == {'a': 1, 'b': 2, 'c': 3}
+
     def test_nested_observed(self):
         self._test_nested_observed(True)
         self._test_nested_observed(False)

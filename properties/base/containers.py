@@ -540,6 +540,17 @@ class Dictionary(basic.Property):
         self._name = value
 
     @property
+    def coerce(self):
+        """Coerce sets/lists to tuples or other inputs to length-1 tuples"""
+        return getattr(self, '_coerce', False)
+
+    @coerce.setter
+    def coerce(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('coerce must be a boolean')
+        self._coerce = value
+
+    @property
     def info(self):
         """Supplemental description of the list, with length and type"""
         itext = self.class_info
@@ -554,8 +565,13 @@ class Dictionary(basic.Property):
         return itext
 
     def validate(self, instance, value):
-        if not isinstance(value, self._class_container):
+        if not self.coerce and not isinstance(value, self._class_container):
             self.error(instance, value)
+        if self.coerce:
+            try:
+                value = self._class_container(value)
+            except TypeError:
+                self.error(instance, value)
         out = value.__class__()
         for key, val in iteritems(value):
             if self.key_prop:
