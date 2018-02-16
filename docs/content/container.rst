@@ -23,11 +23,7 @@ Dictionary
 
 .. autoclass:: properties.Dictionary
 
-Custom Containers
------------------
+Observable Container Creation
+-----------------------------
 
-.. autoclass:: properties.base.containers.PropertiesList
-
-.. autoclass:: properties.base.containers.PropertiesSet
-
-.. autoclass:: properties.base.containers.PropertiesDict
+.. autofunction:: properties.base.containers.observable_copy

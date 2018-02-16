@@ -27,6 +27,26 @@ except ImportError:
     pass
 
 
+OBSERVABLE_REGISTRY = {}
+MUTATOR_CATEGORIES = {
+    '_mutators': [
+        'add', 'append', 'clear', 'difference_update', 'discard',
+        'extend', 'insert', 'intersection_update', 'pop', 'popitem',
+        'remove', 'reverse', 'setdefault', 'sort',
+        'symmetric_difference_update', 'update', '__delitem__',
+        '__delslice__', '__setitem__', '__setslice__',
+    ],
+    '_operators': [
+        'copy', 'difference', 'fromkeys', 'intersection',
+        'symmetric_difference', 'union', '__add__', '__and__', '__mul__',
+        '__or__', '__rand__', '__rmul__', '__ror__', '__rsub__', '__rxor__',
+        '__sub__', '__xor__',
+    ],
+    '_ioperators': [
+        '__iadd__', '__iand__', '__imul__', '__ior__', '__isub__', '__ixor__',
+    ],
+}
+
 def add_properties_callbacks(cls):
     """Class decorator to add change notifications to builtin containers"""
     for name in cls._mutators:                                                 #pylint: disable=protected-access
@@ -42,7 +62,6 @@ def add_properties_callbacks(cls):
             continue
         setattr(cls, name, properties_mutator(cls, name, True))
     return cls
-
 
 def properties_mutator(cls, name, ioper=False):
     """Wraps a mutating container method to add HasProperties notifications
@@ -74,7 +93,6 @@ def properties_mutator(cls, name, ioper=False):
     wrapper.__doc__ = wrapped.__doc__
     return wrapper
 
-
 def properties_operator(cls, name):
     """Wraps a container operator to ensure container class is maintained"""
 
@@ -88,73 +106,37 @@ def properties_operator(cls, name):
     wrapper.__doc__ = wrapped.__doc__
     return wrapper
 
+def observable_copy(value, name, instance):
+    """Return an observable container for HasProperties notifications
 
-@add_properties_callbacks
-class PropertiesList(list):
-    """List for :class:`List <properties.List>` Property with notifications
+    This method creates a new container class to allow HasProperties
+    instances to :code:`observe_mutations`. It returns a copy of the
+    input value as this new class.
 
-    This class keeps track of the Property and HasProperties
-    instance it is held by. When the list is modified, it is set again
-    rather than mutating. This decreases performance but allows notifications
-    to fire on the HasProperties instance.
-
-    If a **PropertiesList** is not part of a HasProperties
-    class, its behavior is identical to a built-in :code:`list`.
+    The output class behaves identically to the input value's original
+    class, except when it is used as a property on a HasProperties
+    instance. In that case, it notifies the HasProperties instance of
+    any mutations or operations.
     """
 
-    _mutators = ['append', 'extend', 'insert', 'pop', 'remove', 'clear',
-                 'sort', 'reverse', '__setitem__', '__delitem__',
-                 '__delslice__', '__setslice__']
-    _operators = ['__add__', '__mul__', '__rmul__']
-    _ioperators = ['__iadd__', '__imul__']
-
-
-@add_properties_callbacks
-class PropertiesSet(set):
-    """Set for :class:`Set <properties.Set>` Property with notifications
-
-    This class keeps track of the Property and HasProperties
-    instance it is held by. When the set is modified, it is set again
-    rather than mutating. This decreases performance but allows notifications
-    to fire on the HasProperties instance.
-
-    If a **PropertiesSet** is not part of a HasProperties
-    class, its behavior is identical to a built-in :code:`set`.
-    """
-
-    _mutators = ['add', 'clear', 'difference_update', 'discard',
-                 'intersection_update', 'pop', 'remove',
-                 'symmetric_difference_update', 'update']
-    _operators = ['__and__', '__or__', '__sub__', '__xor__',
-                  '__rand__', '__ror__', '__rsub__', '__rxor__', 'copy',
-                  'difference', 'intersection', 'symmetric_difference',
-                  'union']
-    _ioperators = ['__iand__', '__ior__', '__isub__', '__ixor__']
-
-
-@add_properties_callbacks
-class PropertiesDict(dict):
-    """Dict for :class:`Dictionary <properties.Dictionary>` Property with notifications
-
-    This class keeps track of the Property and HasProperties
-    instance it is held by. When the dict is modified, it is set again
-    rather than mutating. This decreases performance but allows notifications
-    to fire on the HasProperties instance.
-
-    If a **PropertiesDict** is not part of a HasProperties
-    class, its behavior is identical to a built-in :code:`dict`.
-    """
-
-    _mutators = ['clear', 'pop', 'popitem', 'setdefault', 'update',
-                 '__delitem__', '__setitem__']
-    _operators = ['copy', 'fromkeys']
-    _ioperators = []
-
-OBSERVABLE = {
-    list: PropertiesList,
-    set: PropertiesSet,
-    dict: PropertiesDict,
-}
+    container_class = value.__class__
+    if container_class in OBSERVABLE_REGISTRY:
+        observable_class = OBSERVABLE_REGISTRY[container_class]
+    elif container_class in OBSERVABLE_REGISTRY.values():
+        observable_class = container_class
+    else:
+        observable_class = add_properties_callbacks(
+            type(container_class)(
+                str('Observable{}'.format(container_class.__name__)),
+                (container_class,),
+                MUTATOR_CATEGORIES,
+            )
+        )
+        OBSERVABLE_REGISTRY[container_class] = observable_class
+    value = observable_class(value)
+    value._name = name
+    value._instance = instance
+    return value
 
 def validate_prop(value):
     """Validate Property instance for container items"""
@@ -287,13 +269,17 @@ class Tuple(basic.Property):
             self.error(instance, value)
         if self.coerce and not isinstance(value, CONTAINERS):
             value = [value]
+        if not isinstance(value, self._class_container):
+            out_class = self._class_container
+        else:
+            out_class = value.__class__
         out = []
         for val in value:
             try:
                 out += [self.prop.validate(instance, val)]
             except ValueError:
                 self.error(instance, val, extra='This item is invalid.')
-        return self._class_container(out)
+        return out_class(out)
 
     def assert_valid(self, instance, value=None):
         """Check if tuple and contained properties are valid"""
@@ -392,11 +378,13 @@ class List(Tuple):
       types are coerced to a list and other non-container values become a
       length-1 list. Default value is False.
     * **observe_mutations** - If False, the underlying storage class is
-      a built-in :code:`list`. If True, the underlying storage class will be
-      :class:`PropertiesList <properties.base.containers.PropertiesList>`.
-      The benefit of PropertiesList is that all mutations
-      will trigger HasProperties change notifications. The drawback is
-      slower performance as copies of the list are made on every operation.
+      a :code:`list` (or subclass thereof). If True, the underlying storage
+      class will be an
+      :function:`observable_copy <properties.base.containers.observable_copy>`
+      of the list. The benefit of observing mutations is that all mutations
+      and operations will trigger HasProperties change notifications. The
+      drawback is slower performance as copies of the list are made on
+      every operation.
     """
 
     class_info = 'a list'
@@ -417,10 +405,7 @@ class List(Tuple):
         value = super(List, self).validate(instance, value)
         if not self.observe_mutations:
             return value
-        value = OBSERVABLE[self._class_container](value)
-        value._name = self.name
-        value._instance = instance
-        return value
+        return observable_copy(value, self.name, instance)
 
     @staticmethod
     def from_json(value, **kwargs):
@@ -450,11 +435,13 @@ class Set(List):
       types are coerced to a set and other non-container values become a
       length-1 set. Default value is False.
     * **observe_mutations** - If False, the underlying storage class is
-      a built-in :code:`set`. If True, the underlying storage class will be
-      :class:`PropertiesSet <properties.base.containers.PropertiesSet>`.
-      The benefit of PropertiesSet is that all mutations
-      will trigger HasProperties change notifications. The drawback is
-      slower performance as copies of the set are made on every operation.
+      a :code:`set` (or subclass thereof). If True, the underlying storage
+      class will be an
+      :function:`observable_copy <properties.base.containers.observable_copy>`
+      of the set. The benefit of observing mutations is that all mutations
+      and operations will trigger HasProperties change notifications. The
+      drawback is slower performance as copies of the set are made on
+      every operation.
     """
 
     class_info = 'a set'
@@ -499,11 +486,13 @@ class Dictionary(basic.Property):
       specified; this is simply coerced to an
       :ref:`Instance Property <instance>` of that class.
     * **observe_mutations** - If False, the underlying storage class is
-      a built-in :code:`dict`. If True, the underlying storage class will be
-      :class:`PropertiesDict <properties.base.containers.PropertiesDict>`.
-      The benefit of PropertiesDict is that all mutations
-      will trigger HasProperties change notifications. The drawback is
-      slower performance as copies of the dict are made on every operation.
+      a :code:`dict` (or subclass thereof). If True, the underlying storage
+      class will be an
+      :function:`observable_copy <properties.base.containers.observable_copy>`
+      of the dict. The benefit of observing mutations is that all mutations
+      and operations will trigger HasProperties change notifications. The
+      drawback is slower performance as copies of the dict are made on
+      every operation.
     """
 
     class_info = 'a dictionary'
@@ -565,9 +554,9 @@ class Dictionary(basic.Property):
         return itext
 
     def validate(self, instance, value):
-        if not isinstance(value, dict):
+        if not isinstance(value, self._class_container):
             self.error(instance, value)
-        out = self._class_container()
+        out = value.__class__()
         for key, val in iteritems(value):
             if self.key_prop:
                 try:
@@ -583,10 +572,7 @@ class Dictionary(basic.Property):
         value = out
         if not self.observe_mutations:
             return value
-        value = OBSERVABLE[self._class_container](value)
-        value._name = self.name
-        value._instance = instance
-        return value
+        return observable_copy(value, self.name, instance)
 
     def assert_valid(self, instance, value=None):
         """Check if dict and contained properties are valid"""
