@@ -56,6 +56,4 @@ and methods. These include:
     may also be a callable that returns the default value.
     Almost always this should be left untouched; in that case, the
     default will be :class:`properties.undefined <properties.utils.Sentinel>`.
-    However, in some cases, it makes sense to override. For example,
-    :ref:`container property types <container>` use empty versions of
-    their respective container for default values.
+    However, in some specific cases, it may make sense to override.

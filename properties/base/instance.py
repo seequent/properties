@@ -176,6 +176,8 @@ class Instance(basic.Property):
 
     def sphinx_class(self):
         """Redefine sphinx class so documentation links to instance_class"""
-        return ':class:`{cls} <.{cls}>`'.format(
-            cls=self.instance_class.__name__
+        classdoc = ':class:`{cls} <{pref}.{cls}>`'.format(
+            cls=self.instance_class.__name__,
+            pref=self.instance_class.__module__,
         )
+        return classdoc

@@ -3,8 +3,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 import unittest
 
+import numpy as np
 import properties
 
 
@@ -57,7 +59,7 @@ class TestContainer(unittest.TestCase):
         assert HasDummyTuple()._props['mytuple'].prop.name == 'mytuple'
 
         class HasIntTuple(properties.HasProperties):
-            aaa = properties.Tuple('tuple of ints', properties.Integer(''))
+            aaa = properties.Tuple('tuple of ints', properties.Integer(''), default=tuple)
 
         li = HasIntTuple()
         li.aaa = (1, 2, 3)
@@ -89,6 +91,9 @@ class TestContainer(unittest.TestCase):
         assert isinstance(li.aaa, tuple)
         assert all(val in li.aaa for val in [1, 2, 3])
 
+        li.aaa = np.array([3, 2, 1])
+        assert li.aaa == (3, 2, 1)
+
         class HasConstrianedTuple(properties.HasProperties):
             aaa = properties.Tuple('tuple of ints', properties.Integer(''),
                                   min_length=2)
@@ -112,7 +117,8 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasColorTuple(properties.HasProperties):
-            ccc = properties.Tuple('tuple of colors', properties.Color(''))
+            ccc = properties.Tuple('tuple of colors', properties.Color(''),
+                                   min_length=2, max_length=2)
 
         li = HasColorTuple()
         li.ccc = ('red', '#00FF00')
@@ -173,6 +179,42 @@ class TestContainer(unittest.TestCase):
         )
         assert not properties.Tuple('', properties.Integer('')).equal(5, 5)
 
+        class HasOptPropTuple(properties.HasProperties):
+            mytuple = properties.Tuple(
+                doc='',
+                prop=properties.Bool('', required=False),
+                default=properties.undefined,
+            )
+
+        hopt = HasOptPropTuple()
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (None,)
+
+        with self.assertRaises(ValueError):
+            hopt.mytuple = (properties.undefined,)
+
+        hopt._backend = {'mytuple': (properties.undefined,)}
+
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        hopt.mytuple = (True,)
+
+        del hopt.mytuple
+
+        with self.assertRaises(ValueError):
+            hopt.validate()
+
+        class UntypedTuple(properties.HasProperties):
+            mytuple = properties.Tuple('no type')
+
+        ut = UntypedTuple(mytuple=(1, 'hi', UntypedTuple))
+        ut.validate()
+
+
     def test_list(self):
         self._test_list(True)
         self._test_list(False)
@@ -225,7 +267,7 @@ class TestContainer(unittest.TestCase):
 
         class HasIntList(properties.HasProperties):
             aaa = properties.List('list of ints', properties.Integer(''),
-                                  observe_mutations=om)
+                                  observe_mutations=om, default=list)
 
         li = HasIntList()
         li.aaa = [1, 2, 3]
@@ -304,6 +346,13 @@ class TestContainer(unittest.TestCase):
             'ccc': [[255, 0, 0], [0, 255, 0]]
         }
 
+        li.ccc.append('blue')
+        if om:
+            li.validate()
+        else:
+            with self.assertRaises(ValueError):
+                li.validate()
+
         class HasIntAList(properties.HasProperties):
             mylist = properties.List('list of HasIntA', HasIntA,
                                      observe_mutations=om)
@@ -344,6 +393,38 @@ class TestContainer(unittest.TestCase):
         )
         assert not properties.List('', properties.Integer(''),
                                    observe_mutations=om).equal(5, 5)
+
+        class HasOptPropList(properties.HasProperties):
+            mylist = properties.List(
+                doc='',
+                prop=properties.Bool('', required=False),
+                default=properties.undefined,
+            )
+
+        hopl = HasOptPropList()
+        with self.assertRaises(ValueError):
+            hopl.validate()
+
+        with self.assertRaises(ValueError):
+            hopl.mylist = [None,]
+
+        with self.assertRaises(ValueError):
+            hopl.mylist = [properties.undefined,]
+
+        hopl._backend = {'mylist': [properties.undefined,]}
+
+        with self.assertRaises(ValueError):
+            hopl.validate()
+
+        hopl.mylist = [True,]
+
+        del hopl.mylist[0]
+        hopl.validate()
+
+        del hopl.mylist
+
+        with self.assertRaises(ValueError):
+            hopl.validate()
 
     def test_set(self):
         self._test_set(True)
@@ -397,7 +478,7 @@ class TestContainer(unittest.TestCase):
 
         class HasIntSet(properties.HasProperties):
             aaa = properties.Set('set of ints', properties.Integer(''),
-                                  observe_mutations=om)
+                                  observe_mutations=om, default=set)
 
         li = HasIntSet()
         li.aaa = {1, 2, 3}
@@ -768,6 +849,173 @@ class TestContainer(unittest.TestCase):
         assert hl.advanced == {1, 2}
         assert hl._advanced_tic == 15
 
+
+    def test_dict(self):
+        self._test_dict(True)
+        self._test_dict(False)
+
+    def _test_dict(self, om):
+
+        with self.assertRaises(TypeError):
+            properties.Dictionary('bad string set', key_prop=str)
+        with self.assertRaises(TypeError):
+            properties.Dictionary('bad string set', value_prop=str)
+        with self.assertRaises(TypeError):
+            properties.Dictionary('bad observe', properties.Integer(''),
+                            observe_mutations=5)
+
+        class HasPropsDummy(properties.HasProperties):
+            pass
+
+        mydict = properties.Dictionary('dummy has properties set',
+                                key_prop=properties.String(''),
+                                value_prop=HasPropsDummy,
+                                observe_mutations=om)
+        assert isinstance(mydict.key_prop, properties.String)
+        assert isinstance(mydict.value_prop, properties.Instance)
+        assert mydict.value_prop.instance_class is HasPropsDummy
+
+        class HasDummyDict(properties.HasProperties):
+            mydict = properties.Dictionary('dummy has properties set',
+                                     key_prop=properties.String(''),
+                                     value_prop=HasPropsDummy,
+                                     observe_mutations=om)
+
+        assert HasDummyDict()._props['mydict'].name == 'mydict'
+        assert HasDummyDict()._props['mydict'].key_prop.name == 'mydict'
+        assert HasDummyDict()._props['mydict'].value_prop.name == 'mydict'
+
+        class HasDict(properties.HasProperties):
+            aaa = properties.Dictionary('dictionary', default=dict)
+
+        li = HasDict()
+        li.aaa = {1: 2}
+        with self.assertRaises(ValueError):
+            li.aaa = (1, 2, 3)
+        li.aaa = {'hi': HasPropsDummy()}
+        with self.assertRaises(ValueError):
+            li.aaa = 4
+        with self.assertRaises(ValueError):
+            li.aaa = {'a', 'b', 'c'}
+
+        li1 = HasDict()
+        li2 = HasDict()
+        assert li1.aaa == li2.aaa
+        assert li1.aaa is not li2.aaa
+
+
+        class HasInt(properties.HasProperties):
+            myint = properties.Integer('my integer')
+
+
+        class HasFunnyDict(properties.HasProperties):
+            mydict = properties.Dictionary('my dict',
+                                     key_prop=properties.Color(''),
+                                     value_prop=HasInt,
+                                     observe_mutations=om)
+
+        hfd = HasFunnyDict()
+        hfd.mydict = {'red': HasInt(myint=5)}
+        hfd.mydict.update({'green': HasInt(myint=1)})
+
+        if om:
+            hfd.validate()
+        else:
+            with self.assertRaises(ValueError):
+                hfd.validate()
+
+        with self.assertRaises(ValueError):
+            hfd.mydict.update({1: HasInt(myint=1)})
+            hfd.validate()
+
+        class HasCoercedDict(properties.HasProperties):
+            my_coerced_dict = properties.Dictionary('my dict', coerce=True)
+            my_uncoerced_dict = properties.Dictionary('my dict')
+
+        key_val_list = [('a', 1), ('b', 2), ('c', 3)]
+
+        hcd = HasCoercedDict()
+        with self.assertRaises(ValueError):
+            hcd.my_uncoerced_dict = key_val_list
+
+        hcd.my_coerced_dict = key_val_list
+        assert hcd.my_coerced_dict == {'a': 1, 'b': 2, 'c': 3}
+
+    def test_nested_observed(self):
+        self._test_nested_observed(True)
+        self._test_nested_observed(False)
+
+    def _test_nested_observed(self, om):
+
+        class HasNestedList(properties.HasProperties):
+
+            nested_list = properties.List(
+                'This is not a great idea...',
+                properties.List('',
+                    properties.Integer(''),
+                    observe_mutations=True
+                ),
+                observe_mutations=om,
+            )
+
+        hnl = HasNestedList()
+
+        hnl.nested_list = [[1, 2, 3], [4, 5, 6]]
+        assert hnl.nested_list == [[1, 2, 3], [4, 5, 6]]
+        hnl.nested_list[0][0] = 10
+        assert hnl.nested_list == [[10, 2, 3], [4, 5, 6]]
+        hnl.nested_list += [[7, 8, 9]]
+        assert hnl.nested_list == [[10, 2, 3], [4, 5, 6], [7, 8, 9]]
+        hnl.nested_list[0] += [0]
+        assert hnl.nested_list == [[10, 2, 3, 0], [4, 5, 6], [7, 8, 9]]
+
+    def test_container_class_retention(self):
+
+        class HasCollections(properties.HasProperties):
+            tuple_unobs = properties.Tuple('')
+            dict_unobs = properties.Dictionary('')
+            dict_obs = properties.Dictionary('', observe_mutations=True)
+            list_unobs = properties.List('')
+            list_obs = properties.List('', observe_mutations=True)
+            set_unobs = properties.Set('')
+            set_obs = properties.Set('', observe_mutations=True)
+
+        class SillyTuple(tuple):
+            pass
+
+        class SillyList(list):
+            pass
+
+        class SillySet(set):
+            pass
+
+        hc = HasCollections()
+        hc.tuple_unobs = SillyTuple([1, 2, 3])
+        assert isinstance(hc.tuple_unobs, SillyTuple)
+        hc.dict_unobs = OrderedDict()
+        assert isinstance(hc.dict_unobs, OrderedDict)
+        hc.dict_unobs['a'] = 1
+        assert isinstance(hc.dict_unobs, OrderedDict)
+        hc.dict_obs = OrderedDict()
+        assert isinstance(hc.dict_obs, OrderedDict)
+        hc.dict_obs['a'] = 1
+        assert isinstance(hc.dict_obs, OrderedDict)
+        hc.list_unobs = SillyList()
+        assert isinstance(hc.list_unobs, SillyList)
+        hc.list_unobs += [1]
+        assert isinstance(hc.list_unobs, SillyList)
+        hc.list_obs = SillyList([1])
+        assert isinstance(hc.list_obs, SillyList)
+        hc.list_obs[0] = 0
+        assert isinstance(hc.list_obs, SillyList)
+        hc.set_unobs = SillySet([0])
+        assert isinstance(hc.set_unobs, SillySet)
+        hc.set_unobs |= set([1])
+        assert isinstance(hc.set_unobs, SillySet)
+        hc.set_obs = SillySet()
+        assert isinstance(hc.set_obs, SillySet)
+        hc.set_obs.add(1)
+        assert isinstance(hc.set_obs, SillySet)
 
 if __name__ == '__main__':
     unittest.main()

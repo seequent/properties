@@ -14,6 +14,7 @@ TYPE_MAPPINGS = {
     int: 'i',
     float: 'f',
     bool: 'b',
+    complex: 'c',
 }
 
 
@@ -23,11 +24,12 @@ class Array(Property):
     **Available keywords** (in addition to those inherited from
     :ref:`Property <property>`):
 
-    * **shape** - Tuple that describes the allowed shape of the array.
-      Length of shape tuple corresponds to number of dimensions; values
-      correspond to the allowed length for each dimension. These values
-      may be integers or '*' for any length.
-      For example, an n x 3 array would be shape ('*', 3).
+    * **shape** - Tuple (or set of valid tuples) that describes the
+      allowed shape of the array. Length of shape tuple corresponds to
+      number of dimensions; values correspond to the allowed length for
+      each dimension. These values may be integers or '*' for any length.
+      For example, an n x 3 array would be shape ('*', 3). None may also
+      be used if any shape is valid.
       The default value is ('*',).
     * **dtype** - Allowed data type for the array. May be float, int,
       bool, or a tuple containing any of these. The default is (float, int).
@@ -49,22 +51,38 @@ class Array(Property):
     def shape(self):
         """Valid array shape.
 
-        Must be a tuple with integer or '*' engries corresponding to valid
-        array shapes. '*' means the dimension can be any length.
+        Must be a tuple with integer or '*' entries corresponding to valid
+        array shapes. '*' means the dimension can be any length. A set of
+        these tuples may also be provided if multiple shapes are valid.
+        If any shape is valid, use None for shape.
         """
-        return getattr(self, '_shape', ('*',))
+        return getattr(self, '_shape', {('*',)})
 
     @shape.setter
     def shape(self, value):
-        if not isinstance(value, tuple):
-            raise TypeError("{}: Invalid shape - must be a tuple "
-                            "(e.g. ('*',3) for an array of length-3 "
-                            "arrays)".format(value))
-        for shp in value:
-            if shp != '*' and not isinstance(shp, integer_types):
-                raise TypeError("{}: Invalid shape - values "
-                                "must be '*' or int".format(value))
-        self._shape = value
+        if value is None:
+            self._shape = value
+            return
+        self._shape = self._validate_shape(value)
+
+    @staticmethod
+    def _validate_shape(value):
+        if not isinstance(value, set):
+            try:
+                value = {value}
+            except TypeError:
+                # Valid shapes are hashable - we are just deferring errors
+                value = [value]
+        for val in value:
+            if not isinstance(val, tuple):
+                raise TypeError("{}: Invalid shape - must be a tuple "
+                                "(e.g. ('*', 3) for an array of length-3 "
+                                "arrays)".format(val))
+            for shp in val:
+                if shp != '*' and not isinstance(shp, integer_types):
+                    raise TypeError("{}: Invalid shape - values "
+                                    "must be '*' or int".format(val))
+        return value
 
     @property
     def dtype(self):
@@ -82,17 +100,25 @@ class Array(Property):
             raise TypeError('No dtype specified - must be int, float, '
                             'and/or bool')
         if any([val not in TYPE_MAPPINGS for val in value]):
-            raise TypeError('{}: Invalid dtype - must be int, float, '
-                            'and/or bool'.format(value))
+            raise TypeError('{}: Invalid dtype - must be {}'.format(
+                value, ', '.join(v.__name__ for v in TYPE_MAPPINGS)
+            ))
         self._dtype = value
 
     @property
     def info(self):
-        return '{info} of {type} with shape {shp}'.format(
+        if self.shape is None:
+            shape_info = 'any shape'
+        else:
+            shape_info = 'shape {}'.format(' or '.join(
+                '({})'.format(', '.join(
+                    '\*' if s == '*' else str(s) for s in shape                #pylint: disable=anomalous-backslash-in-string
+                )) for shape in self.shape
+            ))
+        return '{info} of {type} with {shp}'.format(
             info=self.class_info,
             type=', '.join([str(t) for t in self.dtype]),
-            shp='(' + ', '.join(['\*' if s == '*' else str(s)                  #pylint: disable=anomalous-backslash-in-string
-                                 for s in self.shape]) + ')',
+            shp=shape_info,
         )
 
     def validate(self, instance, value):
@@ -107,12 +133,17 @@ class Array(Property):
             )
         if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
             self.error(instance, value)
-        if len(self.shape) != value.ndim:
-            self.error(instance, value)
-        for i, shp in enumerate(self.shape):
-            if shp != '*' and value.shape[i] != shp:
-                self.error(instance, value)
-        return value
+        if self.shape is None:
+            return value
+        for shape in self.shape:
+            if len(shape) != value.ndim:
+                continue
+            for i, shp in enumerate(shape):
+                if shp != '*' and value.shape[i] != shp:
+                    break
+            else:
+                return value
+        self.error(instance, value)
 
     def equal(self, value_a, value_b):
         try:
@@ -261,7 +292,7 @@ class Vector3(BaseVector):
     @property
     def shape(self):
         """Vector3 is fixed at length-3"""
-        return (3,)
+        return {(3,)}
 
     def validate(self, instance, value):
         """Check shape and dtype of vector
@@ -306,7 +337,7 @@ class Vector2(BaseVector):
     @property
     def shape(self):
         """Vector2 is fixed at length-2"""
-        return (2,)
+        return {(2,)}
 
     def validate(self, instance, value):
         """Check shape and dtype of vector
@@ -355,7 +386,17 @@ class Vector3Array(BaseVector):
     @property
     def shape(self):
         """Vector3Array is shape n x 3"""
-        return ('*', 3)
+        return getattr(self, '_shape', {('*', 3)})
+
+    @shape.setter
+    def shape(self, value):
+        value = self._validate_shape(value)
+        for val in value:
+            if len(val) != 2 or val[1] != 3:
+                raise TypeError('{}: Invalid shape - Vector3Array must '
+                                'have two dimensions, and the second '
+                                'must equal 3'.format(val))
+        self._shape = value
 
     def _length_array(self, value):
         return np.ones(value.shape[0])*self.length
@@ -407,7 +448,17 @@ class Vector2Array(BaseVector):
     @property
     def shape(self):
         """Vector2Array is shape n x 2"""
-        return ('*', 2)
+        return getattr(self, '_shape', {('*', 2)})
+
+    @shape.setter
+    def shape(self, value):
+        value = self._validate_shape(value)
+        for val in value:
+            if len(val) != 2 or val[1] != 2:
+                raise TypeError('{}: Invalid shape - Vector2Array must '
+                                'have two dimensions, and the second '
+                                'must equal 2'.format(val))
+        self._shape = value
 
     def _length_array(self, value):
         return np.ones(value.shape[0])*self.length

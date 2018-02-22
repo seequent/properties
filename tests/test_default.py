@@ -246,7 +246,7 @@ class TestDefault(unittest.TestCase):
         assert isinstance(hi2.inst, HasIntSubclass)
 
         class HasList(properties.HasProperties):
-            z = properties.List('z list', HasInstance)
+            z = properties.List('z list', HasInstance, default=list)
 
         hl0 = HasList()
         hl1 = HasList()
@@ -256,8 +256,12 @@ class TestDefault(unittest.TestCase):
         assert hl0.z is not hl1.z
 
     def test_list_default(self):
+
+        class ListDefault(properties.List):
+            _class_default = list
+
         class HasIntList(properties.HasProperties):
-            intlist = properties.List('list of ints', properties.Integer(''))
+            intlist = ListDefault('list of ints', properties.Integer(''))
 
         hil = HasIntList()
 
@@ -270,6 +274,12 @@ class TestDefault(unittest.TestCase):
             properties.List('list', properties.Integer('', default=5))
             assert len(w) == 1
             assert issubclass(w[0].category, RuntimeWarning)
+
+        class HasDefaultIntList(properties.HasProperties):
+            intlist = properties.List('list of ints', properties.Integer('', default=5))
+
+        hdil = HasDefaultIntList()
+        assert hdil.intlist is None
 
     def test_reset(self):
 
@@ -340,6 +350,15 @@ class TestDefault(unittest.TestCase):
 
         hi = HasNewInt()
         assert hi.a == 3
+
+    def test_default_validation(self):
+
+        class HasMatrix(properties.HasProperties):
+            matrix = properties.Array(
+                '2x2 matrix',
+                shape=(2, 2),
+                default=lambda: [[1., 2.], [3., 4.]],
+            )
 
 
 if __name__ == '__main__':
