@@ -166,13 +166,15 @@ class Union(basic.Property):
                 return prop.assert_valid(instance, value)
             except (ValueError, KeyError, TypeError, AttributeError):
                 continue
-        raise ValueError(
+        message = (
             'The "{name}" property of a {cls} instance has not been set '
             'correctly'.format(
                 name=self.name,
                 cls=instance.__class__.__name__
             )
         )
+        instance._error_hook(self, value, message)
+        raise utils.ValidationError(message)
 
     def serialize(self, value, **kwargs):
         """Return a serialized value

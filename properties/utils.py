@@ -123,6 +123,10 @@ class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
 
 
+class ValidationError(ValueError):
+    """Exception type to be raised during property validation"""
+
+
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
     """Basic object with name and doc for specifying singletons
 

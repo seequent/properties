@@ -352,7 +352,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             for val in itervalues(self._class_validators):
                 valid = val.func(self)
                 if valid is False:
-                    raise ValueError('Validation failed')
+                    raise utils.ValidationError('Validation failed')
             return True
         finally:
             self._getting_validated = False
@@ -362,19 +362,25 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         """Assert that all the properties are valid on validate()"""
         for key, prop in iteritems(self._props):
             value = self._get(key)
+            err_msg = 'Invalid value for property {}: {}'.format(key, value)
             if value is not None:
                 change = dict(name=key, previous=value, value=value,
                               mode='validate')
                 self._notify(change)
                 if not prop.equal(value, change['value']):
-                    raise ValueError(
-                        'Invalid value for property {}: {}'.format(key, value)
-                    )
+                    self._error_hook(prop, value, err_msg)
+                    raise utils.ValidationError(err_msg)
             if not prop.assert_valid(self):
-                raise ValueError(
-                    'Invalid value for property {}: {}'.format(key, value)
-                )
+                self._error_hook(prop, value, err_msg)
+                raise utils.ValidationError(err_msg)
         return True
+
+    def _error_hook(self, prop, value, message, error_class=None):
+        """Method called when property validation fails
+
+        This allows HasProperties classes to easily customize how the
+        validation error is handled.
+        """
 
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
         """Serializes a **HasProperties** instance to dictionary
