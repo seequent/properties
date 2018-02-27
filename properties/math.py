@@ -223,6 +223,10 @@ class Array(Property):
         return np.array(value).astype(float)
 
 
+class ZeroDivValidationError(ZeroDivisionError, ValidationError):
+    """Exception type for validation errors related to division-by-zero"""
+
+
 class BaseVector(Array):
     """Base class for Vector properties"""
 
@@ -265,7 +269,7 @@ class BaseVector(Array):
             except ZeroDivisionError:
                 self.error(
                     instance, value,
-                    error_class=ZeroDivisionError,
+                    error_class=ZeroDivValidationError,
                     extra='The vector must have a length specified.'
                 )
         return value
