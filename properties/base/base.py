@@ -375,7 +375,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 raise utils.ValidationError(err_msg)
         return True
 
-    def _error_hook(self, prop, value, message, error_class=None):
+    def _error_hook(self, prop, value, message, **kwargs):
         """Method called when property validation fails
 
         This allows HasProperties classes to easily customize how the

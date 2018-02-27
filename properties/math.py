@@ -190,7 +190,7 @@ class Array(Property):
             )
         )
         if instance:
-            instance._error_hook(self, value, message, error_class)
+            instance._error_hook(self, value, message, error_class=error_class)
         raise error_class(message)
 
     def deserialize(self, value, **kwargs):

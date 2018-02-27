@@ -346,7 +346,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             )
         )
         if instance:
-            instance._error_hook(self, value, message, error_class)
+            instance._error_hook(self, value, message, error_class=error_class)
         raise error_class(message)
 
     def sphinx(self):
