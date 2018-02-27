@@ -189,8 +189,8 @@ class Array(Property):
                 extra=extra,
             )
         )
-        if instance:
-            instance._error_hook(self, value, message, error_class=error_class)
+        if issubclass(error_class, ValidationError):
+            raise error_class(message, prop=self, reason='invalid')
         raise error_class(message)
 
     def deserialize(self, value, **kwargs):
@@ -223,7 +223,7 @@ class Array(Property):
         return np.array(value).astype(float)
 
 
-class ZeroDivValidationError(ZeroDivisionError, ValidationError):
+class ZeroDivValidationError(ValidationError, ZeroDivisionError):
     """Exception type for validation errors related to division-by-zero"""
 
 

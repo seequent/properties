@@ -343,42 +343,60 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         """Call all registered class validator methods
 
         These are all methods decorated with :code:`@properties.validator`.
-        Validator methods are expected to raise an error if they fail.
+        Validator methods are expected to raise a ValidationError if they
+        fail.
         """
-        if getattr(self, '_getting_validated', False):
+        if getattr(self, '_validation_error_tuples', None) is not None:
             return True
-        self._getting_validated = True
+        self._validation_error_tuples = []
         try:
             for val in itervalues(self._class_validators):
-                valid = val.func(self)
-                if valid is False:
-                    raise utils.ValidationError('Validation failed')
+                try:
+                    valid = val.func(self)
+                    if valid is False:
+                        raise utils.ValidationError('Validation failed')
+                except utils.ValidationError as val_err:
+                    self._validation_error_tuples.append(val_err.error_tuple)
+                except (ValueError, KeyError, TypeError, AttributeError):
+                    if self._validation_error_tuples:
+                        break
+                    else:
+                        raise
+            if self._validation_error_tuples:
+                self._error_hook(self._validation_error_tuples)
+                msgs = ['Validation failed:']
+                msgs += [val.message for val in self._validation_error_tuples]
+                raise utils.ValidationError('\n- '.join(msgs))
             return True
         finally:
-            self._getting_validated = False
+            self._validation_error_tuples = None
 
     @handlers.validator
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
         for key, prop in iteritems(self._props):
-            value = self._get(key)
-            err_msg = 'Invalid value for property {}: {}'.format(key, value)
-            if value is not None:
-                change = dict(name=key, previous=value, value=value,
-                              mode='validate')
-                self._notify(change)
-                if not prop.equal(value, change['value']):
-                    self._error_hook(prop, value, err_msg)
-                    raise utils.ValidationError(err_msg)
-            if not prop.assert_valid(self):
-                self._error_hook(prop, value, err_msg)
-                raise utils.ValidationError(err_msg)
+            try:
+                value = self._get(key)
+                err_msg = 'Invalid value for property {}: {}'.format(key, value)
+                if value is not None:
+                    change = dict(name=key, previous=value, value=value,
+                                  mode='validate')
+                    self._notify(change)
+                    if not prop.equal(value, change['value']):
+                        raise utils.ValidationError(err_msg, prop, 'invalid')
+                if not prop.assert_valid(self):
+                    raise utils.ValidationError(err_msg, prop, 'invalid')
+            except utils.ValidationError as val_err:
+                if getattr(self, '_validation_error_tuples', None) is not None:
+                    self._validation_error_tuples.append(val_err.error_tuple)
+                else:
+                    raise
         return True
 
-    def _error_hook(self, prop, value, message, **kwargs):
+    def _error_hook(self, error_tuples):
         """Method called when property validation fails
 
-        This allows HasProperties classes to easily customize how the
+        This allows HasProperties classes to customize how the
         validation error is handled.
         """
 

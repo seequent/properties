@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import namedtuple
 from functools import wraps
 from warnings import warn
 
@@ -123,8 +124,14 @@ class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
 
 
+ErrorTuple = namedtuple('ErrorTuple', ['message', 'prop', 'reason'])
+
 class ValidationError(ValueError):
     """Exception type to be raised during property validation"""
+
+    def __init__(self, message, prop=None, reason=None):
+        self.error_tuple = ErrorTuple(message, prop, reason)
+        super(ValidationError, self).__init__(message)
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
