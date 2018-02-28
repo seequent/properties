@@ -103,7 +103,7 @@ class TestBasic(unittest.TestCase):
             a = properties.Integer('a')
 
             def __setattr__(self, attr, value):
-                if value is not properties.undefined:
+                if attr[0] != '_' and value is not properties.undefined:
                     raise AttributeError()
                 return super(NoAttributes, self).__setattr__(attr, value)
 
