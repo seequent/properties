@@ -129,9 +129,11 @@ ErrorTuple = namedtuple('ErrorTuple', ['message', 'prop', 'reason'])
 class ValidationError(ValueError):
     """Exception type to be raised during property validation"""
 
-    def __init__(self, message, prop=None, reason=None):
-        self.error_tuple = ErrorTuple(message, prop, reason)
+    def __init__(self, message, reason=None, prop=None, instance=None):
         super(ValidationError, self).__init__(message)
+        self.error_tuple = ErrorTuple(message, prop, reason)
+        if not getattr(instance, '_getting_validated', True):
+            instance._error_hook([self.error_tuple])
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods

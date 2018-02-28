@@ -255,7 +255,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             message = 'Invalid value for property: {}: {}'.format(
                 self.name, value
             )
-            raise ValidationError(message, prop=self, reason='invalid')
+            raise ValidationError(message, reason='invalid', prop=self)
         return True
 
     def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
@@ -345,7 +345,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             )
         )
         if issubclass(error_class, ValidationError):
-            raise error_class(message, prop=self, reason='invalid')
+            raise error_class(message, 'invalid', self, instance)
         raise error_class(message)
 
     def sphinx(self):
@@ -649,7 +649,7 @@ class Property(GettableProperty):
                     cls=instance.__class__.__name__
                 )
             )
-            raise ValidationError(message, prop=self, reason='missing')
+            raise ValidationError(message, reason='missing', prop=self)
         valid = super(Property, self).assert_valid(instance, value)
         return valid
 
