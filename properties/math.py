@@ -223,7 +223,7 @@ class Array(Property):
         return np.array(value).astype(float)
 
 
-class ZeroDivValidationError(ValidationError, ZeroDivisionError):
+class ZeroDivValidationError(ValidationError, ZeroDivisionError):              #pylint: disable=too-many-ancestors
     """Exception type for validation errors related to division-by-zero"""
 
 

@@ -133,7 +133,7 @@ class ValidationError(ValueError):
         super(ValidationError, self).__init__(message)
         self.error_tuple = ErrorTuple(message, prop, reason)
         if not getattr(instance, '_getting_validated', True):
-            instance._error_hook([self.error_tuple])
+            instance._error_hook([self.error_tuple])                           #pylint: disable=protected-access
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
