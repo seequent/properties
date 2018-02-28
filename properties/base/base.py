@@ -230,7 +230,7 @@ class PropertyMetaclass(type):
         object.__setattr__(obj, '_listeners', dict())
 
         # Register the listeners
-        for _, val in iteritems(obj._prop_observers):
+        for val in itervalues(obj._prop_observers):
             handlers._set_listener(obj, val)
 
         # Set the GettableProperties from defaults - these are only set here
@@ -276,15 +276,30 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def __init__(self, **kwargs):
         # Set the keyword arguments with change notifications
-        for key, val in iteritems(kwargs):
-            prop = self._props.get(key, None)
-            if not prop and not hasattr(self, key):
-                raise AttributeError("Keyword input '{}' is not a known "
-                                     "property or attribute".format(key))
-            if isinstance(prop, basic.DynamicProperty):
-                raise AttributeError("Dynamic property '{} cannot be set on "
-                                     "init".format(key))
-            setattr(self, key, val)
+        self._getting_validated = True
+        self._validation_error_tuples = []
+        try:
+            for key, val in iteritems(kwargs):
+                prop = self._props.get(key, None)
+                if not prop and not hasattr(self, key):
+                    raise AttributeError("Keyword input '{}' is not a known "
+                                         "property or attribute".format(key))
+                if isinstance(prop, basic.DynamicProperty):
+                    raise AttributeError("Dynamic property '{}' cannot be set on "
+                                         "init".format(key))
+                try:
+                    setattr(self, key, val)
+                except utils.ValidationError as val_err:
+                    self._validation_error_tuples.append(val_err.error_tuple)
+
+            if self._validation_error_tuples:
+                self._error_hook(self._validation_error_tuples)
+                msgs = ['Initialization failed:']
+                msgs += [val.message for val in self._validation_error_tuples]
+                raise utils.ValidationError('\n- '.join(msgs))
+        finally:
+            self._getting_validated = False
+            self._validation_error_tuples = None
 
     def _get(self, name):
         return self._backend.get(name, None)
@@ -318,7 +333,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         """Revert specified property to default value
 
         If no property is specified, all properties are returned to default.
-        If silent is True, notifications will not be fired.
         """
         if name is None:
             for key in self._props:
@@ -346,8 +360,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         Validator methods are expected to raise a ValidationError if they
         fail.
         """
-        if getattr(self, '_validation_error_tuples', None) is not None:
+        if getattr(self, '_getting_validated', False):
             return True
+        self._getting_validated = True
         self._validation_error_tuples = []
         try:
             for val in itervalues(self._class_validators):
@@ -369,6 +384,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 raise utils.ValidationError('\n- '.join(msgs))
             return True
         finally:
+            self._getting_validated = False
             self._validation_error_tuples = None
 
     @handlers.validator
@@ -383,9 +399,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                                   mode='validate')
                     self._notify(change)
                     if not prop.equal(value, change['value']):
-                        raise utils.ValidationError(err_msg, prop, 'invalid')
+                        raise utils.ValidationError(err_msg, 'invalid',
+                                                    prop, self)
                 if not prop.assert_valid(self):
-                    raise utils.ValidationError(err_msg, prop, 'invalid')
+                    raise utils.ValidationError(err_msg, 'invalid', prop, self)
             except utils.ValidationError as val_err:
                 if getattr(self, '_validation_error_tuples', None) is not None:
                     self._validation_error_tuples.append(val_err.error_tuple)
