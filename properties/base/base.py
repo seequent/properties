@@ -290,13 +290,16 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 try:
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
-                    self._validation_error_tuples.append(val_err.error_tuple)
+                    self._validation_error_tuples += val_err.error_tuples
 
             if self._validation_error_tuples:
                 self._error_hook(self._validation_error_tuples)
                 msgs = ['Initialization failed:']
                 msgs += [val.message for val in self._validation_error_tuples]
-                raise utils.ValidationError('\n- '.join(msgs))
+                raise utils.ValidationError(
+                    message='\n- '.join(msgs),
+                    _error_tuples=self._validation_error_tuples,
+                )
         finally:
             self._getting_validated = False
             self._validation_error_tuples = None
@@ -381,7 +384,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 self._error_hook(self._validation_error_tuples)
                 msgs = ['Validation failed:']
                 msgs += [val.message for val in self._validation_error_tuples]
-                raise utils.ValidationError('\n- '.join(msgs))
+                raise utils.ValidationError(
+                    message='\n- '.join(msgs),
+                    _error_tuples=self._validation_error_tuples,
+                )
             return True
         finally:
             self._getting_validated = False
@@ -405,7 +411,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     raise utils.ValidationError(err_msg, 'invalid', prop, self)
             except utils.ValidationError as val_err:
                 if getattr(self, '_validation_error_tuples', None) is not None:
-                    self._validation_error_tuples.append(val_err.error_tuple)
+                    self._validation_error_tuples += val_err.error_tuples
                 else:
                     raise
         return True

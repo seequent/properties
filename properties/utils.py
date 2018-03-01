@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 from functools import wraps
+from six import string_types
 from warnings import warn
 
 
@@ -124,16 +125,37 @@ class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
 
 
-ErrorTuple = namedtuple('ErrorTuple', ['message', 'prop', 'reason'])
+# class ErrorInfo(object):
+
+#     def __init__(self, message, reason=None, prop=None):
+#         if not isinstance(message, string_types):
+#             raise ValueError('Error message must be a string')
+#         self.message = message
+#         if reason is not None and not isinstance(reason, string_types):
+#             raise ValueError('Error reason must be a string')
+#         self.reason = reason
+#         parent_names = [cls.__name__ for cls in prop.__class__.__mro__]
+#         if 'GettableProperty' not in parent_names:
+#             raise ValueError('Error prop must be a Property')
+#         self.prop = prop
+
+ErrorTuple = namedtuple('ErrorTuple', ['message', 'reason', 'prop'])
 
 class ValidationError(ValueError):
     """Exception type to be raised during property validation"""
 
-    def __init__(self, message, reason=None, prop=None, instance=None):
+    def __init__(self, message, reason=None, prop=None, instance=None,
+                 _error_tuples=None):
         super(ValidationError, self).__init__(message)
-        self.error_tuple = ErrorTuple(message, prop, reason)
+        if _error_tuples is None:
+            self.error_tuples = []
+        else:
+            self.error_tuples = _error_tuples
+        if reason and prop:
+            error_tuple = ErrorTuple(message, reason, prop)
+            self.error_tuples.append(error_tuple)
         if not getattr(instance, '_getting_validated', True):
-            instance._error_hook([self.error_tuple])                           #pylint: disable=protected-access
+            instance._error_hook(self.error_tuples)                           #pylint: disable=protected-access
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
