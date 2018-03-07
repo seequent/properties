@@ -374,7 +374,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     if valid is False:
                         raise utils.ValidationError('Validation failed')
                 except utils.ValidationError as val_err:
-                    self._validation_error_tuples.append(val_err.error_tuple)
+                    self._validation_error_tuples += val_err.error_tuples
                 except (ValueError, KeyError, TypeError, AttributeError):
                     if self._validation_error_tuples:
                         break
