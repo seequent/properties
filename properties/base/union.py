@@ -173,7 +173,7 @@ class Union(basic.Property):
                 cls=instance.__class__.__name__
             )
         )
-        raise utils.ValidationError(message, reason='invalid', prop=self)
+        raise utils.ValidationError(message, 'invalid', self.name, instance)
 
     def serialize(self, value, **kwargs):
         """Return a serialized value

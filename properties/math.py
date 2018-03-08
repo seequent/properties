@@ -190,7 +190,7 @@ class Array(Property):
             )
         )
         if issubclass(error_class, ValidationError):
-            raise error_class(message, 'invalid', self, instance)
+            raise error_class(message, 'invalid', self.name, instance)
         raise error_class(message)
 
     def deserialize(self, value, **kwargs):

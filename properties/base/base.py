@@ -372,7 +372,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 try:
                     valid = val.func(self)
                     if valid is False:
-                        raise utils.ValidationError('Validation failed')
+                        raise utils.ValidationError(
+                            'Validation failed', None, None, self
+                        )
                 except utils.ValidationError as val_err:
                     self._validation_error_tuples += val_err.error_tuples
                 except (ValueError, KeyError, TypeError, AttributeError):
@@ -406,9 +408,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     self._notify(change)
                     if not prop.equal(value, change['value']):
                         raise utils.ValidationError(err_msg, 'invalid',
-                                                    prop, self)
+                                                    prop.name, self)
                 if not prop.assert_valid(self):
-                    raise utils.ValidationError(err_msg, 'invalid', prop, self)
+                    raise utils.ValidationError(err_msg, 'invalid',
+                                                prop.name, self)
             except utils.ValidationError as val_err:
                 if getattr(self, '_validation_error_tuples', None) is not None:
                     self._validation_error_tuples += val_err.error_tuples

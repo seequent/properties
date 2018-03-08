@@ -139,7 +139,10 @@ class SelfReferenceError(Exception):
 #             raise ValueError('Error prop must be a Property')
 #         self.prop = prop
 
-ErrorTuple = namedtuple('ErrorTuple', ['message', 'reason', 'prop'])
+ErrorTuple = namedtuple(
+    'ErrorTuple',
+    ['message', 'reason', 'prop', 'instance']
+)
 
 class ValidationError(ValueError):
     """Exception type to be raised during property validation"""
@@ -151,8 +154,8 @@ class ValidationError(ValueError):
             self.error_tuples = []
         else:
             self.error_tuples = _error_tuples
-        if reason and prop:
-            error_tuple = ErrorTuple(message, reason, prop)
+        if reason or prop or instance:
+            error_tuple = ErrorTuple(message, reason, prop, instance)
             self.error_tuples.append(error_tuple)
         if not getattr(instance, '_getting_validated', True):
             instance._error_hook(self.error_tuples)                           #pylint: disable=protected-access
