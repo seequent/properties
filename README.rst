@@ -74,12 +74,14 @@ Alternatives
 
     1. attrs acts somewhat like a `namedtuple`, whereas properties acts
        more like a `dict` or mutable object.
-       - as a result, attrs is able to tackle hashing, comparison methods,
+
+       * as a result, attrs is able to tackle hashing, comparison methods,
          string representation, etc.
-       - attrs does not suffer runtime performance penalties as much as properties
-       - on the other hand, properties focuses on interactivity, with
+       * attrs does not suffer runtime performance penalties as much as properties
+       * on the other hand, properties focuses on interactivity, with
          notifications, serialization/deserialization, and mutable,
          possibly invalid states.
+
     2. properties has many built-in types with existing, complex validation
        already in place. This includes recursive validation of container
        and instance properties. attrs only allows attribute type to be specified.
@@ -119,8 +121,8 @@ Alternatives
 
   .. note::
 
-      properties provides `link`s which inter-operate with traitlets and
-      follow the same API as traitlets links
+      properties provides a :code:`link` object which inter-operates with
+      traitlets and follows the same API as traitlets links
 
 * `param <https://github.com/ioam/param>`_ - This library also provides
   type-checking, validation, and notification. It has a few unique features
