@@ -8,7 +8,7 @@ from warnings import warn
 
 from six import PY2
 
-from ..base import HasProperties, Instance
+from ..base import GENERIC_ERRORS, HasProperties, Instance
 from .. import basic
 from .. import utils
 
@@ -128,7 +128,7 @@ class Union(basic.Property):
                     prop.validate(None, value)
                 self._default = value
                 return
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
         raise TypeError('Invalid default for Union property')
 
@@ -148,7 +148,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.validate(instance, value)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
         self.error(instance, value)
 
@@ -164,7 +164,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
         message = (
             'The "{name}" property of a {cls} instance has not been set '
@@ -189,7 +189,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 prop.validate(None, value)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
             return prop.serialize(value, **kwargs)
         return self.to_json(value, **kwargs)
@@ -208,7 +208,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.deserialize(value, **kwargs)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
         return self.from_json(value, **kwargs)
 

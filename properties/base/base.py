@@ -20,6 +20,8 @@ if PY2:
 else:
     CLASS_TYPES = (type,)
 
+GENERIC_ERRORS = (ValueError, KeyError, TypeError, AttributeError)
+
 
 class PropertyMetaclass(type):
     """Metaclass to establish behavior of **HasProperties** classes
@@ -286,13 +288,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     raise AttributeError("Keyword input '{}' is not a known "
                                          "property or attribute".format(key))
                 if isinstance(prop, basic.DynamicProperty):
-                    raise AttributeError("Dynamic property '{}' cannot be set on "
-                                         "init".format(key))
+                    raise AttributeError("Dynamic property '{}' cannot be "
+                                         "set on init".format(key))
                 try:
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
                     self._validation_error_tuples += val_err.error_tuples
-                except Exception as err:
+                except GENERIC_ERRORS as err:
                     if not self._non_validation_error:
                         self._non_validation_error = err
                     continue
@@ -305,7 +307,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     _error_tuples=self._validation_error_tuples,
                 )
             elif self._non_validation_error:
-                raise self._non_validation_error
+                raise self._non_validation_error                               #pylint: disable=raising-bad-type
         finally:
             self._getting_validated = False
             self._validation_error_tuples = None
@@ -385,7 +387,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         )
                 except utils.ValidationError as val_err:
                     self._validation_error_tuples += val_err.error_tuples
-                except Exception as err:
+                except GENERIC_ERRORS as err:
                     if not self._non_validation_error:
                         self._non_validation_error = err
                     continue
@@ -398,7 +400,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     _error_tuples=self._validation_error_tuples,
                 )
             elif self._non_validation_error:
-                raise self._non_validation_error
+                raise self._non_validation_error                               #pylint: disable=raising-bad-type
             return True
         finally:
             self._getting_validated = False
