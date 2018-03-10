@@ -477,7 +477,7 @@ class TestBasic(unittest.TestCase):
         assert choices.mychoicedict == 'vowel'
         choices.mychoicedict = 'maybe'
 
-        self.assertEquals(choices.serialize(include_class=False), {
+        self.assertEqual(choices.serialize(include_class=False), {
             'mychoicelist': 'o',
             'mychoicedict': 'maybe'
         })
