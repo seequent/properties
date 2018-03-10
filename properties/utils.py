@@ -125,20 +125,6 @@ class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
 
 
-# class ErrorInfo(object):
-
-#     def __init__(self, message, reason=None, prop=None):
-#         if not isinstance(message, string_types):
-#             raise ValueError('Error message must be a string')
-#         self.message = message
-#         if reason is not None and not isinstance(reason, string_types):
-#             raise ValueError('Error reason must be a string')
-#         self.reason = reason
-#         parent_names = [cls.__name__ for cls in prop.__class__.__mro__]
-#         if 'GettableProperty' not in parent_names:
-#             raise ValueError('Error prop must be a Property')
-#         self.prop = prop
-
 ErrorTuple = namedtuple(
     'ErrorTuple',
     ['message', 'reason', 'prop', 'instance']
