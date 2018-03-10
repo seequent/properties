@@ -278,6 +278,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         # Set the keyword arguments with change notifications
         self._getting_validated = True
         self._validation_error_tuples = []
+        self._non_validation_error = None
         try:
             for key, val in iteritems(kwargs):
                 prop = self._props.get(key, None)
@@ -291,7 +292,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
                     self._validation_error_tuples += val_err.error_tuples
-
+                except Exception as err:
+                    if not self._non_validation_error:
+                        self._non_validation_error = err
+                    continue
             if self._validation_error_tuples:
                 self._error_hook(self._validation_error_tuples)
                 msgs = ['Initialization failed:']
@@ -300,9 +304,12 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     message='\n- '.join(msgs),
                     _error_tuples=self._validation_error_tuples,
                 )
+            elif self._non_validation_error:
+                raise self._non_validation_error
         finally:
             self._getting_validated = False
             self._validation_error_tuples = None
+            self._non_validation_error = None
 
     def _get(self, name):
         return self._backend.get(name, None)
@@ -367,6 +374,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             return True
         self._getting_validated = True
         self._validation_error_tuples = []
+        self._non_validation_error = None
         try:
             for val in itervalues(self._class_validators):
                 try:
@@ -377,11 +385,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         )
                 except utils.ValidationError as val_err:
                     self._validation_error_tuples += val_err.error_tuples
-                except (ValueError, KeyError, TypeError, AttributeError):
-                    if self._validation_error_tuples:
-                        break
-                    else:
-                        raise
+                except Exception as err:
+                    if not self._non_validation_error:
+                        self._non_validation_error = err
+                    continue
             if self._validation_error_tuples:
                 self._error_hook(self._validation_error_tuples)
                 msgs = ['Validation failed:']
@@ -390,10 +397,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     message='\n- '.join(msgs),
                     _error_tuples=self._validation_error_tuples,
                 )
+            elif self._non_validation_error:
+                raise self._non_validation_error
             return True
         finally:
             self._getting_validated = False
             self._validation_error_tuples = None
+            self._non_validation_error = None
 
     @handlers.validator
     def _validate_props(self):
