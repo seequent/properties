@@ -13,6 +13,30 @@ class TestErrors(unittest.TestCase):
 
     def test_validation_error(self):
 
+        with self.assertRaises(TypeError):
+            properties.ValidationError(
+                message='msg',
+                reason=5,
+                prop='a',
+                instance=properties.HasProperties,
+            )
+        with self.assertRaises(TypeError):
+            properties.ValidationError(
+                message='msg',
+                reason='invalid',
+                prop=5,
+                instance=properties.HasProperties,
+            )
+
+        with self.assertRaises(TypeError):
+            properties.ValidationError(
+                message='msg',
+                reason='invalid',
+                prop='a',
+                instance=5,
+            )
+
+
         class Simple(properties.HasProperties):
 
             a = properties.List(
