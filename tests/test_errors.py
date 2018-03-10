@@ -101,6 +101,15 @@ class TestErrors(unittest.TestCase):
                 assert t.reason == 'missing'
                 assert t.instance is sp
 
+        try:
+            sp._validate_props()
+        except properties.ValidationError as err:
+            assert hasattr(err, 'error_tuples')
+            tup = err.error_tuples
+            assert len(tup) == 1
+            assert tup[0].reason == 'missing'
+            assert tup[0].instance is sp
+
         sp.a = sp.b = sp.c = 1
         sp._backend['d'] = 'd'
         try:
@@ -112,6 +121,8 @@ class TestErrors(unittest.TestCase):
             assert tup[0].reason == 'invalid'
             assert tup[0].prop == 'd'
             assert tup[0].instance is sp
+
+
 
     def test_error_hook(self):
 
@@ -149,6 +160,110 @@ class TestErrors(unittest.TestCase):
             hh.validate()
         except SillyError as err:
             assert err.num_tuples == 1
+
+
+    def test_validate_false(self):
+
+        class Invalid(properties.HasProperties):
+
+            a = properties.Integer('')
+
+            @properties.validator
+            def _return_false(self):
+                return False
+
+        inv = Invalid(a=5)
+
+        with self.assertRaises(properties.ValidationError):
+            inv.validate()
+
+    def test_non_validation_errors(self):
+
+        class RaisesErrors(properties.HasProperties):
+
+            a = properties.Integer('')
+            b = properties.Integer('', required=False)
+
+            @properties.validator('b')
+            def _key_error(self, change):
+                raise KeyError()
+
+            @properties.validator
+            def _type_error(self):
+                raise TypeError
+
+        try:
+            RaisesErrors(a='a', b=2)
+        except properties.ValidationError as err:
+            assert hasattr(err, 'error_tuples')
+            tup = err.error_tuples
+            assert len(tup) == 1
+            assert tup[0].reason == 'invalid'
+            assert tup[0].prop == 'a'
+            assert tup[0].instance.__class__ is RaisesErrors
+
+        with self.assertRaises(KeyError):
+            RaisesErrors(a=1, b=2)
+
+        re = RaisesErrors()
+        try:
+            re.validate()
+        except properties.ValidationError as err:
+            assert hasattr(err, 'error_tuples')
+            tup = err.error_tuples
+            assert len(tup) == 1
+            assert tup[0].reason == 'missing'
+            assert tup[0].prop == 'a'
+            assert tup[0].instance is re
+
+        re.a = 1
+        with self.assertRaises(TypeError):
+            re.validate()
+
+    def test_bad_design_errors(self):
+
+        class Subtractor(properties.HasProperties):
+
+            a = properties.Integer('')
+
+            @properties.validator('a')
+            def _subtract(self, change):
+                change['value'] -= 1
+
+        s = Subtractor(a=5)
+        assert s.a == 4
+        with self.assertRaises(properties.ValidationError):
+            s.validate()
+
+        class AssertFalse(properties.String):
+
+            def assert_valid(self, instance):
+                return False
+
+        class BadProp(properties.HasProperties):
+
+            a = AssertFalse('')
+
+        bp = BadProp()
+        bp.a = 'hi'
+        with self.assertRaises(properties.ValidationError):
+            bp.validate()
+
+        class SillyError(Exception):
+            pass
+
+        class SillyErrorProp(properties.String):
+
+            def validate(self, instance, value):
+                self.error(instance, value, error_class=SillyError)
+
+        class HasSillyProp(properties.HasProperties):
+
+            a = SillyErrorProp('')
+
+        hsp = HasSillyProp()
+        with self.assertRaises(SillyError):
+            hsp.a = 'hi'
 
 
 if __name__ == '__main__':
