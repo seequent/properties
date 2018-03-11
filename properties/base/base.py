@@ -20,6 +20,8 @@ if PY2:
 else:
     CLASS_TYPES = (type,)
 
+GENERIC_ERRORS = (ValueError, KeyError, TypeError, AttributeError)
+
 
 class PropertyMetaclass(type):
     """Metaclass to establish behavior of **HasProperties** classes
@@ -278,6 +280,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         # Set the keyword arguments with change notifications
         self._getting_validated = True
         self._validation_error_tuples = []
+        self._non_validation_error = None
         try:
             for key, val in iteritems(kwargs):
                 prop = self._props.get(key, None)
@@ -285,13 +288,16 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     raise AttributeError("Keyword input '{}' is not a known "
                                          "property or attribute".format(key))
                 if isinstance(prop, basic.DynamicProperty):
-                    raise AttributeError("Dynamic property '{}' cannot be set on "
-                                         "init".format(key))
+                    raise AttributeError("Dynamic property '{}' cannot be "
+                                         "set on init".format(key))
                 try:
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
                     self._validation_error_tuples += val_err.error_tuples
-
+                except GENERIC_ERRORS as err:
+                    if not self._non_validation_error:
+                        self._non_validation_error = err
+                    continue
             if self._validation_error_tuples:
                 self._error_hook(self._validation_error_tuples)
                 msgs = ['Initialization failed:']
@@ -300,9 +306,12 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     message='\n- '.join(msgs),
                     _error_tuples=self._validation_error_tuples,
                 )
+            elif self._non_validation_error:
+                raise self._non_validation_error                               #pylint: disable=raising-bad-type
         finally:
             self._getting_validated = False
             self._validation_error_tuples = None
+            self._non_validation_error = None
 
     def _get(self, name):
         return self._backend.get(name, None)
@@ -367,6 +376,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             return True
         self._getting_validated = True
         self._validation_error_tuples = []
+        self._non_validation_error = None
         try:
             for val in itervalues(self._class_validators):
                 try:
@@ -377,11 +387,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                         )
                 except utils.ValidationError as val_err:
                     self._validation_error_tuples += val_err.error_tuples
-                except (ValueError, KeyError, TypeError, AttributeError):
-                    if self._validation_error_tuples:
-                        break
-                    else:
-                        raise
+                except GENERIC_ERRORS as err:
+                    if not self._non_validation_error:
+                        self._non_validation_error = err
+                    continue
             if self._validation_error_tuples:
                 self._error_hook(self._validation_error_tuples)
                 msgs = ['Validation failed:']
@@ -390,10 +399,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     message='\n- '.join(msgs),
                     _error_tuples=self._validation_error_tuples,
                 )
+            elif self._non_validation_error:
+                raise self._non_validation_error                               #pylint: disable=raising-bad-type
             return True
         finally:
             self._getting_validated = False
             self._validation_error_tuples = None
+            self._non_validation_error = None
 
     @handlers.validator
     def _validate_props(self):

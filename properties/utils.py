@@ -6,9 +6,9 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 from functools import wraps
-from six import string_types
 from warnings import warn
 
+from six import string_types
 
 def filter_props(has_props_cls, input_dict, include_immutable=True):
     """Split a dictionary based keys that correspond to Properties
@@ -125,20 +125,6 @@ class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
 
 
-# class ErrorInfo(object):
-
-#     def __init__(self, message, reason=None, prop=None):
-#         if not isinstance(message, string_types):
-#             raise ValueError('Error message must be a string')
-#         self.message = message
-#         if reason is not None and not isinstance(reason, string_types):
-#             raise ValueError('Error reason must be a string')
-#         self.reason = reason
-#         parent_names = [cls.__name__ for cls in prop.__class__.__mro__]
-#         if 'GettableProperty' not in parent_names:
-#             raise ValueError('Error prop must be a Property')
-#         self.prop = prop
-
 ErrorTuple = namedtuple(
     'ErrorTuple',
     ['message', 'reason', 'prop', 'instance']
@@ -154,6 +140,13 @@ class ValidationError(ValueError):
             self.error_tuples = []
         else:
             self.error_tuples = _error_tuples
+        if reason is not None and not isinstance(reason, string_types):
+            raise TypeError('ValidationError reason must be a string')
+        if prop is not None and not isinstance(prop, string_types):
+            raise TypeError('ValidationError prop must be a string')
+        if instance is not None and not hasattr(instance, '_error_hook'):
+            raise TypeError('ValidationError instance must be a '
+                            'HasProperties instance')
         if reason or prop or instance:
             error_tuple = ErrorTuple(message, reason, prop, instance)
             self.error_tuples.append(error_tuple)
