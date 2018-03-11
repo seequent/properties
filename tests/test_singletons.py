@@ -51,6 +51,28 @@ class TestSingleton(unittest.TestCase):
         assert hs1.s is hs2.s
         assert hs1.s is hs3.s
 
+    def test_prop_singleton(self):
+
+        class Stringleton(Singleton):
+
+            name = properties.String('')
+
+        with self.assertRaises(properties.ValidationError):
+            Stringleton(5)
+
+        a = Stringleton('z')
+        b = Stringleton('z')
+
+        assert a is b
+
+        a.name = 'b'
+        assert b.name == 'b'
+        c = Stringleton('z')
+        assert c.name == 'b'
+
+        d = properties.copy(c)
+        assert d.name is 'b'
+
 
 if __name__ == '__main__':
     unittest.main()
