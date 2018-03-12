@@ -73,6 +73,21 @@ class TestSingleton(unittest.TestCase):
         d = properties.copy(c)
         assert d.name is 'b'
 
+        with self.assertRaises(ValueError):
+            Stringleton.deserialize(10)
+
+        d_ser = d.serialize()
+        d_ser.pop('__id__')
+        with self.assertRaises(ValueError):
+            Stringleton.deserialize(d_ser)
+
+        e_ser = {'__id__': 'm', 'name': 'hi'}
+        e = Stringleton.deserialize(e_ser)
+
+        assert e.name == 'hi'
+        f = Stringleton('m')
+        assert f.name == 'hi'
+
     def test_singleton_registry(self):
 
         class NewSingleton(Singleton):

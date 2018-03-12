@@ -49,8 +49,9 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
             raise ValueError('Singleton classes must contain identifying name')
         if value['__id__'] in cls._SINGLETONS:
             return cls._SINGLETONS[value['__id__']]
+        value = value.copy()
         name = value.get('name', None)
-        value.update({'name': value['__id__']})
+        value.update({'name': value.pop('__id__')})
         newinst = super(Singleton, cls).deserialize(
             value,
             trusted=trusted,
