@@ -73,6 +73,17 @@ class TestSingleton(unittest.TestCase):
         d = properties.copy(c)
         assert d.name is 'b'
 
+    def test_singleton_registry(self):
+
+        class NewSingleton(Singleton):
+
+            _SINGLETONS = dict()
+
+        newsing_a = NewSingleton('a')
+        sing_a = Singleton('a')
+
+        assert sing_a is not newsing_a
+
 
 if __name__ == '__main__':
     unittest.main()
