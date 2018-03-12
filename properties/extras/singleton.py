@@ -5,10 +5,10 @@ from ..base import HasProperties, PropertyMetaclass
 
 
 class SingletonMetaclass(PropertyMetaclass):
-    """Metaclass to produce singleton behaviour"""
+    """Metaclass to produce singleton behavior"""
 
     def __call__(cls, name, *args, **kwargs):
-        """Look up an entry by name in the registry, or make a new one"""
+        """Look up an instance by name in the registry, or make a new one"""
         if name in cls._SINGLETONS:
             oldinst = cls._SINGLETONS[name]
             if oldinst.__class__ is not cls:
@@ -22,7 +22,13 @@ class SingletonMetaclass(PropertyMetaclass):
 
 
 class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
-    """Class that only allows one of each child with a given name"""
+    """Class that only allows one instance for each identifying name
+
+    Each singleton must be initialized with a name. You can type-check and
+    validate this value by including a 'name' property on your class. The
+    identifying name does not change during the lifetime of the singleton,
+    even if the 'name' value is changed.
+    """
 
     _SINGLETONS = dict()
 
@@ -33,6 +39,11 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         super(Singleton, self).__init__(**kwargs)
 
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
+        """Serialize Singleton instance to a dictoinary.
+
+        This behaves identically to HasProperties.serialize, except it also
+        saves the identifying name in the dictionary as well.
+        """
         json_dict = super(Singleton, self).serialize(
             include_class=include_class,
             save_dynamic=save_dynamic,
@@ -43,6 +54,18 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
 
     @classmethod
     def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
+        """Create a Singleton instance from a serialized dictionary.
+
+        This behaves identically to HasProperties.deserialize, except if
+        the singleton is already found in the singleton registry the existing
+        value is used.
+
+        .. note::
+
+            If property values differ from the existing singleton and
+            the input dictionary, the new values from the input dictionary
+            will be ignored
+        """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
         if '__id__' not in value:
