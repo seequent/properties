@@ -7,7 +7,7 @@ from ..base import HasProperties, PropertyMetaclass
 class SingletonMetaclass(PropertyMetaclass):
     """Metaclass to produce singleton behaviour"""
 
-    def __call__(cls, name, **kwargs):
+    def __call__(cls, name, *args, **kwargs):
         """Look up an entry by name in the registry, or make a new one"""
         if name in cls._SINGLETONS:
             oldinst = cls._SINGLETONS[name]
@@ -32,13 +32,17 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         self.__id__ = name
         super(Singleton, self).__init__(**kwargs)
 
-    def serialize(self, **kwargs):
-        json_dict = super(Singleton, self).serialize(**kwargs)
+    def serialize(self, include_class=True, save_dynamic=False, **kwargs):
+        json_dict = super(Singleton, self).serialize(
+            include_class=include_class,
+            save_dynamic=save_dynamic,
+            **kwargs
+        )
         json_dict['__id__'] = self.__id__
         return json_dict
 
     @classmethod
-    def deserialize(cls, value, **kwargs):
+    def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
         if '__id__' not in value:
@@ -47,7 +51,12 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
             return cls._SINGLETONS[value['__id__']]
         name = value.get('name', None)
         value.update({'name': value['__id__']})
-        newinst = super(Singleton, cls).deserialize(value, **kwargs)
+        newinst = super(Singleton, cls).deserialize(
+            value,
+            trusted=trusted,
+            verbose=verbose,
+            **kwargs
+        )
         if name:
             newinst.name = name
         return newinst
