@@ -68,13 +68,14 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
-        if '__id__' not in value:
+        identifier = value.pop('__id__', value.get('name'))
+        if identifier is None:
             raise ValueError('Singleton classes must contain identifying name')
-        if value['__id__'] in cls._SINGLETONS:
-            return cls._SINGLETONS[value['__id__']]
+        if identifier in cls._SINGLETONS:
+            return cls._SINGLETONS[identifier]
         value = value.copy()
         name = value.get('name', None)
-        value.update({'name': value.pop('__id__')})
+        value.update({'name': identifier})
         newinst = super(Singleton, cls).deserialize(
             value,
             trusted=trusted,
