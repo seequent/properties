@@ -145,10 +145,27 @@ class TestUnion(unittest.TestCase):
                 props=[SomeProps, DifferentProps],
             )
 
-        dp = {'c': 1, 'd': 2}
+        dp = {'u': {'c': 1, 'd': 2}}
 
         uu = UnambigousUnion.deserialize(dp)
         assert isinstance(uu.u, DifferentProps)
+
+        class AmbiguousUnion(properties.HasProperties):
+
+            u = properties.Union(
+                doc='ambiguous',
+                props=[SomeProps, SameProps],
+            )
+
+        sp = {'u': {'a': 1, 'b': 2}}
+
+        au = AmbiguousUnion.deserialize(sp)
+        assert isinstance(au.u, SomeProps)
+
+        sp.update({'__class__': 'SameProps'})
+
+        au = AmbiguousUnion.deserialize(sp)
+        assert isinstance(au.u, SameProps)
 
 
 
