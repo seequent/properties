@@ -121,6 +121,37 @@ class TestUnion(unittest.TestCase):
         with self.assertRaises(ValueError):
             hou.validate()
 
+    def test_union_deserialization(self):
+
+        class SomeProps(properties.HasProperties):
+
+            a = properties.Integer('')
+            b = properties.Integer('')
+
+        class SameProps(properties.HasProperties):
+
+            a = properties.Integer('')
+            b = properties.Integer('')
+
+        class DifferentProps(properties.HasProperties):
+
+            c = properties.Integer('')
+            d = properties.Integer('')
+
+        class UnambigousUnion(properties.HasProperties):
+
+            u = properties.Union(
+                doc='unambiguous',
+                props=[SomeProps, DifferentProps],
+            )
+
+        dp = {'c': 1, 'd': 2}
+
+        uu = UnambigousUnion.deserialize(dp)
+        assert isinstance(uu.u, DifferentProps)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
