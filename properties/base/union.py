@@ -85,6 +85,16 @@ class Union(basic.Property):
         self._props = new_props
 
     @property
+    def strict_instances(self):
+        return getattr(self, '_strict_instances', True)
+
+    @strict_instances.setter
+    def strict_instances(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('strict_instances must be a boolean')
+        self._strict_instances = value
+
+    @property
     def info(self):
         """Description of the property, supplemental to the basic doc"""
         return ' or '.join([p.info or 'any value' for p in self.props])
@@ -205,6 +215,22 @@ class Union(basic.Property):
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
+        instance_props = [
+            prop for prop in self.props if isinstance(prop, Instance)
+        ]
+        kwargs = kwargs.copy()
+        kwargs.update({
+            'strict': kwargs.get('strict') or self.strict_instances,
+            'assert_valid': self.strict_instances,
+        })
+        if isinstance(value, dict) and value.get('__class__'):
+            clsname = value.get('__class__')
+            for prop in instance_props:
+                if clsname == prop.instance_class.__name__:
+                    try:
+                        return prop.deserialize(value, **kwargs)
+                    except GENERIC_ERRORS:
+                        continue
         for prop in self.props:
             try:
                 return prop.deserialize(value, **kwargs)
