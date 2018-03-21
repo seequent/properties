@@ -481,7 +481,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._getting_serialized = False
 
     @classmethod
-    def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
+    def deserialize(cls, value, trusted=False, verbose=True, strict=False,
+                    assert_valid=False, **kwargs):
         """Creates **HasProperties** instance from serialized dictionary
 
         This uses the Property deserializers to deserialize all
@@ -501,28 +502,47 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         * **verbose** - Raise warnings if :code:`'__class__'` is not found in
           the registry or of there are unused Property values in the input
           dictionary. Default is True.
+        * **strict** - Requires :code:`'__class__'`, if present on the input
+          dictionary, to match the deserialized instance's class. Also
+          disallows unused properties in the input dictionary. Default
+          is False.
+        * **assert_valid** - Require deserialized instance to be valid.
+          Default is False.
         * Any other keyword arguments will be passed through to the Property
           deserializers.
         """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
-        if trusted and '__class__' in value:
-            if value['__class__'] in cls._REGISTRY:
-                cls = cls._REGISTRY[value['__class__']]
-            elif verbose:
-                warn(
-                    'Class name {rcl} not found in _REGISTRY. Using class '
-                    '{cl} for deserialize.'.format(
-                        rcl=value['__class__'], cl=cls.__name__
-                    ), RuntimeWarning
-                )
-        kwargs.update({'trusted': trusted, 'verbose': verbose})
+        input_class = value.get('__class__')
+        if not input_class or input_class == cls.__name__:
+            pass
+        elif trusted and input_class in cls._REGISTRY:
+            cls = cls._REGISTRY[value['__class__']]
+        elif strict:
+            raise utils.ValidationError(
+                'Class name {} from input dictionary does not match input '
+                'class {}'.format(input_class, cls.__name__))
+        elif trusted and verbose:
+            warn(
+                'Class name {} not found in _REGISTRY. Using class '
+                '{} for deserialize.'.format(input_class, cls.__name__),
+                RuntimeWarning
+            )
+        kwargs.update({
+            'trusted': trusted,
+            'verbose': verbose,
+            'strict': strict,
+        })
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
-        if unused and verbose:
-            warn('Unused properties during deserialization: {}'.format(
+        if unused:
+            msg = 'Unused properties during deserialization: {}'.format(
                 ', '.join(unused)
-            ), RuntimeWarning)
+            )
+            if strict:
+                raise utils.ValidationError(msg)
+            if verbose:
+                warn(msg, RuntimeWarning)
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, **kwargs)
@@ -532,6 +552,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, val in iteritems(immutable):
             valid_val = cls._props[key].validate(newinst, val)
             newinst._backend[key] = valid_val
+        if assert_valid and not newinst.validate():
+            raise utils.ValidationError('Deserialized instance is not valid')
         return newinst
 
     def __setstate__(self, newstate):
