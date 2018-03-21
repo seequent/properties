@@ -145,7 +145,7 @@ class TestUnion(unittest.TestCase):
                 props=[SomeProps, DifferentProps],
             )
 
-        dp = {'u': {'c': 1, 'd': 2}}
+        dp = {'u': {'c': 1, 'd': 2}, 'v': 'extra'}
 
         uu = UnambigousUnion.deserialize(dp)
         assert isinstance(uu.u, DifferentProps)
@@ -159,15 +159,37 @@ class TestUnion(unittest.TestCase):
 
         sp = {'u': {'a': 1, 'b': 2}}
 
-        au = AmbiguousUnion.deserialize(sp)
+        au = AmbiguousUnion.deserialize(sp.copy())
         assert isinstance(au.u, SomeProps)
 
-        sp.update({'__class__': 'SameProps'})
+        sp['u'].update({'__class__': 'SameProps'})
 
         au = AmbiguousUnion.deserialize(sp)
         assert isinstance(au.u, SameProps)
 
+        dp_extra = dp.copy()
+        dp_extra['u'].update({'e': 3})
+        with self.assertRaises(properties.ValidationError):
+            UnambigousUnion.deserialize(dp_extra)
 
+        class LenientUnion(properties.HasProperties):
+
+            u = properties.Union(
+                doc='unambiguous',
+                props=[SomeProps, DifferentProps],
+                strict_instances=False,
+            )
+
+        lu = LenientUnion.deserialize(dp_extra)
+        assert isinstance(lu.u, SomeProps)
+        with self.assertRaises(properties.ValidationError):
+            lu.validate()
+
+        dp_extra['u'].update({'__class__': 'DifferentProps'})
+        dp_extra['u'].pop('c')
+
+        lu = LenientUnion.deserialize(dp_extra)
+        assert isinstance(lu.u, DifferentProps)
 
 
 if __name__ == '__main__':
