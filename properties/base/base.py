@@ -481,7 +481,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._getting_serialized = False
 
     @classmethod
-    def deserialize(cls, value, trusted=False, verbose=True, strict=False,
+    def deserialize(cls, value, trusted=False, strict=False,                   #pylint: disable=too-many-locals
                     assert_valid=False, **kwargs):
         """Creates **HasProperties** instance from serialized dictionary
 
@@ -499,9 +499,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           new **HasProperties** class will come from the dictionary.
           If False (the default), only the **HasProperties** class this
           method is called on will be constructed.
-        * **verbose** - Raise warnings if :code:`'__class__'` is not found in
-          the registry or of there are unused Property values in the input
-          dictionary. Default is True.
         * **strict** - Requires :code:`'__class__'`, if present on the input
           dictionary, to match the deserialized instance's class. Also
           disallows unused properties in the input dictionary. Default
@@ -517,32 +514,20 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         if not input_class or input_class == cls.__name__:
             pass
         elif trusted and input_class in cls._REGISTRY:
-            cls = cls._REGISTRY[value['__class__']]
+            cls = cls._REGISTRY[input_class]
         elif strict:
             raise utils.ValidationError(
                 'Class name {} from input dictionary does not match input '
                 'class {}'.format(input_class, cls.__name__))
-        elif trusted and verbose:
-            warn(
-                'Class name {} not found in _REGISTRY. Using class '
-                '{} for deserialize.'.format(input_class, cls.__name__),
-                RuntimeWarning
-            )
-        kwargs.update({
-            'trusted': trusted,
-            'verbose': verbose,
-            'strict': strict,
-        })
+        kwargs.update({'trusted': trusted, 'strict': strict})
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
-        if unused:
-            msg = 'Unused properties during deserialization: {}'.format(
-                ', '.join(unused)
+        if unused and strict:
+            raise utils.ValidationError(
+                'Unused properties during deserialization: {}'.format(
+                    ', '.join(unused)
+                )
             )
-            if strict:
-                raise utils.ValidationError(msg)
-            if verbose:
-                warn(msg, RuntimeWarning)
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, **kwargs)

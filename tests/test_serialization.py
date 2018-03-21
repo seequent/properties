@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import pickle
 import unittest
-import warnings
 
 import numpy as np
 
@@ -63,30 +62,20 @@ class TestSerialization(unittest.TestCase):
         assert hp3.serialize() == hp3_dict
         assert hp3.serialize(include_class=False) == hp3_dict_no_class
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            assert not isinstance(
-                properties.HasProperties.deserialize(hp3_dict), HP3
-            )
-            assert len(w) == 1
-            assert issubclass(w[0].category, RuntimeWarning)
-            assert not isinstance(
-                properties.HasProperties.deserialize(hp3_dict_no_class), HP3
-            )
-            assert len(w) == 2
-            assert issubclass(w[1].category, RuntimeWarning)
-            assert not isinstance(
-                properties.HasProperties.deserialize(
-                    hp3_dict_no_class, trusted=True
-                ), HP3
-            )
-            assert len(w) == 3
-            assert issubclass(w[2].category, RuntimeWarning)
-            assert isinstance(properties.HasProperties.deserialize(
-                {'__class__': 'HP9'}, trusted=True
-            ), properties.HasProperties)
-            assert len(w) == 4
-            assert issubclass(w[3].category, RuntimeWarning)
+        assert not isinstance(
+            properties.HasProperties.deserialize(hp3_dict), HP3
+        )
+        assert not isinstance(
+            properties.HasProperties.deserialize(hp3_dict_no_class), HP3
+        )
+        assert not isinstance(
+            properties.HasProperties.deserialize(
+                hp3_dict_no_class, trusted=True
+            ), HP3
+        )
+        assert isinstance(properties.HasProperties.deserialize(
+            {'__class__': 'HP9'}, trusted=True
+        ), properties.HasProperties)
 
         assert isinstance(HP3.deserialize(hp3_dict), HP3)
         assert isinstance(HP3.deserialize(hp3_dict_no_class), HP3)

@@ -86,6 +86,12 @@ class Union(basic.Property):
 
     @property
     def strict_instances(self):
+        """Require input dictionaries for instances to be valid
+
+        If True (the default), this passes
+        :code:`strict=True, assert_valid=True` to the instance
+        deserializer.
+        """
         return getattr(self, '_strict_instances', True)
 
     @strict_instances.setter
