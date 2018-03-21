@@ -233,10 +233,7 @@ class Union(basic.Property):
             clsname = value.get('__class__')
             for prop in instance_props:
                 if clsname == prop.instance_class.__name__:
-                    try:
-                        return prop.deserialize(value, **kwargs)
-                    except GENERIC_ERRORS:
-                        continue
+                    return prop.deserialize(value, **kwargs)
         for prop in self.props:
             try:
                 return prop.deserialize(value, **kwargs)

@@ -140,6 +140,15 @@ class TestSerialization(unittest.TestCase):
         with self.assertRaises(properties.ValidationError):
             HP3.deserialize(hp3_subextra, strict=True)
 
+        class Invalid(properties.HasProperties):
+
+            def validate(self):
+                return False
+
+        assert isinstance(Invalid.deserialize({}), Invalid)
+        with self.assertRaises(properties.ValidationError):
+            Invalid.deserialize({}, assert_valid=True)
+
 
     def test_immutable_serial(self):
 
