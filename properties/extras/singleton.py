@@ -39,7 +39,7 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         super(Singleton, self).__init__(**kwargs)
 
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
-        """Serialize Singleton instance to a dictoinary.
+        """Serialize Singleton instance to a dictionary.
 
         This behaves identically to HasProperties.serialize, except it also
         saves the identifying name in the dictionary as well.
