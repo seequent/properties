@@ -53,7 +53,8 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         return json_dict
 
     @classmethod
-    def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
+    def deserialize(cls, value, trusted=False, strict=False,
+                    assert_valid=False, **kwargs):
         """Create a Singleton instance from a serialized dictionary.
 
         This behaves identically to HasProperties.deserialize, except if
@@ -79,7 +80,8 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         newinst = super(Singleton, cls).deserialize(
             value,
             trusted=trusted,
-            verbose=verbose,
+            strict=strict,
+            assert_valid=assert_valid,
             **kwargs
         )
         if name:
