@@ -64,6 +64,30 @@ API Documentation is available at `ReadTheDocs <https://propertiespy.readthedocs
 Alternatives
 ------------
 
+* `attrs <https://github.com/python-attrs/attrs>`_ - "Python Classes Without
+  Boilerplate" - This is a popular, actively developed library that aims to
+  simplify class creation, especially around object protocols (i.e. dunder
+  methods), with concise, declarative code.
+
+  Similarities to Properties include type-checking, defaults, validation, and
+  coercion. There are a number of differences:
+
+    1. attrs acts somewhat like a `namedtuple`, whereas properties acts
+       more like a `dict` or mutable object.
+
+       * as a result, attrs is able to tackle hashing, comparison methods,
+         string representation, etc.
+       * attrs does not suffer runtime performance penalties as much as properties
+       * on the other hand, properties focuses on interactivity, with
+         notifications, serialization/deserialization, and mutable,
+         possibly invalid states.
+
+    2. properties has many built-in types with existing, complex validation
+       already in place. This includes recursive validation of container
+       and instance properties. attrs only allows attribute type to be specified.
+    3. properties is more prescriptive and detailed around auto-generated
+       class documentation, for better or worse.
+
 * `traitlets <https://github.com/ipython/traitlets>`_ (Jupyter project) and
   `traits <https://github.com/enthought/traits>`_ (Enthought) - These libraries
   are driven by GUI development (much of the Jupyter environment is built
@@ -95,6 +119,11 @@ Alternatives
   and `NumPy/SciPy trait types <https://github.com/jupyter-widgets/traittypes>`_
   (note: properties has a NumPy array property type).
 
+  .. note::
+
+      properties provides a :code:`link` object which inter-operates with
+      traitlets and follows the same API as traitlets links
+
 * `param <https://github.com/ioam/param>`_ - This library also provides
   type-checking, validation, and notification. It has a few unique features
   and parameter types (possibly of note is the ability to provide dynamic
@@ -102,14 +131,22 @@ Alternatives
   introduced before built-in Python properties, and current development is
   very slow.
 
-* `mypy <https://github.com/python/mypy>`_ and `PEP0484 <https://www.python.org/dev/peps/pep-0484/>`_ -
-  This provides static typing for Python without coersion, notifications, etc.
-  It has a very different scope and implementation than traits-like libraries.
+* `built-in Python dataclass decorator <https://www.python.org/dev/peps/pep-0557/>`_ -
+  provides "mutable named tuples with defaults" - this provides similar functionality
+  to the attrs by adding several object protocol dunder methods to a class. Data
+  Classes are clean, lightweight and included with Python 3.7. However, they
+  don't provide as much builtin functionality or customization as the above
+  libraries.
 
 * `built-in Python property <https://docs.python.org/3/library/functions.html#property>`_ -
   properties/traits-like behavior can be mostly recreated using :code:`@property`.
   This requires significantly more work by the programmer, and results in
   not-declarative, difficult-to-read code.
+
+* `mypy <https://github.com/python/mypy>`_,  `PEP 484 <https://www.python.org/dev/peps/pep-0484/>`_,
+  and `PEP 526 <https://www.python.org/dev/peps/pep-0526/>`_ -
+  This provides static typing for Python without coersion, notifications, etc.
+  It has a very different scope and implementation than traits-like libraries.
 
 Connections
 -----------

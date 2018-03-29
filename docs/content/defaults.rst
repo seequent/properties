@@ -26,9 +26,10 @@ come from three places. These include, in order of precedence:
     points to note:
 
     - Default values may be callables. In this case :code:`value()` will be
-      used as the default rather than :code:`value`. For example, the
-      :code:`_class_default` for :class:`properties.List` is :code:`list`
-      rather than :code:`[]`, so a new list is created every time.
+      used as the default rather than :code:`value`. For example, if you want
+      a :class:`properties.List` to default to an empty list, you set the
+      default to :code:`list` rather than :code:`list()` or :code:`[]`,
+      so a new list is created every time.
 
     - To eliminate any default value, the default can be set to
       :class:`properties.undefined <properties.utils.Sentinel>`. This is
