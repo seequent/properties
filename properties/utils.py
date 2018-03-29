@@ -4,9 +4,11 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import namedtuple
 from functools import wraps
 from warnings import warn
 
+from six import string_types
 
 def filter_props(has_props_cls, input_dict, include_immutable=True):
     """Split a dictionary based keys that correspond to Properties
@@ -121,6 +123,35 @@ class stop_recursion_with(object):                                             #
 
 class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
+
+
+ErrorTuple = namedtuple(
+    'ErrorTuple',
+    ['message', 'reason', 'prop', 'instance']
+)
+
+class ValidationError(ValueError):
+    """Exception type to be raised during property validation"""
+
+    def __init__(self, message, reason=None, prop=None, instance=None,
+                 _error_tuples=None):
+        super(ValidationError, self).__init__(message)
+        if _error_tuples is None:
+            self.error_tuples = []
+        else:
+            self.error_tuples = _error_tuples
+        if reason is not None and not isinstance(reason, string_types):
+            raise TypeError('ValidationError reason must be a string')
+        if prop is not None and not isinstance(prop, string_types):
+            raise TypeError('ValidationError prop must be a string')
+        if instance is not None and not hasattr(instance, '_error_hook'):
+            raise TypeError('ValidationError instance must be a '
+                            'HasProperties instance')
+        if reason or prop or instance:
+            error_tuple = ErrorTuple(message, reason, prop, instance)
+            self.error_tuples.append(error_tuple)
+        if not getattr(instance, '_getting_validated', True):
+            instance._error_hook(self.error_tuples)                           #pylint: disable=protected-access
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods

@@ -9,6 +9,7 @@ from six import integer_types, string_types
 import vectormath as vmath
 
 from .basic import Property, TOL
+from .utils import ValidationError
 
 TYPE_MAPPINGS = {
     int: 'i',
@@ -159,7 +160,7 @@ class Array(Property):
 
     def error(self, instance, value, error_class=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
-        error_class = error_class if error_class is not None else ValueError
+        error_class = error_class or ValidationError
         if not isinstance(value, (list, tuple, np.ndarray)):
             super(Array, self).error(instance, value, error_class, extra)
         if isinstance(value, (list, tuple)):
@@ -180,7 +181,7 @@ class Array(Property):
                 name=self.name,
                 cls=instance.__class__.__name__,
             )
-        raise error_class(
+        message = (
             '{prefix} must be {info}. {desc} was specified. {extra}'.format(
                 prefix=prefix,
                 info=self.info,
@@ -188,6 +189,9 @@ class Array(Property):
                 extra=extra,
             )
         )
+        if issubclass(error_class, ValidationError):
+            raise error_class(message, 'invalid', self.name, instance)
+        raise error_class(message)
 
     def deserialize(self, value, **kwargs):
         """De-serialize the property value from JSON
@@ -217,6 +221,10 @@ class Array(Property):
     @staticmethod
     def from_json(value, **kwargs):
         return np.array(value).astype(float)
+
+
+class ZeroDivValidationError(ValidationError, ZeroDivisionError):              #pylint: disable=too-many-ancestors
+    """Exception type for validation errors related to division-by-zero"""
 
 
 class BaseVector(Array):
@@ -261,7 +269,7 @@ class BaseVector(Array):
             except ZeroDivisionError:
                 self.error(
                     instance, value,
-                    error_class=ZeroDivisionError,
+                    error_class=ZeroDivValidationError,
                     extra='The vector must have a length specified.'
                 )
         return value

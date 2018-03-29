@@ -86,6 +86,7 @@ from .utils import (
     SelfReferenceError,
     stop_recursion_with,
     undefined,
+    ValidationError,
 )
 
 __version__ = '0.4.0'
