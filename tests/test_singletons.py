@@ -77,16 +77,22 @@ class TestSingleton(unittest.TestCase):
             Stringleton.deserialize(10)
 
         d_ser = d.serialize()
-        d_ser.pop('__id__')
-        with self.assertRaises(ValueError):
-            Stringleton.deserialize(d_ser)
+        assert Stringleton.deserialize(d_ser.copy()) is c
+        d_ser.pop('_singleton_id')
+        assert Stringleton.deserialize(d_ser) is not c
 
-        e_ser = {'__id__': 'm', 'name': 'hi'}
+        e_ser = {'_singleton_id': 'm', 'name': 'hi'}
         e = Stringleton.deserialize(e_ser)
 
         assert e.name == 'hi'
         f = Stringleton('m')
         assert f.name == 'hi'
+
+
+        g_ser = {'name': 'blah'}
+        g = Stringleton.deserialize(g_ser)
+        assert g.name == 'blah'
+        assert g._singleton_id == 'blah'
 
     def test_singleton_registry(self):
 

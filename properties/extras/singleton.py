@@ -35,11 +35,11 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
     def __init__(self, name, **kwargs):
         """Initialize with a name"""
         self.name = name
-        self.__id__ = name
+        self._singleton_id = name
         super(Singleton, self).__init__(**kwargs)
 
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
-        """Serialize Singleton instance to a dictoinary.
+        """Serialize Singleton instance to a dictionary.
 
         This behaves identically to HasProperties.serialize, except it also
         saves the identifying name in the dictionary as well.
@@ -49,7 +49,7 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
             save_dynamic=save_dynamic,
             **kwargs
         )
-        json_dict['__id__'] = self.__id__
+        json_dict['_singleton_id'] = self._singleton_id
         return json_dict
 
     @classmethod
@@ -69,13 +69,14 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
-        if '__id__' not in value:
+        identifier = value.pop('_singleton_id', value.get('name'))
+        if identifier is None:
             raise ValueError('Singleton classes must contain identifying name')
-        if value['__id__'] in cls._SINGLETONS:
-            return cls._SINGLETONS[value['__id__']]
+        if identifier in cls._SINGLETONS:
+            return cls._SINGLETONS[identifier]
         value = value.copy()
         name = value.get('name', None)
-        value.update({'name': value.pop('__id__')})
+        value.update({'name': identifier})
         newinst = super(Singleton, cls).deserialize(
             value,
             trusted=trusted,
