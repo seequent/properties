@@ -35,7 +35,7 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
     def __init__(self, name, **kwargs):
         """Initialize with a name"""
         self.name = name
-        self.__id__ = name
+        self._singleton_id = name
         super(Singleton, self).__init__(**kwargs)
 
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
@@ -49,7 +49,7 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
             save_dynamic=save_dynamic,
             **kwargs
         )
-        json_dict['__id__'] = self.__id__
+        json_dict['_singleton_id'] = self._singleton_id
         return json_dict
 
     @classmethod
@@ -68,7 +68,7 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
-        identifier = value.pop('__id__', value.get('name'))
+        identifier = value.pop('_singleton_id', value.get('name'))
         if identifier is None:
             raise ValueError('Singleton classes must contain identifying name')
         if identifier in cls._SINGLETONS:
