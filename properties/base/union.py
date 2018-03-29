@@ -8,7 +8,7 @@ from warnings import warn
 
 from six import PY2
 
-from ..base import HasProperties, Instance
+from ..base import GENERIC_ERRORS, HasProperties, Instance
 from .. import basic
 from .. import utils
 
@@ -85,6 +85,22 @@ class Union(basic.Property):
         self._props = new_props
 
     @property
+    def strict_instances(self):
+        """Require input dictionaries for instances to be valid
+
+        If True (the default), this passes
+        :code:`strict=True, assert_valid=True` to the instance
+        deserializer.
+        """
+        return getattr(self, '_strict_instances', True)
+
+    @strict_instances.setter
+    def strict_instances(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('strict_instances must be a boolean')
+        self._strict_instances = value
+
+    @property
     def info(self):
         """Description of the property, supplemental to the basic doc"""
         return ' or '.join([p.info or 'any value' for p in self.props])
@@ -128,7 +144,7 @@ class Union(basic.Property):
                     prop.validate(None, value)
                 self._default = value
                 return
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
         raise TypeError('Invalid default for Union property')
 
@@ -148,7 +164,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.validate(instance, value)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
         self.error(instance, value)
 
@@ -164,15 +180,16 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
-        raise ValueError(
+        message = (
             'The "{name}" property of a {cls} instance has not been set '
             'correctly'.format(
                 name=self.name,
                 cls=instance.__class__.__name__
             )
         )
+        raise utils.ValidationError(message, 'invalid', self.name, instance)
 
     def serialize(self, value, **kwargs):
         """Return a serialized value
@@ -188,7 +205,7 @@ class Union(basic.Property):
         for prop in self.props:
             try:
                 prop.validate(None, value)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
             return prop.serialize(value, **kwargs)
         return self.to_json(value, **kwargs)
@@ -204,10 +221,23 @@ class Union(basic.Property):
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
+        instance_props = [
+            prop for prop in self.props if isinstance(prop, Instance)
+        ]
+        kwargs = kwargs.copy()
+        kwargs.update({
+            'strict': kwargs.get('strict') or self.strict_instances,
+            'assert_valid': self.strict_instances,
+        })
+        if isinstance(value, dict) and value.get('__class__'):
+            clsname = value.get('__class__')
+            for prop in instance_props:
+                if clsname == prop.instance_class.__name__:
+                    return prop.deserialize(value, **kwargs)
         for prop in self.props:
             try:
                 return prop.deserialize(value, **kwargs)
-            except (ValueError, KeyError, TypeError, AttributeError):
+            except GENERIC_ERRORS:
                 continue
         return self.from_json(value, **kwargs)
 

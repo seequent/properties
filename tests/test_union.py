@@ -16,6 +16,12 @@ class TestUnion(unittest.TestCase):
             properties.Union('bad properties', props=properties.Integer)
         with self.assertRaises(TypeError):
             properties.Union('bad properties', props=[str])
+        with self.assertRaises(TypeError):
+            properties.Union(
+                doc='bad strict_instances',
+                props=[properties.Integer(''), properties.String('')],
+                strict_instances=5,
+            )
 
         class HasPropsDummy(properties.HasProperties):
             pass
@@ -121,6 +127,93 @@ class TestUnion(unittest.TestCase):
         with self.assertRaises(ValueError):
             hou.validate()
 
+    def test_union_deserialization(self):
+
+        class SomeProps(properties.HasProperties):
+
+            a = properties.Integer('')
+            b = properties.Integer('')
+
+        class SameProps(properties.HasProperties):
+
+            a = properties.Integer('')
+            b = properties.Integer('')
+
+        class DifferentProps(properties.HasProperties):
+
+            c = properties.Integer('')
+            d = properties.Integer('')
+
+        class UnambigousUnion(properties.HasProperties):
+
+            u = properties.Union(
+                doc='unambiguous',
+                props=[SomeProps, DifferentProps],
+            )
+
+        dp = {'u': {'c': 1, 'd': 2}, 'v': 'extra'}
+
+        uu = UnambigousUnion.deserialize(dp)
+        assert isinstance(uu.u, DifferentProps)
+
+        class AmbiguousUnion(properties.HasProperties):
+
+            u = properties.Union(
+                doc='ambiguous',
+                props=[SomeProps, SameProps],
+            )
+
+        sp = {'u': {'a': 1, 'b': 2}}
+
+        au = AmbiguousUnion.deserialize(sp.copy())
+        assert isinstance(au.u, SomeProps)
+
+        sp['u'].update({'__class__': 'SameProps'})
+
+        au = AmbiguousUnion.deserialize(sp)
+        assert isinstance(au.u, SameProps)
+
+        dp_extra = dp.copy()
+        dp_extra['u'].update({'e': 3})
+        with self.assertRaises(properties.ValidationError):
+            UnambigousUnion.deserialize(dp_extra)
+
+        with self.assertRaises(properties.ValidationError):
+            UnambigousUnion.deserialize({'u': {'__class__': 'SomethingElse', 'a': 1, 'b': 2}})
+
+        with self.assertRaises(ValueError):
+            UnambigousUnion.deserialize({'u': {'__class__': 'SomeProps', 'a': 'hi', 'b': 2}})
+
+        with self.assertRaises(ValueError):
+            UnambigousUnion.deserialize({'u': {'a': 'hi'}})
+
+        class LenientUnion(properties.HasProperties):
+
+            u = properties.Union(
+                doc='unambiguous',
+                props=[SomeProps, DifferentProps],
+                strict_instances=False,
+            )
+
+        lu = LenientUnion.deserialize(dp_extra)
+        assert isinstance(lu.u, SomeProps)
+        with self.assertRaises(properties.ValidationError):
+            lu.validate()
+
+        dp_extra['u'].update({'__class__': 'DifferentProps'})
+        dp_extra['u'].pop('c')
+
+        lu = LenientUnion.deserialize(dp_extra)
+        assert isinstance(lu.u, DifferentProps)
+
+        lu = LenientUnion.deserialize({'u': {'__class__': 'SomethingElse'}})
+        assert isinstance(lu.u, SomeProps)
+
+        with self.assertRaises(ValueError):
+            LenientUnion.deserialize({'u': {'__class__': 'SomeProps', 'a': 'hi'}})
+
+        lu = LenientUnion.deserialize({'u': {'a': 'hi'}})
+        assert isinstance(lu.u, DifferentProps)
 
 if __name__ == '__main__':
     unittest.main()

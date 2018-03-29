@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import pickle
 import unittest
-import warnings
 
 import numpy as np
 
@@ -48,45 +47,35 @@ class TestSerialization(unittest.TestCase):
                 '__class__': 'HP2',
                 'inst1': {
                     '__class__': 'HP1',
-                    'a': 10
-                }
-            }
+                    'a': 10,
+                },
+            },
         }
         hp3_dict_no_class = {
             'inst2': {
                 'inst1': {
-                    'a': 10
-                }
-            }
+                    'a': 10,
+                },
+            },
         }
 
         assert hp3.serialize() == hp3_dict
         assert hp3.serialize(include_class=False) == hp3_dict_no_class
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            assert not isinstance(
-                properties.HasProperties.deserialize(hp3_dict), HP3
-            )
-            assert len(w) == 1
-            assert issubclass(w[0].category, RuntimeWarning)
-            assert not isinstance(
-                properties.HasProperties.deserialize(hp3_dict_no_class), HP3
-            )
-            assert len(w) == 2
-            assert issubclass(w[1].category, RuntimeWarning)
-            assert not isinstance(
-                properties.HasProperties.deserialize(
-                    hp3_dict_no_class, trusted=True
-                ), HP3
-            )
-            assert len(w) == 3
-            assert issubclass(w[2].category, RuntimeWarning)
-            assert isinstance(properties.HasProperties.deserialize(
-                {'__class__': 'HP9'}, trusted=True
-            ), properties.HasProperties)
-            assert len(w) == 4
-            assert issubclass(w[3].category, RuntimeWarning)
+        assert not isinstance(
+            properties.HasProperties.deserialize(hp3_dict), HP3
+        )
+        assert not isinstance(
+            properties.HasProperties.deserialize(hp3_dict_no_class), HP3
+        )
+        assert not isinstance(
+            properties.HasProperties.deserialize(
+                hp3_dict_no_class, trusted=True
+            ), HP3
+        )
+        assert isinstance(properties.HasProperties.deserialize(
+            {'__class__': 'HP9'}, trusted=True
+        ), properties.HasProperties)
 
         assert isinstance(HP3.deserialize(hp3_dict), HP3)
         assert isinstance(HP3.deserialize(hp3_dict_no_class), HP3)
@@ -96,6 +85,70 @@ class TestSerialization(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             HP1.deserialize(5)
+
+        with self.assertRaises(properties.ValidationError):
+            properties.HasProperties.deserialize(hp3_dict, strict=True)
+        assert isinstance(
+            HP3.deserialize(hp3_dict, strict=True), HP3
+        )
+        hp3_extra = {
+            '__class__': 'HP3',
+            'inst2': {
+                '__class__': 'HP2',
+                'inst1': {
+                    '__class__': 'HP1',
+                    'a': 10,
+                }
+            },
+            'b': 1,
+        }
+        with self.assertRaises(properties.ValidationError):
+            HP3.deserialize(hp3_extra, strict=True)
+        assert isinstance(HP3.deserialize({}), HP3)
+        with self.assertRaises(properties.ValidationError):
+            HP3.deserialize({}).validate()
+        with self.assertRaises(properties.ValidationError):
+            HP3.deserialize({}, assert_valid=True)
+
+        hp3_incomplete = {
+            '__class__': 'HP3',
+            'inst2': {
+                '__class__': 'HP2',
+                'inst1': {
+                    '__class__': 'HP1',
+                }
+            }
+        }
+
+        assert isinstance(HP3.deserialize(hp3_incomplete, strict=True), HP3)
+        with self.assertRaises(properties.ValidationError):
+            HP3.deserialize(hp3_incomplete, assert_valid=True)
+
+        hp3_subextra = {
+            '__class__': 'HP3',
+            'inst2': {
+                '__class__': 'HP2',
+                'inst1': {
+                    '__class__': 'HP1',
+                    'a': 10,
+                    'b': 2,
+                }
+            }
+        }
+
+        assert isinstance(HP3.deserialize(hp3_subextra, assert_valid=True), HP3)
+        with self.assertRaises(properties.ValidationError):
+            HP3.deserialize(hp3_subextra, strict=True)
+
+        class Invalid(properties.HasProperties):
+
+            def validate(self):
+                return False
+
+        assert isinstance(Invalid.deserialize({}), Invalid)
+        with self.assertRaises(properties.ValidationError):
+            Invalid.deserialize({}, assert_valid=True)
+
 
     def test_immutable_serial(self):
 
@@ -231,6 +284,8 @@ class TestSerialization(unittest.TestCase):
         assert isinstance(many.mylist[0], HP1)
         assert many.mylist[0].a == 6
         assert many.myunion == '1PH'
+
+        assert isinstance(ManyProperties.deserialize({'mystr': 'hi'}), ManyProperties)
 
     def test_dynamic_serial(self):
 
