@@ -29,7 +29,7 @@ EXTRAS = {
 EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
     name='properties',
-    version='0.5.0b0',
+    version='0.5.0b1',
     packages=find_packages(exclude=('tests',)),
     install_requires=['six>=1.7.3'],
     extras_require=EXTRAS,
@@ -39,8 +39,8 @@ setup(
                  'validation and tab completion of class properties'),
     long_description=LONG_DESCRIPTION,
     keywords='declarative, properties, traits',
-    url='https://github.com/aranzgeo/properties',
-    download_url='https://github.com/aranzgeo/properties',
+    url='https://github.com/seequent/properties',
+    download_url='https://github.com/seequent/properties',
     classifiers=CLASSIFIERS,
     platforms=['Windows', 'Linux', 'Solaris', 'Mac OS-X', 'Unix'],
     use_2to3=False,
