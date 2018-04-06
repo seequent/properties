@@ -58,9 +58,9 @@ class directional_link(object):  #pylint: disable=invalid-name, too-many-instanc
             source,
             target,
             update_now=False,
-            change_only=True,  #pylint: disable=too-many-arguments
+            change_only=True,
             transform=None
-    ):
+    ):  #pylint: disable=too-many-arguments
         self.source = source
         self.target = target
         if source == target:
