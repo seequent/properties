@@ -15,7 +15,7 @@ import warnings
 
 from six import integer_types, string_types, text_type, with_metaclass
 
-from .utils import undefined
+from .utils import undefined, ValidationError
 
 TOL = 1e-9
 
@@ -257,11 +257,14 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):  #pylint: disa
         """
         if value is None:
             value = instance._get(self.name)
-        if (value is not None
-                and not self.equal(value, self.validate(instance, value))):
-            raise ValueError(
-                'Invalid value for property {}: {}'.format(self.name, value)
+        if (
+                value is not None and
+                not self.equal(value, self.validate(instance, value))
+        ):
+            message = 'Invalid value for property: {}: {}'.format(
+                self.name, value
             )
+            raise ValidationError(message, 'invalid', self.name, instance)
         return True
 
     def equal(self, value_a, value_b):  #pylint: disable=no-self-use
@@ -332,7 +335,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):  #pylint: disa
         The instance is the containing HasProperties instance, but it may
         be None if the error is raised outside a HasProperties class.
         """
-        error_class = error_class if error_class is not None else ValueError
+        error_class = error_class or ValidationError
         prefix = 'The {} property'.format(self.__class__.__name__)
         if self.name != '':
             prefix = prefix + " '{}'".format(self.name)
@@ -340,7 +343,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):  #pylint: disa
             prefix = prefix + ' of a {cls} instance'.format(
                 cls=instance.__class__.__name__,
             )
-        raise error_class(
+        message = (
             '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
             'specified. {extra}'.format(
                 prefix=prefix,
@@ -350,6 +353,9 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):  #pylint: disa
                 extra=extra,
             )
         )
+        if issubclass(error_class, ValidationError):
+            raise error_class(message, 'invalid', self.name, instance)
+        raise error_class(message)
 
     def sphinx(self):
         """Generate Sphinx-formatted documentation for the Property"""
@@ -645,12 +651,13 @@ class Property(GettableProperty):
         if value is None:
             value = instance._get(self.name)
         if value is None and self.required:
-            raise ValueError(
+            message = (
                 "The '{name}' property of a {cls} instance is required "
                 "and has not been set.".format(
                     name=self.name, cls=instance.__class__.__name__
                 )
             )
+            raise ValidationError(message, 'missing', self.name, instance)
         valid = super(Property, self).assert_valid(instance, value)
         return valid
 
@@ -1173,29 +1180,24 @@ class Color(Property):
             if len(value) == 3:
                 value = ''.join(v * 2 for v in value)
             if len(value) != 6:
-                raise ValueError(
-                    '{}: Color must be known name or a hex with '
-                    '6 digits. e.g. "#FF0000"'.format(value)
-                )
+                self.error(instance, value, extra='Color must be known name '
+                           'or a hex with 6 digits. e.g. "#FF0000"')
             try:
                 value = [
                     int(value[i:i + 6 // 3], 16) for i in range(0, 6, 6 // 3)
                 ]
             except ValueError:
-                raise ValueError(
-                    '{}: Hex color must be base 16 (0-F)'.format(value)
-                )
+                self.error(instance, value,
+                           extra='Hex color must be base 16 (0-F)')
         if not isinstance(value, (list, tuple)):
-            raise ValueError(
-                '{}: Color must be a list or tuple of length 3'.format(value)
-            )
+            self.error(instance, value,
+                       extra='Color must be a list or tuple of length 3')
         if len(value) != 3:
-            raise ValueError('{}: Color must be length 3'.format(value))
+            self.error(instance, value, extra='Color must be length 3')
         for val in value:
             if not isinstance(val, integer_types) or not 0 <= val <= 255:
-                raise ValueError(
-                    '{}: Color values must be ints 0-255.'.format(value)
-                )
+                self.error(instance, value,
+                           extra='Color values must be ints 0-255.')
         return tuple(value)
 
     @staticmethod

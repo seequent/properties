@@ -151,7 +151,7 @@ Alternatives
 Connections
 -----------
 
-* `casingSimulations <https://github.com/lheagy/casingSimulations>`_ - Research repository for
+* `casingSimulations <https://github.com/simpeg-research/casingSimulations>`_ - Research repository for
   electromagnetic simulations in the presence of well casing
 * `OMF <https://github.com/GMSGDataExchange/omf>`_ - Open Mining Format API and file serialization
 * `SimPEG <https://github.com/simpeg/simpeg>`_ - Simulation and Parameter Estimation in Geophysics
