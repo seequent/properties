@@ -9,7 +9,6 @@ import properties
 
 
 class TestUnion(unittest.TestCase):
-
     def test_union(self):
 
         with self.assertRaises(TypeError):
@@ -19,7 +18,8 @@ class TestUnion(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.Union(
                 doc='bad strict_instances',
-                props=[properties.Integer(''), properties.String('')],
+                props=[properties.Integer(''),
+                       properties.String('')],
                 strict_instances=5,
             )
 
@@ -46,7 +46,8 @@ class TestUnion(unittest.TestCase):
         class HasBoolColor(properties.HasProperties):
             mybc = properties.Union(
                 'union of bool or color',
-                props=[properties.Bool(''), properties.Color('')]
+                props=[properties.Bool(''),
+                       properties.Color('')]
             )
 
         hbc = HasBoolColor()
@@ -60,7 +61,8 @@ class TestUnion(unittest.TestCase):
 
         class HasIntAndList(properties.HasProperties):
             myints = properties.Union(
-                'union of int or int list', props=[
+                'union of int or int list',
+                props=[
                     properties.Integer(''),
                     properties.List('', properties.Integer(''), min_length=2)
                 ]
@@ -81,21 +83,24 @@ class TestUnion(unittest.TestCase):
         assert HasIntAndList(myints=5).serialize(include_class=False) == {
             'myints': 5
         }
-        assert HasIntAndList(
-            myints=[5, 6, 7]
-        ).serialize(include_class=False) == {'myints': [5, 6, 7]}
+        assert HasIntAndList(myints=[5, 6, 7]
+                             ).serialize(include_class=False) == {
+                                 'myints': [5, 6, 7]
+                             }
 
         assert HasIntAndList.deserialize({'myints': 5}).myints == 5
-        assert HasIntAndList.deserialize(
-            {'myints': [5, 6, 7]}
-        ).myints == [5, 6, 7]
+        assert HasIntAndList.deserialize({
+            'myints': [5, 6, 7]
+        }).myints == [5, 6, 7]
 
         assert HasIntAndList._props['myints'].deserialize(None) is None
 
         union_prop = properties.Union(
             doc='',
-            props=[properties.Instance('', HasDummyUnion),
-                   properties.String('')]
+            props=[
+                properties.Instance('', HasDummyUnion),
+                properties.String('')
+            ]
         )
         assert union_prop.equal('hi', 'hi')
         hdu = HasDummyUnion()
@@ -106,7 +111,8 @@ class TestUnion(unittest.TestCase):
         class HasOptionalUnion(properties.HasProperties):
             mybc = properties.Union(
                 'union of bool or color',
-                props=[properties.Bool(''), properties.Color('')],
+                props=[properties.Bool(''),
+                       properties.Color('')],
                 required=False,
             )
 
@@ -128,7 +134,6 @@ class TestUnion(unittest.TestCase):
             hou.validate()
 
     def test_union_deserialization(self):
-
         class SomeProps(properties.HasProperties):
 
             a = properties.Integer('')
@@ -179,10 +184,26 @@ class TestUnion(unittest.TestCase):
             UnambigousUnion.deserialize(dp_extra)
 
         with self.assertRaises(properties.ValidationError):
-            UnambigousUnion.deserialize({'u': {'__class__': 'SomethingElse', 'a': 1, 'b': 2}})
+            UnambigousUnion.deserialize(
+                {
+                    'u': {
+                        '__class__': 'SomethingElse',
+                        'a': 1,
+                        'b': 2
+                    }
+                }
+            )
 
         with self.assertRaises(ValueError):
-            UnambigousUnion.deserialize({'u': {'__class__': 'SomeProps', 'a': 'hi', 'b': 2}})
+            UnambigousUnion.deserialize(
+                {
+                    'u': {
+                        '__class__': 'SomeProps',
+                        'a': 'hi',
+                        'b': 2
+                    }
+                }
+            )
 
         with self.assertRaises(ValueError):
             UnambigousUnion.deserialize({'u': {'a': 'hi'}})
@@ -210,10 +231,18 @@ class TestUnion(unittest.TestCase):
         assert isinstance(lu.u, SomeProps)
 
         with self.assertRaises(ValueError):
-            LenientUnion.deserialize({'u': {'__class__': 'SomeProps', 'a': 'hi'}})
+            LenientUnion.deserialize(
+                {
+                    'u': {
+                        '__class__': 'SomeProps',
+                        'a': 'hi'
+                    }
+                }
+            )
 
         lu = LenientUnion.deserialize({'u': {'a': 'hi'}})
         assert isinstance(lu.u, DifferentProps)
+
 
 if __name__ == '__main__':
     unittest.main()

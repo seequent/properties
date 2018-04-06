@@ -15,6 +15,7 @@ def properties_observer(instance, prop, callback, **kwargs):
     change_only = kwargs.get('change_only', True)
     observer(instance, prop, callback, change_only=change_only)
 
+
 LINK_OBSERVERS = {HasProperties: properties_observer}
 
 try:
@@ -30,7 +31,7 @@ except ImportError:
     pass
 
 
-class directional_link(object):                                                #pylint: disable=invalid-name, too-many-instance-attributes
+class directional_link(object):  #pylint: disable=invalid-name, too-many-instance-attributes
     """Link two properties so updating the source updates the target
 
     **source** and **target** must each be tuples of HasProperties (or
@@ -52,8 +53,14 @@ class directional_link(object):                                                #
     with the transformed source value.
     """
 
-    def __init__(self, source, target, update_now=False, change_only=True,     #pylint: disable=too-many-arguments
-                 transform=None):
+    def __init__(
+            self,
+            source,
+            target,
+            update_now=False,
+            change_only=True,
+            transform=None
+    ):  #pylint: disable=too-many-arguments
         self.source = source
         self.target = target
         if source == target:
@@ -63,8 +70,12 @@ class directional_link(object):                                                #
             self._update()
         for link_cls in LINK_OBSERVERS:
             if isinstance(source[0], link_cls):
-                LINK_OBSERVERS[link_cls](source[0], source[1], self._update,
-                                         change_only=change_only)
+                LINK_OBSERVERS[link_cls](
+                    source[0],
+                    source[1],
+                    self._update,
+                    change_only=change_only
+                )
 
     @property
     def source(self):
@@ -115,9 +126,10 @@ class directional_link(object):                                                #
             return
         self._updating = True
         try:
-            setattr(self.target[0], self.target[1], self.transform(
-                getattr(self.source[0], self.source[1])
-            ))
+            setattr(
+                self.target[0], self.target[1],
+                self.transform(getattr(self.source[0], self.source[1]))
+            )
         finally:
             self._updating = False
 
@@ -127,15 +139,21 @@ class directional_link(object):                                                #
         if not isinstance(item, tuple) or len(item) != 2:
             raise ValueError('Linked items must be instance/prop-name tuple')
         if not isinstance(item[0], tuple(LINK_OBSERVERS)):
-            raise ValueError('Only {} instances may be linked'.format(
-                ', '.join([link_cls.__name__ for link_cls in LINK_OBSERVERS])
-            ))
+            raise ValueError(
+                'Only {} instances may be linked'.format(
+                    ', '.join(
+                        [link_cls.__name__ for link_cls in LINK_OBSERVERS]
+                    )
+                )
+            )
         if not isinstance(item[1], string_types):
             raise ValueError('Properties must be specified as string names')
         if not hasattr(item[0], item[1]):
-            raise ValueError('Invalid property {} for {} instance'.format(
-                item[1], item[0].__class__.__name__
-            ))
+            raise ValueError(
+                'Invalid property {} for {} instance'.format(
+                    item[1], item[0].__class__.__name__
+                )
+            )
 
     def relink(self):
         """Re-enable an unlinked directional link"""
@@ -152,7 +170,7 @@ class directional_link(object):                                                #
         self._unlinked = True
 
 
-class link(object):                                                            #pylint: disable=invalid-name
+class link(object):  #pylint: disable=invalid-name
     """Link property values to keep them in sync
 
     :code:`link` takes two or more **items** to link. Each item must be
@@ -189,7 +207,7 @@ class link(object):                                                            #
             for j, item_j in enumerate(items):
                 if i == j:
                     continue
-                self._dlinks += (directional_link(item_i, item_j, **kwargs),)
+                self._dlinks += (directional_link(item_i, item_j, **kwargs), )
 
     @property
     def dlinks(self):

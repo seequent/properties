@@ -1,0 +1,14 @@
+[style]
+based_on_style = pep8
+dedent_closing_brackets = true
+split_complex_comprehension = true
+split_before_logical_operator = true
+split_before_expression_after_opening_paren = true
+split_before_first_argument = true
+split_before_named_assigns = true
+each_dict_entry_on_separate_line = true
+continuation_align_style = fixed
+continuation_indent_width = 4
+column_limit: 79
+allow_multiline_dictionary_keys = false
+allow_split_before_dict_value = false

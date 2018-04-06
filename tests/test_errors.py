@@ -10,7 +10,6 @@ import properties
 
 
 class TestErrors(unittest.TestCase):
-
     def test_validation_error(self):
 
         with self.assertRaises(TypeError):
@@ -36,7 +35,6 @@ class TestErrors(unittest.TestCase):
                 instance=5,
             )
 
-
         class Simple(properties.HasProperties):
 
             a = properties.List(
@@ -58,7 +56,6 @@ class TestErrors(unittest.TestCase):
 
         with self.assertRaises(properties.ValidationError):
             Simple(a=5)
-
 
         class SeveralProps(properties.HasProperties):
 
@@ -122,12 +119,8 @@ class TestErrors(unittest.TestCase):
             assert tup[0].prop == 'd'
             assert tup[0].instance is sp
 
-
-
     def test_error_hook(self):
-
         class SillyError(Exception):
-
             def __init__(self, msg, num_tuples):
                 self.num_tuples = num_tuples
                 super(SillyError, self).__init__(msg)
@@ -139,6 +132,7 @@ class TestErrors(unittest.TestCase):
 
             def _error_hook(self, error_tuples):
                 raise SillyError('Silly', len(error_tuples))
+
         try:
             HasHook(a='a', b='b')
         except SillyError as err:
@@ -161,9 +155,7 @@ class TestErrors(unittest.TestCase):
         except SillyError as err:
             assert err.num_tuples == 1
 
-
     def test_validate_false(self):
-
         class Invalid(properties.HasProperties):
 
             a = properties.Integer('')
@@ -178,7 +170,6 @@ class TestErrors(unittest.TestCase):
             inv.validate()
 
     def test_non_validation_errors(self):
-
         class RaisesErrors(properties.HasProperties):
 
             a = properties.Integer('')
@@ -221,7 +212,6 @@ class TestErrors(unittest.TestCase):
             re.validate()
 
     def test_bad_design_errors(self):
-
         class Subtractor(properties.HasProperties):
 
             a = properties.Integer('')
@@ -236,7 +226,6 @@ class TestErrors(unittest.TestCase):
             s.validate()
 
         class AssertFalse(properties.String):
-
             def assert_valid(self, instance):
                 return False
 
@@ -253,7 +242,6 @@ class TestErrors(unittest.TestCase):
             pass
 
         class SillyErrorProp(properties.String):
-
             def validate(self, instance, value):
                 self.error(instance, value, error_class=SillyError)
 

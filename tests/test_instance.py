@@ -9,7 +9,6 @@ import properties
 
 
 class TestInstance(unittest.TestCase):
-
     def test_instance(self):
 
         with self.assertRaises(TypeError):
@@ -44,7 +43,9 @@ class TestInstance(unittest.TestCase):
                     self.a = args[0]
 
         class HasInstance(properties.HasProperties):
-            myinst = properties.Instance('has int a', HasIntA, auto_create=True)
+            myinst = properties.Instance(
+                'has int a', HasIntA, auto_create=True
+            )
 
         hi = HasInstance()
         with self.assertRaises(ValueError):
@@ -66,11 +67,7 @@ class TestInstance(unittest.TestCase):
                 'a': 20
             }
         }
-        assert hi.serialize(include_class=False) == {
-            'myinst': {
-                'a': 20
-            }
-        }
+        assert hi.serialize(include_class=False) == {'myinst': {'a': 20}}
 
         assert properties.Instance.to_json(hi) == {
             '__class__': 'HasInstance',
@@ -104,8 +101,8 @@ class TestInstance(unittest.TestCase):
         hia = HasIntA()
         assert properties.Instance('', HasIntA).equal(hia, hia)
         assert properties.Instance('', HasIntA).equal(HasIntA(), HasIntA())
-        assert not properties.Instance('', HasIntA).equal(HasIntA(5),
-                                                          HasIntA(1))
+        assert not properties.Instance('', HasIntA
+                                       ).equal(HasIntA(5), HasIntA(1))
 
 
 if __name__ == '__main__':

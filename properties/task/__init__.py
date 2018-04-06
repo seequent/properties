@@ -9,9 +9,7 @@ from __future__ import unicode_literals
 
 try:
     import png
-    from .image import (
-        PlotImagePNG
-    )
+    from .image import (PlotImagePNG)
 except ImportError:
     pass
 else:

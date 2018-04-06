@@ -13,10 +13,10 @@ from .. import basic
 from .. import utils
 
 if PY2:
-    from types import ClassType                                                #pylint: disable=no-name-in-module
+    from types import ClassType  #pylint: disable=no-name-in-module
     CLASS_TYPES = (type, ClassType)
 else:
-    CLASS_TYPES = (type,)
+    CLASS_TYPES = (type, )
 
 
 class Union(basic.Property):
@@ -75,13 +75,15 @@ class Union(basic.Property):
             raise TypeError('props must be a list')
         new_props = tuple()
         for prop in value:
-            if (isinstance(prop, CLASS_TYPES) and
-                    issubclass(prop, HasProperties)):
+            if (isinstance(prop, CLASS_TYPES)
+                    and issubclass(prop, HasProperties)):
                 prop = Instance('', prop)
             if not isinstance(prop, basic.Property):
-                raise TypeError('props must be Property instances or '
-                                'HasProperties classes')
-            new_props += (prop,)
+                raise TypeError(
+                    'props must be Property instances or '
+                    'HasProperties classes'
+                )
+            new_props += (prop, )
         self._props = new_props
 
     @property
@@ -156,8 +158,10 @@ class Union(basic.Property):
             if prop_def is utils.undefined:
                 prop_def = prop.default
             elif prop_def != prop.default:
-                warn('Union prop default ignored: {}'.format(prop.default),
-                     RuntimeWarning)
+                warn(
+                    'Union prop default ignored: {}'.format(prop.default),
+                    RuntimeWarning
+                )
 
     def validate(self, instance, value):
         """Check if value is a valid type of one of the Union props"""
@@ -185,8 +189,7 @@ class Union(basic.Property):
         message = (
             'The "{name}" property of a {cls} instance has not been set '
             'correctly'.format(
-                name=self.name,
-                cls=instance.__class__.__name__
+                name=self.name, cls=instance.__class__.__name__
             )
         )
         raise utils.ValidationError(message, 'invalid', self.name, instance)
@@ -225,10 +228,12 @@ class Union(basic.Property):
             prop for prop in self.props if isinstance(prop, Instance)
         ]
         kwargs = kwargs.copy()
-        kwargs.update({
-            'strict': kwargs.get('strict') or self.strict_instances,
-            'assert_valid': self.strict_instances,
-        })
+        kwargs.update(
+            {
+                'strict': kwargs.get('strict') or self.strict_instances,
+                'assert_valid': self.strict_instances,
+            }
+        )
         if isinstance(value, dict) and value.get('__class__'):
             clsname = value.get('__class__')
             for prop in instance_props:

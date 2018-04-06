@@ -35,8 +35,10 @@ setup(
     extras_require=EXTRAS,
     author='Seequent',
     author_email='it@seequent.com',
-    description=('properties: an organizational aid and wrapper for '
-                 'validation and tab completion of class properties'),
+    description=(
+        'properties: an organizational aid and wrapper for '
+        'validation and tab completion of class properties'
+    ),
     long_description=LONG_DESCRIPTION,
     keywords='declarative, properties, traits',
     url='https://github.com/seequent/properties',

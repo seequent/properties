@@ -30,3 +30,6 @@ test-docs:
 tests:
 	nosetests --logging-level=INFO --with-coverage --cover-package=$(PACKAGE_NAME)
 	make lint
+
+lint-yapf:
+	yapf -rd properties tests

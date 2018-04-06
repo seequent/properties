@@ -10,9 +10,7 @@ import properties
 
 
 class TestRecursion(unittest.TestCase):
-
     def test_basic_recursion(self):
-
         class HasHasProps(properties.HasProperties):
             my_hp = properties.Instance('dangerous', properties.HasProperties)
             my_int = properties.Integer('an int')
@@ -31,7 +29,6 @@ class TestRecursion(unittest.TestCase):
             hhp.validate()
 
         class HasRecursion(properties.HasProperties):
-
             def twelve(self):
                 return 12
 
@@ -44,7 +41,6 @@ class TestRecursion(unittest.TestCase):
         assert hr.add_one_recursively() == 13
 
     def test_list_recursion(self):
-
         class HasInteger(properties.HasProperties):
             my_int = properties.Integer('an int')
 

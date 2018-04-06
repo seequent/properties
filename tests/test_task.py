@@ -12,9 +12,7 @@ from properties.task import BaseResult, Task, PermanentTaskFailure
 
 
 class TestTask(unittest.TestCase):
-
     def test_task(self):
-
         class AddTask(Task):
 
             addend_a = properties.Float('First add argument')

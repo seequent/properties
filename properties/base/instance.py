@@ -14,10 +14,10 @@ from .. import basic
 from .. import utils
 
 if PY2:
-    from types import ClassType                                                #pylint: disable=no-name-in-module
+    from types import ClassType  #pylint: disable=no-name-in-module
     CLASS_TYPES = (type, ClassType)
 else:
-    CLASS_TYPES = (type,)
+    CLASS_TYPES = (type, )
 
 
 class Instance(basic.Property):
@@ -74,9 +74,11 @@ class Instance(basic.Property):
 
     @auto_create.setter
     def auto_create(self, value):
-        warn('Deprecation warning: auto_create will be removed in a future '
-             'release. Please set default to the instance_class instead',
-             FutureWarning)
+        warn(
+            'Deprecation warning: auto_create will be removed in a future '
+            'release. Please set default to the instance_class instead',
+            FutureWarning
+        )
         if not isinstance(value, bool):
             raise TypeError('auto_create must be a boolean')
         self._auto_create = value
@@ -114,7 +116,6 @@ class Instance(basic.Property):
         if isinstance(value, HasProperties):
             value.validate()
         return True
-
 
     def serialize(self, value, **kwargs):
         """Serialize instance to JSON
@@ -168,11 +169,13 @@ class Instance(basic.Property):
     @staticmethod
     def from_json(value, **kwargs):
         """Instance properties cannot statically convert from JSON"""
-        raise TypeError("Instance properties cannot statically convert "
-                        "values from JSON. 'deserialize' must be used on an "
-                        "instance of Instance Property instead, and if the "
-                        "instance_class is not a HasProperties subclass a "
-                        "custom deserializer must be registered")
+        raise TypeError(
+            "Instance properties cannot statically convert "
+            "values from JSON. 'deserialize' must be used on an "
+            "instance of Instance Property instead, and if the "
+            "instance_class is not a HasProperties subclass a "
+            "custom deserializer must be registered"
+        )
 
     def sphinx_class(self):
         """Redefine sphinx class so documentation links to instance_class"""

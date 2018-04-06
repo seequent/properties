@@ -57,7 +57,7 @@ class Array(Property):
         these tuples may also be provided if multiple shapes are valid.
         If any shape is valid, use None for shape.
         """
-        return getattr(self, '_shape', {('*',)})
+        return getattr(self, '_shape', {('*', )})
 
     @shape.setter
     def shape(self, value):
@@ -76,13 +76,17 @@ class Array(Property):
                 value = [value]
         for val in value:
             if not isinstance(val, tuple):
-                raise TypeError("{}: Invalid shape - must be a tuple "
-                                "(e.g. ('*', 3) for an array of length-3 "
-                                "arrays)".format(val))
+                raise TypeError(
+                    "{}: Invalid shape - must be a tuple "
+                    "(e.g. ('*', 3) for an array of length-3 "
+                    "arrays)".format(val)
+                )
             for shp in val:
                 if shp != '*' and not isinstance(shp, integer_types):
-                    raise TypeError("{}: Invalid shape - values "
-                                    "must be '*' or int".format(val))
+                    raise TypeError(
+                        "{}: Invalid shape - values "
+                        "must be '*' or int".format(val)
+                    )
         return value
 
     @property
@@ -96,14 +100,18 @@ class Array(Property):
     @dtype.setter
     def dtype(self, value):
         if not isinstance(value, (list, tuple)):
-            value = (value,)
-        if len(value) == 0:                                                    #pylint: disable=len-as-condition
-            raise TypeError('No dtype specified - must be int, float, '
-                            'and/or bool')
+            value = (value, )
+        if len(value) == 0:  #pylint: disable=len-as-condition
+            raise TypeError(
+                'No dtype specified - must be int, float, '
+                'and/or bool'
+            )
         if any([val not in TYPE_MAPPINGS for val in value]):
-            raise TypeError('{}: Invalid dtype - must be {}'.format(
-                value, ', '.join(v.__name__ for v in TYPE_MAPPINGS)
-            ))
+            raise TypeError(
+                '{}: Invalid dtype - must be {}'.format(
+                    value, ', '.join(v.__name__ for v in TYPE_MAPPINGS)
+                )
+            )
         self._dtype = value
 
     @property
@@ -111,11 +119,15 @@ class Array(Property):
         if self.shape is None:
             shape_info = 'any shape'
         else:
-            shape_info = 'shape {}'.format(' or '.join(
-                '({})'.format(', '.join(
-                    '\*' if s == '*' else str(s) for s in shape                #pylint: disable=anomalous-backslash-in-string
-                )) for shape in self.shape
-            ))
+            shape_info = 'shape {}'.format(
+                ' or '.join(
+                    '({})'.format(
+                        ', '.join(
+                            '\*' if s == '*' else str(s) for s in shape  #pylint: disable=anomalous-backslash-in-string
+                        )
+                    ) for shape in self.shape
+                )
+            )
         return '{info} of {type} with {shp}'.format(
             info=self.class_info,
             type=', '.join([str(t) for t in self.dtype]),
@@ -157,7 +169,6 @@ class Array(Property):
         except TypeError:
             return False
 
-
     def error(self, instance, value, error_class=None, extra=''):
         """Generates a ValueError on setting property to an invalid value"""
         error_class = error_class or ValidationError
@@ -165,13 +176,11 @@ class Array(Property):
             super(Array, self).error(instance, value, error_class, extra)
         if isinstance(value, (list, tuple)):
             val_description = 'A {typ} of length {len}'.format(
-                typ=value.__class__.__name__,
-                len=len(value)
+                typ=value.__class__.__name__, len=len(value)
             )
         else:
             val_description = 'An array of shape {shp} and dtype {typ}'.format(
-                shp=value.shape,
-                typ=value.dtype
+                shp=value.shape, typ=value.dtype
             )
 
         if instance is None:
@@ -212,10 +221,12 @@ class Array(Property):
 
         nan values are converted to string 'nan', inf values to 'inf'.
         """
+
         def _recurse_list(val):
             if val and isinstance(val[0], list):
                 return [_recurse_list(v) for v in val]
             return [str(v) if np.isnan(v) or np.isinf(v) else v for v in val]
+
         return _recurse_list(value.tolist())
 
     @staticmethod
@@ -223,7 +234,7 @@ class Array(Property):
         return np.array(value).astype(float)
 
 
-class ZeroDivValidationError(ValidationError, ZeroDivisionError):              #pylint: disable=too-many-ancestors
+class ZeroDivValidationError(ValidationError, ZeroDivisionError):  #pylint: disable=too-many-ancestors
     """Exception type for validation errors related to division-by-zero"""
 
 
@@ -233,7 +244,7 @@ class BaseVector(Array):
     @property
     def dtype(self):
         """Vectors must be floats"""
-        return (float,)
+        return (float, )
 
     @property
     def length(self):
@@ -251,7 +262,7 @@ class BaseVector(Array):
             raise TypeError('length must be positive')
         self._length = float(value)
 
-    def _length_array(self, value):                                            #pylint: disable=unused-argument
+    def _length_array(self, value):  #pylint: disable=unused-argument
         """Return scalar length for Vector classes.
 
         This is overridden to return array length for VectorArray classes.
@@ -268,7 +279,8 @@ class BaseVector(Array):
                 value.length = self._length_array(value)
             except ZeroDivisionError:
                 self.error(
-                    instance, value,
+                    instance,
+                    value,
                     error_class=ZeroDivValidationError,
                     extra='The vector must have a length specified.'
                 )
@@ -300,7 +312,7 @@ class Vector3(BaseVector):
     @property
     def shape(self):
         """Vector3 is fixed at length-3"""
-        return {(3,)}
+        return {(3, )}
 
     def validate(self, instance, value):
         """Check shape and dtype of vector
@@ -345,7 +357,7 @@ class Vector2(BaseVector):
     @property
     def shape(self):
         """Vector2 is fixed at length-2"""
-        return {(2,)}
+        return {(2, )}
 
     def validate(self, instance, value):
         """Check shape and dtype of vector
@@ -355,10 +367,8 @@ class Vector2(BaseVector):
         scales it to the given length.
         """
         if isinstance(value, string_types):
-            if (
-                    value.upper() not in VECTOR_DIRECTIONS or
-                    value.upper() in ('Z', '-Z', 'UP', 'DOWN')
-            ):
+            if (value.upper() not in VECTOR_DIRECTIONS
+                    or value.upper() in ('Z', '-Z', 'UP', 'DOWN')):
                 self.error(instance, value)
             value = VECTOR_DIRECTIONS[value.upper()][:2]
 
@@ -401,13 +411,15 @@ class Vector3Array(BaseVector):
         value = self._validate_shape(value)
         for val in value:
             if len(val) != 2 or val[1] != 3:
-                raise TypeError('{}: Invalid shape - Vector3Array must '
-                                'have two dimensions, and the second '
-                                'must equal 3'.format(val))
+                raise TypeError(
+                    '{}: Invalid shape - Vector3Array must '
+                    'have two dimensions, and the second '
+                    'must equal 3'.format(val)
+                )
         self._shape = value
 
     def _length_array(self, value):
-        return np.ones(value.shape[0])*self.length
+        return np.ones(value.shape[0]) * self.length
 
     def validate(self, instance, value):
         """Check shape and dtype of vector
@@ -463,13 +475,15 @@ class Vector2Array(BaseVector):
         value = self._validate_shape(value)
         for val in value:
             if len(val) != 2 or val[1] != 2:
-                raise TypeError('{}: Invalid shape - Vector2Array must '
-                                'have two dimensions, and the second '
-                                'must equal 2'.format(val))
+                raise TypeError(
+                    '{}: Invalid shape - Vector2Array must '
+                    'have two dimensions, and the second '
+                    'must equal 2'.format(val)
+                )
         self._shape = value
 
     def _length_array(self, value):
-        return np.ones(value.shape[0])*self.length
+        return np.ones(value.shape[0]) * self.length
 
     def validate(self, instance, value):
         """Check shape and dtype of vector
@@ -482,11 +496,9 @@ class Vector2Array(BaseVector):
             self.error(instance, value)
         if isinstance(value, (tuple, list)):
             for i, val in enumerate(value):
-                if (
-                        isinstance(val, string_types) and
-                        val.upper() in VECTOR_DIRECTIONS and
-                        val.upper() not in ('Z', '-Z', 'UP', 'DOWN')
-                ):
+                if (isinstance(val, string_types)
+                        and val.upper() in VECTOR_DIRECTIONS
+                        and val.upper() not in ('Z', '-Z', 'UP', 'DOWN')):
                     value[i] = VECTOR_DIRECTIONS[val.upper()][:2]
 
         return super(Vector2Array, self).validate(instance, value)

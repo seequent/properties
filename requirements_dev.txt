@@ -1,5 +1,6 @@
 nose-cov
 pylint
+yapf
 sphinx
 traitlets
 -r requirements.txt

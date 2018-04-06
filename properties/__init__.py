@@ -48,9 +48,7 @@ from .basic import (
 # or
 # >> pip install properties[full]
 try:
-    from .images import (
-        ImagePNG
-    )
+    from .images import (ImagePNG)
 except ImportError:
     pass
 
