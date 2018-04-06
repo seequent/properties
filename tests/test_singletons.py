@@ -11,7 +11,6 @@ from properties.extras import Singleton
 
 
 class TestSingleton(unittest.TestCase):
-
     def test_singleton(self):
 
         a = Singleton('a')
@@ -35,7 +34,6 @@ class TestSingleton(unittest.TestCase):
             AnotherSingleton('a')
 
     def test_hassingleton(self):
-
         class HasSingleton(properties.HasProperties):
 
             s = properties.Instance('', Singleton)
@@ -52,7 +50,6 @@ class TestSingleton(unittest.TestCase):
         assert hs1.s is hs3.s
 
     def test_prop_singleton(self):
-
         class Stringleton(Singleton):
 
             name = properties.String('')
@@ -88,14 +85,12 @@ class TestSingleton(unittest.TestCase):
         f = Stringleton('m')
         assert f.name == 'hi'
 
-
         g_ser = {'name': 'blah'}
         g = Stringleton.deserialize(g_ser)
         assert g.name == 'blah'
         assert g._singleton_id == 'blah'
 
     def test_singleton_registry(self):
-
         class NewSingleton(Singleton):
 
             _SINGLETONS = dict()

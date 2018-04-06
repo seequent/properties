@@ -294,11 +294,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             for key, val in iteritems(kwargs):
                 prop = self._props.get(key, None)
                 if not prop and not hasattr(self, key):
-                    raise AttributeError("Keyword input '{}' is not a known "
-                                         "property or attribute".format(key))
+                    raise AttributeError(
+                        "Keyword input '{}' is not a known "
+                        "property or attribute".format(key)
+                    )
                 if isinstance(prop, basic.DynamicProperty):
-                    raise AttributeError("Dynamic property '{}' cannot be "
-                                         "set on init".format(key))
+                    raise AttributeError(
+                        "Dynamic property '{}' cannot be "
+                        "set on init".format(key)
+                    )
                 try:
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
@@ -316,7 +320,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     _error_tuples=self._validation_error_tuples,
                 )
             elif self._non_validation_error:
-                raise self._non_validation_error                               #pylint: disable=raising-bad-type
+                raise self._non_validation_error  #pylint: disable=raising-bad-type
         finally:
             self._getting_validated = False
             self._validation_error_tuples = None
@@ -410,7 +414,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     _error_tuples=self._validation_error_tuples,
                 )
             elif self._non_validation_error:
-                raise self._non_validation_error                               #pylint: disable=raising-bad-type
+                raise self._non_validation_error  #pylint: disable=raising-bad-type
             return True
         finally:
             self._getting_validated = False
@@ -423,17 +427,22 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, prop in iteritems(self._props):
             try:
                 value = self._get(key)
-                err_msg = 'Invalid value for property {}: {}'.format(key, value)
+                err_msg = 'Invalid value for property {}: {}'.format(
+                    key, value
+                )
                 if value is not None:
-                    change = dict(name=key, previous=value, value=value,
-                                  mode='validate')
+                    change = dict(
+                        name=key, previous=value, value=value, mode='validate'
+                    )
                     self._notify(change)
                     if not prop.equal(value, change['value']):
-                        raise utils.ValidationError(err_msg, 'invalid',
-                                                    prop.name, self)
+                        raise utils.ValidationError(
+                            err_msg, 'invalid', prop.name, self
+                        )
                 if not prop.assert_valid(self):
-                    raise utils.ValidationError(err_msg, 'invalid',
-                                                prop.name, self)
+                    raise utils.ValidationError(
+                        err_msg, 'invalid', prop.name, self
+                    )
             except utils.ValidationError as val_err:
                 if getattr(self, '_validation_error_tuples', None) is not None:
                     self._validation_error_tuples += val_err.error_tuples
@@ -497,8 +506,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._getting_serialized = False
 
     @classmethod
-    def deserialize(cls, value, trusted=False, strict=False,                   #pylint: disable=too-many-locals
-                    assert_valid=False, **kwargs):
+    def deserialize(
+            cls, value, trusted=False, strict=False, assert_valid=False,
+            **kwargs
+    ):  #pylint: disable=too-many-locals
         """Creates **HasProperties** instance from serialized dictionary
 
         This uses the Property deserializers to deserialize all
@@ -534,7 +545,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         elif strict:
             raise utils.ValidationError(
                 'Class name {} from input dictionary does not match input '
-                'class {}'.format(input_class, cls.__name__))
+                'class {}'.format(input_class, cls.__name__)
+            )
         kwargs.update({'trusted': trusted, 'strict': strict})
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)

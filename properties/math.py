@@ -234,7 +234,7 @@ class Array(Property):
         return np.array(value).astype(float)
 
 
-class ZeroDivValidationError(ValidationError, ZeroDivisionError):              #pylint: disable=too-many-ancestors
+class ZeroDivValidationError(ValidationError, ZeroDivisionError):  #pylint: disable=too-many-ancestors
     """Exception type for validation errors related to division-by-zero"""
 
 
@@ -279,7 +279,8 @@ class BaseVector(Array):
                 value.length = self._length_array(value)
             except ZeroDivisionError:
                 self.error(
-                    instance, value,
+                    instance,
+                    value,
                     error_class=ZeroDivValidationError,
                     extra='The vector must have a length specified.'
                 )

@@ -499,13 +499,15 @@ class TestBasic(unittest.TestCase):
         assert choices.mychoicedict == 'vowel'
         choices.mychoicedict = 'maybe'
 
-        self.assertEqual(choices.serialize(include_class=False), {
-            'mychoicelist': 'o',
-            'mychoicedict': 'maybe'
-        })
-        assert StrChoicesOpts.deserialize(
-            {'mychoicedict': 'a'}
-        ).mychoicedict == 'vowel'
+        self.assertEqual(
+            choices.serialize(include_class=False), {
+                'mychoicelist': 'o',
+                'mychoicedict': 'maybe'
+            }
+        )
+        assert StrChoicesOpts.deserialize({
+            'mychoicedict': 'a'
+        }).mychoicedict == 'vowel'
 
         assert properties.StringChoice('', {}).equal('equal', 'equal')
         assert not properties.StringChoice('', {}).equal('equal', 'EQUAL')

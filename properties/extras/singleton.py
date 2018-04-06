@@ -12,9 +12,13 @@ class SingletonMetaclass(PropertyMetaclass):
         if name in cls._SINGLETONS:
             oldinst = cls._SINGLETONS[name]
             if oldinst.__class__ is not cls:
-                raise ValueError('Singleton {} is class {}, not {}'.format(
-                    name, oldinst.__class__.__name__, cls.__name__,
-                ))
+                raise ValueError(
+                    'Singleton {} is class {}, not {}'.format(
+                        name,
+                        oldinst.__class__.__name__,
+                        cls.__name__,
+                    )
+                )
             return oldinst
         newinst = super(SingletonMetaclass, cls).__call__(name, **kwargs)
         cls._SINGLETONS[name] = newinst
@@ -45,16 +49,16 @@ class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
         saves the identifying name in the dictionary as well.
         """
         json_dict = super(Singleton, self).serialize(
-            include_class=include_class,
-            save_dynamic=save_dynamic,
-            **kwargs
+            include_class=include_class, save_dynamic=save_dynamic, **kwargs
         )
         json_dict['_singleton_id'] = self._singleton_id
         return json_dict
 
     @classmethod
-    def deserialize(cls, value, trusted=False, strict=False,
-                    assert_valid=False, **kwargs):
+    def deserialize(
+            cls, value, trusted=False, strict=False, assert_valid=False,
+            **kwargs
+    ):
         """Create a Singleton instance from a serialized dictionary.
 
         This behaves identically to HasProperties.deserialize, except if

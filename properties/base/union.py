@@ -228,10 +228,12 @@ class Union(basic.Property):
             prop for prop in self.props if isinstance(prop, Instance)
         ]
         kwargs = kwargs.copy()
-        kwargs.update({
-            'strict': kwargs.get('strict') or self.strict_instances,
-            'assert_valid': self.strict_instances,
-        })
+        kwargs.update(
+            {
+                'strict': kwargs.get('strict') or self.strict_instances,
+                'assert_valid': self.strict_instances,
+            }
+        )
         if isinstance(value, dict) and value.get('__class__'):
             clsname = value.get('__class__')
             for prop in instance_props:
