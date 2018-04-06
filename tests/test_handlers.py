@@ -39,10 +39,10 @@ class ConsiderItHandled(properties.HasProperties):
 
 
 class TestHandlers(unittest.TestCase):
-
     def test_handlers(self):
 
         with self.assertRaises(TypeError):
+
             class BadHandler(properties.HasProperties):
                 a = properties.Integer('int a')
 
@@ -51,6 +51,7 @@ class TestHandlers(unittest.TestCase):
                     pass
 
         with self.assertRaises(TypeError):
+
             class BadHandler(properties.HasProperties):
                 a = properties.Integer('int a')
 
@@ -161,8 +162,11 @@ class TestHandlers(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.listeners_disabled('invalid')
 
-        class ValidateError(Exception): pass
-        class ObserveError(Exception): pass
+        class ValidateError(Exception):
+            pass
+
+        class ObserveError(Exception):
+            pass
 
         class ErrorListeners(properties.HasProperties):
             a = properties.Integer('int a')

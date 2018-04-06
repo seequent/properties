@@ -15,15 +15,13 @@ from ..basic import Bool, Float, Integer, String, StringChoice
 from ..images import ImagePNG
 
 
-class PlotImagePNG(Task):                                                      #pylint: disable=abstract-method
+class PlotImagePNG(Task):  #pylint: disable=abstract-method
     """Task mixin for producing matplotlib plot images from task results"""
 
-    nx = Integer(                                                              #pylint: disable=invalid-name
-        'x-dimension of the image array',
-    )
-    ny = Integer(                                                              #pylint: disable=invalid-name
-        'y-dimension of the image array',
-    )
+    nx = Integer(  #pylint: disable=invalid-name
+        'x-dimension of the image array', )
+    ny = Integer(  #pylint: disable=invalid-name
+        'y-dimension of the image array', )
     title = String(
         'Plot title',
         default='New Plot',
@@ -69,9 +67,7 @@ class PlotImagePNG(Task):                                                      #
                 'Aspect ratio string choices',
                 ('auto', 'equal'),
             ),
-            Float(
-                'Aspect ratio floating point',
-            ),
+            Float('Aspect ratio floating point', ),
         ),
         default=1,
     )

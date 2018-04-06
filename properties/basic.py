@@ -19,10 +19,10 @@ from .utils import undefined
 
 TOL = 1e-9
 
-BOOLEAN_TYPES = (bool,)
+BOOLEAN_TYPES = (bool, )
 try:
     import numpy as np
-    BOOLEAN_TYPES += (np.bool_,)
+    BOOLEAN_TYPES += (np.bool_, )
 except ImportError:
     pass
 
@@ -39,19 +39,22 @@ class ArgumentWrangler(type):
 
         # Backward compatibility:
         if 'info_text' in classdict:
-            warnings.warn('Deprecation warning: info_text has been renamed '
-                          'class_info. Consider updating class '
-                          '{} '.format(name), FutureWarning)
+            warnings.warn(
+                'Deprecation warning: info_text has been renamed '
+                'class_info. Consider updating class '
+                '{} '.format(name), FutureWarning
+            )
             classdict['class_info'] = classdict['info_text']
         if 'info' in classdict and callable(classdict['info']):
-            warnings.warn('Deprecation warning: info is now a @property, not '
-                          'a callable. Consider updating class '
-                          '{}'.format(name), FutureWarning)
+            warnings.warn(
+                'Deprecation warning: info is now a @property, not '
+                'a callable. Consider updating class '
+                '{}'.format(name), FutureWarning
+            )
             classdict['info'] = property(fget=classdict['info'])
 
-        newcls = super(ArgumentWrangler, mcs).__new__(
-            mcs, name, bases, classdict
-        )
+        newcls = super(ArgumentWrangler,
+                       mcs).__new__(mcs, name, bases, classdict)
         return newcls
 
     def __call__(cls, *args, **kwargs):
@@ -61,7 +64,7 @@ class ArgumentWrangler(type):
         return instance
 
 
-class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #pylint: disable=too-many-instance-attributes
+class GettableProperty(with_metaclass(ArgumentWrangler, object)):  #pylint: disable=too-many-instance-attributes
     """Property with immutable value
 
     **GettableProperties** are assigned their default values upon
@@ -92,9 +95,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             try:
                 setattr(self, key, kwargs[key])
             except AttributeError:
-                raise AttributeError(
-                    'Cannot set attribute: "{}".'.format(key)
-                )
+                raise AttributeError('Cannot set attribute: "{}".'.format(key))
         if default is not None:
             self.default = default
 
@@ -125,19 +126,17 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def terms(self):
         """Initialization terms and options for Property"""
         terms = PropertyTerms(
-            self.name,
-            self.__class__,
-            self._args,
-            self._kwargs,
-            self.meta
+            self.name, self.__class__, self._args, self._kwargs, self.meta
         )
         return terms
 
     @terms.setter
     def terms(self, value):
         if not isinstance(value, dict) or len(value) != 2:
-            raise TypeError("terms must be set with a dictionary of 'args' "
-                            "and 'kwargs'")
+            raise TypeError(
+                "terms must be set with a dictionary of 'args' "
+                "and 'kwargs'"
+            )
         if 'args' not in value or not isinstance(value['args'], tuple):
             raise TypeError("terms must have a tuple 'args'")
         if 'kwargs' not in value or not isinstance(value['kwargs'], dict):
@@ -168,13 +167,17 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         if not callable(value):
             raise TypeError('serializer must be a callable')
         if hasattr(value, '__code__') and value.__code__.co_argcount == 1:
+
             def ignore_kwargs(func):
                 """Wrap a function to allow unused kwargs"""
+
                 @wraps(func)
-                def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
+                def wrapped(val, **kwargs):  #pylint: disable=unused-argument
                     """Perform a function on a value, ignoring kwargs"""
                     return func(val)
+
                 return wrapped
+
             value = ignore_kwargs(value)
         self._serializer = value
 
@@ -188,13 +191,17 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         if not callable(value):
             raise TypeError('deserializer must be a callable')
         if hasattr(value, '__code__') and value.__code__.co_argcount == 1:
+
             def ignore_kwargs(func):
                 """Wrap a function to allow unused kwargs"""
+
                 @wraps(func)
-                def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
+                def wrapped(val, **kwargs):  #pylint: disable=unused-argument
                     """Perform a function on a value, ignoring kwargs"""
                     return func(val)
+
                 return wrapped
+
             value = ignore_kwargs(value)
         self._deserializer = value
 
@@ -210,8 +217,10 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         elif len(tag) == 1 and isinstance(tag[0], dict):
             self._meta.update(tag[0])
         else:
-            raise TypeError('Tags must be provided as key-word arguments or '
-                            'a dictionary')
+            raise TypeError(
+                'Tags must be provided as key-word arguments or '
+                'a dictionary'
+            )
         self._meta.update(kwtags)
         return self
 
@@ -220,7 +229,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         """Description of the Property, supplemental to the base doc"""
         return self.class_info
 
-    def validate(self, instance, value):                                       #pylint: disable=unused-argument,no-self-use
+    def validate(self, instance, value):  #pylint: disable=unused-argument,no-self-use
         """Check if the value is valid for the Property
 
         If valid, return the value, possibly coerced from the input value.
@@ -248,16 +257,14 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         """
         if value is None:
             value = instance._get(self.name)
-        if (
-                value is not None and
-                not self.equal(value, self.validate(instance, value))
-        ):
-            raise ValueError('Invalid value for property {}: {}'.format(
-                self.name, value
-            ))
+        if (value is not None
+                and not self.equal(value, self.validate(instance, value))):
+            raise ValueError(
+                'Invalid value for property {}: {}'.format(self.name, value)
+            )
         return True
 
-    def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
+    def equal(self, value_a, value_b):  #pylint: disable=no-self-use
         """Check if two valid Property values are equal
 
         .. note::
@@ -281,7 +288,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
 
         return property(fget=fget, doc=scope.sphinx())
 
-    def serialize(self, value, **kwargs):                                      #pylint: disable=unused-argument
+    def serialize(self, value, **kwargs):  #pylint: disable=unused-argument
         """Serialize a valid Property value
 
         This method uses the Property :code:`serializer` if available.
@@ -295,7 +302,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             return None
         return self.to_json(value, **kwargs)
 
-    def deserialize(self, value, **kwargs):                                    #pylint: disable=unused-argument
+    def deserialize(self, value, **kwargs):  #pylint: disable=unused-argument
         """Deserialize input value to valid Property value
 
         This method uses the Property :code:`deserializer` if available.
@@ -310,12 +317,12 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return self.from_json(value, **kwargs)
 
     @staticmethod
-    def to_json(value, **kwargs):                                              #pylint: disable=unused-argument
+    def to_json(value, **kwargs):  #pylint: disable=unused-argument
         """Statically convert a valid Property value to JSON value"""
         return value
 
     @staticmethod
-    def from_json(value, **kwargs):                                            #pylint: disable=unused-argument
+    def from_json(value, **kwargs):  #pylint: disable=unused-argument
         """Statically load a Property value from JSON value"""
         return value
 
@@ -374,7 +381,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         return DynamicProperty(self.doc, func=func, prop=self)
 
 
-class DynamicProperty(GettableProperty):                                       #pylint: disable=too-many-instance-attributes
+class DynamicProperty(GettableProperty):  #pylint: disable=too-many-instance-attributes
     """DynamicProperties are GettableProperties calculated dynamically
 
     These allow for a similar behavior to :code:`@property` with additional
@@ -641,8 +648,7 @@ class Property(GettableProperty):
             raise ValueError(
                 "The '{name}' property of a {cls} instance is required "
                 "and has not been set.".format(
-                    name=self.name,
-                    cls=instance.__class__.__name__
+                    name=self.name, cls=instance.__class__.__name__
                 )
             )
         valid = super(Property, self).assert_valid(instance, value)
@@ -682,7 +688,7 @@ class Property(GettableProperty):
         try:
             if default_val is None or default_val is undefined:
                 default_str = ''
-            elif len(default_val) == 0:                                        #pylint: disable=len-as-condition
+            elif len(default_val) == 0:  #pylint: disable=len-as-condition
                 default_str = ''
             else:
                 default_str = ', Default: {}'.format(default_str)
@@ -751,10 +757,8 @@ Bool = Boolean
 
 def _in_bounds(prop, instance, value):
     """Checks if the value is in the range (min, max)"""
-    if (
-            (prop.min is not None and value < prop.min) or
-            (prop.max is not None and value > prop.max)
-    ):
+    if ((prop.min is not None and value < prop.min)
+            or (prop.max is not None and value > prop.max)):
         prop.error(instance, value)
 
 
@@ -807,14 +811,14 @@ class Integer(Boolean):
         _in_bounds(self, instance, intval)
         return intval
 
-    def equal(self, value_a, value_b):                                         #pylint: disable=no-self-use
+    def equal(self, value_a, value_b):  #pylint: disable=no-self-use
         """Check if two valid Property values are equal"""
         return value_a == value_b
 
     @property
     def info(self):
-        if (getattr(self, 'min', None) is None and
-                getattr(self, 'max', None) is None):
+        if (getattr(self, 'min', None) is None
+                and getattr(self, 'max', None) is None):
             return self.class_info
         return '{txt} in range [{mn}, {mx}]'.format(
             txt=self.class_info,
@@ -893,10 +897,8 @@ class Complex(Boolean):
         """
         try:
             compval = complex(value)
-            if not self.cast and (
-                    abs(value.real - compval.real) > TOL or
-                    abs(value.imag - compval.imag) > TOL
-            ):
+            if not self.cast and (abs(value.real - compval.real) > TOL
+                                  or abs(value.imag - compval.imag) > TOL):
                 self.error(instance, value)
         except (TypeError, ValueError, AttributeError):
             self.error(instance, value)
@@ -963,8 +965,7 @@ class String(Property):
     @change_case.setter
     def change_case(self, value):
         if value not in (None, 'upper', 'lower'):
-            raise TypeError("change_case must be 'upper', "
-                            "'lower' or None")
+            raise TypeError("change_case must be 'upper', " "'lower' or None")
         self._change_case = value
 
     @property
@@ -993,15 +994,17 @@ class String(Property):
         if hasattr(value, 'search') and callable(value.search):
             self._regex = value
         else:
-            raise TypeError('regex must be a string pattern or a compiled'
-                            'regular expression')
+            raise TypeError(
+                'regex must be a string pattern or a compiled'
+                'regular expression'
+            )
 
     def validate(self, instance, value):
         """Check if value is a string, and strips it and changes case"""
         value_type = type(value)
         if not isinstance(value, string_types):
             self.error(instance, value)
-        if self.regex is not None and self.regex.search(value) is None:        #pylint: disable=no-member
+        if self.regex is not None and self.regex.search(value) is None:  #pylint: disable=no-member
             self.error(instance, value)
         value = value.strip(self.strip)
         if self.change_case == 'upper':
@@ -1020,7 +1023,7 @@ class String(Property):
         if self.regex is not None:
             info += ' that matches pattern'
         if hasattr(self.regex, 'pattern'):
-            info += ' "{}"'.format(self.regex.pattern)                         #pylint: disable=no-member
+            info += ' "{}"'.format(self.regex.pattern)  #pylint: disable=no-member
         return info
 
 
@@ -1067,7 +1070,7 @@ class StringChoice(Property):
         return self._choices
 
     @choices.setter
-    def choices(self, value):                                                  #pylint: disable=too-many-branches
+    def choices(self, value):  #pylint: disable=too-many-branches
         if isinstance(value, (set, list, tuple)):
             if len(value) != len(set(value)):
                 raise TypeError('choices must contain no duplicate strings')
@@ -1133,7 +1136,7 @@ class StringChoice(Property):
                 raise TypeError('descriptions values must be strings')
         self._descriptions = value
 
-    def validate(self, instance, value):                                       #pylint: disable=inconsistent-return-statements
+    def validate(self, instance, value):  #pylint: disable=inconsistent-return-statements
         """Check if input is a valid string based on the choices"""
         if not isinstance(value, string_types):
             self.error(instance, value)
@@ -1168,18 +1171,20 @@ class Color(Property):
                 value = random.choice(COLORS_20)
             value = value.upper().lstrip('#')
             if len(value) == 3:
-                value = ''.join(v*2 for v in value)
+                value = ''.join(v * 2 for v in value)
             if len(value) != 6:
                 raise ValueError(
                     '{}: Color must be known name or a hex with '
-                    '6 digits. e.g. "#FF0000"'.format(value))
+                    '6 digits. e.g. "#FF0000"'.format(value)
+                )
             try:
                 value = [
                     int(value[i:i + 6 // 3], 16) for i in range(0, 6, 6 // 3)
                 ]
             except ValueError:
                 raise ValueError(
-                    '{}: Hex color must be base 16 (0-F)'.format(value))
+                    '{}: Hex color must be base 16 (0-F)'.format(value)
+                )
         if not isinstance(value, (list, tuple)):
             raise ValueError(
                 '{}: Color must be a list or tuple of length 3'.format(value)
@@ -1233,8 +1238,9 @@ class DateTime(Property):
     @staticmethod
     def from_json(value, **kwargs):
         if len(value) == 10:
-            return datetime.datetime.strptime(value.replace('-', '/'),
-                                              '%Y/%m/%d')
+            return datetime.datetime.strptime(
+                value.replace('-', '/'), '%Y/%m/%d'
+            )
         return datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
 
 
@@ -1291,9 +1297,7 @@ class File(Property):
     class_info = 'an open file or filename'
 
     file_modes = {
-        'r', 'r+', 'rb', 'rb+',
-        'w', 'w+', 'wb', 'wb+',
-        'a', 'a+', 'ab', 'ab+'
+        'r', 'r+', 'rb', 'rb+', 'w', 'w+', 'wb', 'wb+', 'a', 'a+', 'ab', 'ab+'
     }
 
     def __init__(self, doc, mode=None, **kwargs):
@@ -1314,16 +1318,18 @@ class File(Property):
     @property
     def valid_modes(self):
         """Valid modes of an open file"""
-        default_mode = (self.mode,) if self.mode is not None else None
+        default_mode = (self.mode, ) if self.mode is not None else None
         return getattr(self, '_valid_mode', default_mode)
 
     @valid_modes.setter
     def valid_modes(self, value):
         if not isinstance(value, (set, list, tuple)):
-            value = (value,)
+            value = (value, )
         if self.mode not in value:
-            raise TypeError('mode {} must be included in '
-                            'valid_modes'.format(self.mode))
+            raise TypeError(
+                'mode {} must be included in '
+                'valid_modes'.format(self.mode)
+            )
         for val in value:
             if val not in self.file_modes:
                 raise TypeError('Invalid file mode: {}'.format(val))
@@ -1343,8 +1349,9 @@ class File(Property):
                 self._get(scope.name).close()
             self._set(scope.name, undefined)
 
-        new_prop = property(fget=prop.fget, fset=prop.fset,
-                            fdel=fdel, doc=scope.sphinx())
+        new_prop = property(
+            fget=prop.fget, fset=prop.fset, fdel=fdel, doc=scope.sphinx()
+        )
         return new_prop
 
     def validate(self, instance, value):
@@ -1356,15 +1363,19 @@ class File(Property):
             try:
                 value = open(value, self.mode)
             except (IOError, TypeError):
-                self.error(instance, value,
-                           extra='Cannot open file: {}'.format(value))
+                self.error(
+                    instance,
+                    value,
+                    extra='Cannot open file: {}'.format(value)
+                )
         if not all([hasattr(value, attr) for attr in ('read', 'seek')]):
             self.error(instance, value, extra='Not a file-like object')
         if not hasattr(value, 'mode') or self.valid_modes is None:
             pass
         elif value.mode not in self.valid_modes:
-            self.error(instance, value,
-                       extra='Invalid mode: {}'.format(value.mode))
+            self.error(
+                instance, value, extra='Invalid mode: {}'.format(value.mode)
+            )
         if getattr(value, 'closed', False):
             self.error(instance, value, extra='File is closed.')
         return value
@@ -1375,8 +1386,9 @@ class File(Property):
     @property
     def info(self):
         """Help text for the File Property, including valid modes"""
-        info = '{}, valid modes include {}'.format(self.class_info,
-                                                   self.valid_modes)
+        info = '{}, valid modes include {}'.format(
+            self.class_info, self.valid_modes
+        )
         return info
 
 
@@ -1442,7 +1454,6 @@ class Renamed(GettableProperty):
             raise TypeError("'warn' property must be a boolean")
         self._warn = value
 
-
     def sphinx_class(self):
         return ''
 
@@ -1452,7 +1463,8 @@ class Renamed(GettableProperty):
             warnings.warn(
                 "\nProperty '{}' is deprecated and may be removed in the "
                 "future. Please use '{}'.".format(self.name, self.new_name),
-                FutureWarning, stacklevel=3
+                FutureWarning,
+                stacklevel=3
             )
 
     def get_property(self):
@@ -1478,62 +1490,167 @@ class Renamed(GettableProperty):
 
 
 COLORS_20 = [
-    '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
-    '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
-    '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-    '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5'
+    '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#98df8a',
+    '#d62728', '#ff9896', '#9467bd', '#c5b0d5', '#8c564b', '#c49c94',
+    '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d',
+    '#17becf', '#9edae5'
 ]
 
 COLORS_NAMED = dict(
-    aliceblue="F0F8FF", antiquewhite="FAEBD7", aqua="00FFFF",
-    aquamarine="7FFFD4", azure="F0FFFF", beige="F5F5DC",
-    bisque="FFE4C4", black="000000", blanchedalmond="FFEBCD",
-    blue="0000FF", blueviolet="8A2BE2", brown="A52A2A",
-    burlywood="DEB887", cadetblue="5F9EA0", chartreuse="7FFF00",
-    chocolate="D2691E", coral="FF7F50", cornflowerblue="6495ED",
-    cornsilk="FFF8DC", crimson="DC143C", cyan="00FFFF",
-    darkblue="00008B", darkcyan="008B8B", darkgoldenrod="B8860B",
-    darkgray="A9A9A9", darkgrey="A9A9A9", darkgreen="006400",
-    darkkhaki="BDB76B", darkmagenta="8B008B", darkolivegreen="556B2F",
-    darkorange="FF8C00", darkorchid="9932CC", darkred="8B0000",
-    darksalmon="E9967A", darkseagreen="8FBC8F", darkslateblue="483D8B",
-    darkslategray="2F4F4F", darkslategrey="2F4F4F", darkturquoise="00CED1",
-    darkviolet="9400D3", deeppink="FF1493", deepskyblue="00BFFF",
-    dimgray="696969", dimgrey="696969", dodgerblue="1E90FF",
-    irebrick="B22222", floralwhite="FFFAF0", forestgreen="228B22",
-    fuchsia="FF00FF", gainsboro="DCDCDC", ghostwhite="F8F8FF",
-    gold="FFD700", goldenrod="DAA520", gray="808080",
-    grey="808080", green="008000", greenyellow="ADFF2F",
-    honeydew="F0FFF0", hotpink="FF69B4", indianred="CD5C5C",
-    indigo="4B0082", ivory="FFFFF0", khaki="F0E68C",
-    lavender="E6E6FA", lavenderblush="FFF0F5", lawngreen="7CFC00",
-    lemonchiffon="FFFACD", lightblue="ADD8E6", lightcoral="F08080",
-    lightcyan="E0FFFF", lightgoldenrodyellow="FAFAD2", lightgray="D3D3D3",
-    lightgrey="D3D3D3", lightgreen="90EE90", lightpink="FFB6C1",
-    lightsalmon="FFA07A", lightseagreen="20B2AA", lightskyblue="87CEFA",
-    lightslategray="778899", lightslategrey="778899", lightsteelblue="B0C4DE",
-    lightyellow="FFFFE0", lime="00FF00", limegreen="32CD32",
-    linen="FAF0E6", magenta="FF00FF", maroon="800000",
-    mediumaquamarine="66CDAA", mediumblue="0000CD", mediumorchid="BA55D3",
-    mediumpurple="9370DB", mediumseagreen="3CB371", mediumslateblue="7B68EE",
-    mediumspringgreen="00FA9A", mediumturquoise="48D1CC",
-    mediumvioletred="C71585", midnightblue="191970", mintcream="F5FFFA",
-    mistyrose="FFE4E1", moccasin="FFE4B5", navajowhite="FFDEAD",
-    navy="000080", oldlace="FDF5E6", olive="808000",
-    olivedrab="6B8E23", orange="FFA500", orangered="FF4500",
-    orchid="DA70D6", palegoldenrod="EEE8AA", palegreen="98FB98",
-    paleturquoise="AFEEEE", palevioletred="DB7093", papayawhip="FFEFD5",
-    peachpuff="FFDAB9", peru="CD853F", pink="FFC0CB",
-    plum="DDA0DD", powderblue="B0E0E6", purple="800080",
-    rebeccapurple="663399", red="FF0000", rosybrown="BC8F8F",
-    royalblue="4169E1", saddlebrown="8B4513", salmon="FA8072",
-    sandybrown="F4A460", seagreen="2E8B57", seashell="FFF5EE",
-    sienna="A0522D", silver="C0C0C0", skyblue="87CEEB",
-    slateblue="6A5ACD", slategray="708090", slategrey="708090",
-    snow="FFFAFA", springgreen="00FF7F", steelblue="4682B4",
-    tan="D2B48C", teal="008080", thistle="D8BFD8",
-    tomato="FF6347", turquoise="40E0D0", violet="EE82EE",
-    wheat="F5DEB3", white="FFFFFF", whitesmoke="F5F5F5",
-    yellow="FFFF00", yellowgreen="9ACD32", k="000000", b="0000FF",
-    c="00FFFF", g="00FF00", m="FF00FF", r="FF0000", w="FFFFFF", y="FFFF00"
+    aliceblue="F0F8FF",
+    antiquewhite="FAEBD7",
+    aqua="00FFFF",
+    aquamarine="7FFFD4",
+    azure="F0FFFF",
+    beige="F5F5DC",
+    bisque="FFE4C4",
+    black="000000",
+    blanchedalmond="FFEBCD",
+    blue="0000FF",
+    blueviolet="8A2BE2",
+    brown="A52A2A",
+    burlywood="DEB887",
+    cadetblue="5F9EA0",
+    chartreuse="7FFF00",
+    chocolate="D2691E",
+    coral="FF7F50",
+    cornflowerblue="6495ED",
+    cornsilk="FFF8DC",
+    crimson="DC143C",
+    cyan="00FFFF",
+    darkblue="00008B",
+    darkcyan="008B8B",
+    darkgoldenrod="B8860B",
+    darkgray="A9A9A9",
+    darkgrey="A9A9A9",
+    darkgreen="006400",
+    darkkhaki="BDB76B",
+    darkmagenta="8B008B",
+    darkolivegreen="556B2F",
+    darkorange="FF8C00",
+    darkorchid="9932CC",
+    darkred="8B0000",
+    darksalmon="E9967A",
+    darkseagreen="8FBC8F",
+    darkslateblue="483D8B",
+    darkslategray="2F4F4F",
+    darkslategrey="2F4F4F",
+    darkturquoise="00CED1",
+    darkviolet="9400D3",
+    deeppink="FF1493",
+    deepskyblue="00BFFF",
+    dimgray="696969",
+    dimgrey="696969",
+    dodgerblue="1E90FF",
+    irebrick="B22222",
+    floralwhite="FFFAF0",
+    forestgreen="228B22",
+    fuchsia="FF00FF",
+    gainsboro="DCDCDC",
+    ghostwhite="F8F8FF",
+    gold="FFD700",
+    goldenrod="DAA520",
+    gray="808080",
+    grey="808080",
+    green="008000",
+    greenyellow="ADFF2F",
+    honeydew="F0FFF0",
+    hotpink="FF69B4",
+    indianred="CD5C5C",
+    indigo="4B0082",
+    ivory="FFFFF0",
+    khaki="F0E68C",
+    lavender="E6E6FA",
+    lavenderblush="FFF0F5",
+    lawngreen="7CFC00",
+    lemonchiffon="FFFACD",
+    lightblue="ADD8E6",
+    lightcoral="F08080",
+    lightcyan="E0FFFF",
+    lightgoldenrodyellow="FAFAD2",
+    lightgray="D3D3D3",
+    lightgrey="D3D3D3",
+    lightgreen="90EE90",
+    lightpink="FFB6C1",
+    lightsalmon="FFA07A",
+    lightseagreen="20B2AA",
+    lightskyblue="87CEFA",
+    lightslategray="778899",
+    lightslategrey="778899",
+    lightsteelblue="B0C4DE",
+    lightyellow="FFFFE0",
+    lime="00FF00",
+    limegreen="32CD32",
+    linen="FAF0E6",
+    magenta="FF00FF",
+    maroon="800000",
+    mediumaquamarine="66CDAA",
+    mediumblue="0000CD",
+    mediumorchid="BA55D3",
+    mediumpurple="9370DB",
+    mediumseagreen="3CB371",
+    mediumslateblue="7B68EE",
+    mediumspringgreen="00FA9A",
+    mediumturquoise="48D1CC",
+    mediumvioletred="C71585",
+    midnightblue="191970",
+    mintcream="F5FFFA",
+    mistyrose="FFE4E1",
+    moccasin="FFE4B5",
+    navajowhite="FFDEAD",
+    navy="000080",
+    oldlace="FDF5E6",
+    olive="808000",
+    olivedrab="6B8E23",
+    orange="FFA500",
+    orangered="FF4500",
+    orchid="DA70D6",
+    palegoldenrod="EEE8AA",
+    palegreen="98FB98",
+    paleturquoise="AFEEEE",
+    palevioletred="DB7093",
+    papayawhip="FFEFD5",
+    peachpuff="FFDAB9",
+    peru="CD853F",
+    pink="FFC0CB",
+    plum="DDA0DD",
+    powderblue="B0E0E6",
+    purple="800080",
+    rebeccapurple="663399",
+    red="FF0000",
+    rosybrown="BC8F8F",
+    royalblue="4169E1",
+    saddlebrown="8B4513",
+    salmon="FA8072",
+    sandybrown="F4A460",
+    seagreen="2E8B57",
+    seashell="FFF5EE",
+    sienna="A0522D",
+    silver="C0C0C0",
+    skyblue="87CEEB",
+    slateblue="6A5ACD",
+    slategray="708090",
+    slategrey="708090",
+    snow="FFFAFA",
+    springgreen="00FF7F",
+    steelblue="4682B4",
+    tan="D2B48C",
+    teal="008080",
+    thistle="D8BFD8",
+    tomato="FF6347",
+    turquoise="40E0D0",
+    violet="EE82EE",
+    wheat="F5DEB3",
+    white="FFFFFF",
+    whitesmoke="F5F5F5",
+    yellow="FFFF00",
+    yellowgreen="9ACD32",
+    k="000000",
+    b="0000FF",
+    c="00FFFF",
+    g="00FF00",
+    m="FF00FF",
+    r="FF0000",
+    w="FFFFFF",
+    y="FFFF00"
 )

@@ -12,15 +12,11 @@ import properties
 
 
 class TestImages(unittest.TestCase):
-
     def test_png(self):
 
         dirname, _ = os.path.split(os.path.abspath(__file__))
         png_file = os.path.sep.join(dirname.split(os.path.sep) + ['temp.png'])
-        s = ['110010010011',
-             '101011010100',
-             '110010110101',
-             '100010010011']
+        s = ['110010010011', '101011010100', '110010110101', '100010010011']
         f = open(png_file, 'wb')
         w = png.Writer(len(s[0]), len(s), greyscale=True, bitdepth=16)
         w.write(f, s)

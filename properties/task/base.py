@@ -45,11 +45,13 @@ class Task(HasProperties):
     def report_status(self, status):
         """Report the task status towards completion"""
         status = Instance('', TaskStatus).validate(None, status)
-        print(r'{taskname} | {percent:>3}% | {message}'.format(
-            taskname=self.__class__.__name__,
-            percent=int(round(100*status.progress)),
-            message=status.message if status.message else '',
-        ))
+        print(
+            r'{taskname} | {percent:>3}% | {message}'.format(
+                taskname=self.__class__.__name__,
+                percent=int(round(100 * status.progress)),
+                message=status.message if status.message else '',
+            )
+        )
 
     def __call__(self):
         """Execute the compute task"""

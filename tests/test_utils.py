@@ -9,7 +9,6 @@ import properties
 
 
 class TestUtils(unittest.TestCase):
-
     def test_utils(self):
 
         assert properties.undefined is properties.undefined
@@ -21,8 +20,8 @@ class TestUtils(unittest.TestCase):
         test_dict = {'int_a': 10, 'int_b': 9, 'int_c': 8, 'int_d': 7}
 
         for hint in (HasInts, HasInts()):
-            (properties_dict, others_dict) = properties.filter_props(hint,
-                                                                     test_dict)
+            (properties_dict,
+             others_dict) = properties.filter_props(hint, test_dict)
 
             assert 'int_a' in properties_dict
             assert 'int_b' in properties_dict

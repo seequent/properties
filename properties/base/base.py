@@ -15,10 +15,10 @@ from .. import handlers
 from .. import utils
 
 if PY2:
-    from types import ClassType                                                #pylint: disable=no-name-in-module
+    from types import ClassType  #pylint: disable=no-name-in-module
     CLASS_TYPES = (type, ClassType)
 else:
-    CLASS_TYPES = (type,)
+    CLASS_TYPES = (type, )
 
 
 class PropertyMetaclass(type):
@@ -49,19 +49,22 @@ class PropertyMetaclass(type):
       notifications.
     """
 
-    def __new__(mcs, name, bases, classdict):                                  #pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def __new__(mcs, name, bases, classdict):  #pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         # Grab all the properties, observers, and validators
         prop_dict = {
-            key: value for key, value in classdict.items()
+            key: value
+            for key, value in classdict.items()
             if isinstance(value, basic.GettableProperty)
         }
         observer_dict = {
-            key: value for key, value in classdict.items()
+            key: value
+            for key, value in classdict.items()
             if isinstance(value, handlers.Observer)
         }
         validator_dict = {
-            key: value for key, value in classdict.items()
+            key: value
+            for key, value in classdict.items()
             if isinstance(value, handlers.ClassValidator)
         }
 
@@ -70,9 +73,9 @@ class PropertyMetaclass(type):
         _prop_observers = OrderedDict()
         _class_validators = OrderedDict()
         for base in reversed(bases):
-            if not all((hasattr(base, '_props'),
-                        hasattr(base, '_prop_observers'),
-                        hasattr(base, '_class_validators'))):
+            if not all(
+                (hasattr(base, '_props'), hasattr(base, '_prop_observers'),
+                 hasattr(base, '_class_validators'))):
                 continue
             for key, val in iteritems(base._props):
                 if key not in prop_dict and key in classdict:
@@ -100,8 +103,10 @@ class PropertyMetaclass(type):
         # Ensure prop names are valid and overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             if isinstance(prop, basic.Renamed) and prop.new_name not in _props:
-                raise TypeError('Invalid new name for renamed property: '
-                                '{}'.format(prop.new_name))
+                raise TypeError(
+                    'Invalid new name for renamed property: '
+                    '{}'.format(prop.new_name)
+                )
             prop.name = key
             classdict[key] = prop.get_property()
 
@@ -112,8 +117,10 @@ class PropertyMetaclass(type):
             for prop in handler.names:
                 if prop in _props and isinstance(_props[prop], basic.Property):
                     continue
-                raise TypeError('Observed name must be a mutable '
-                                'property: {}'.format(prop))
+                raise TypeError(
+                    'Observed name must be a mutable '
+                    'property: {}'.format(prop)
+                )
 
         # Overwrite observers and validators with their function
         observer_dict.update(validator_dict)
@@ -138,18 +145,14 @@ class PropertyMetaclass(type):
         _doc_order = None
         for base in reversed(bases):
             _doc_order = getattr(base, '_doc_order', _doc_order)
-            if (
-                    not isinstance(_doc_order, (list, tuple)) or
-                    sorted(list(_doc_order)) != documented_props
-            ):
+            if (not isinstance(_doc_order, (list, tuple))
+                    or sorted(list(_doc_order)) != documented_props):
                 _doc_order = None
         _doc_order = classdict.get('_doc_order', _doc_order)
         if _doc_order is None:
             _doc_order = documented_props
         elif not isinstance(_doc_order, (list, tuple)):
-            raise AttributeError(
-                '_doc_order must be a list of property names'
-            )
+            raise AttributeError('_doc_order must be a list of property names')
         elif sorted(list(_doc_order)) != documented_props:
             raise AttributeError(
                 '_doc_order must be unspecified or contain ALL property names'
@@ -157,14 +160,19 @@ class PropertyMetaclass(type):
 
         # Sort props into required, optional, and immutable
         doc_str = classdict.get('__doc__', '')
-        req = [key for key in _doc_order
-               if key[0] != '_' and getattr(_props[key], 'required', False)]
-        opt = [key for key in _doc_order
-               if key[0] != '_' and not getattr(_props[key], 'required', True)]
-        imm = [key for key in _doc_order
-               if key[0] != '_' and not hasattr(_props[key], 'required')]
-        priv = [key for key in _doc_order
-                if key[0] == '_']
+        req = [
+            key for key in _doc_order
+            if key[0] != '_' and getattr(_props[key], 'required', False)
+        ]
+        opt = [
+            key for key in _doc_order
+            if key[0] != '_' and not getattr(_props[key], 'required', True)
+        ]
+        imm = [
+            key for key in _doc_order
+            if key[0] != '_' and not hasattr(_props[key], 'required')
+        ]
+        priv = [key for key in _doc_order if key[0] == '_']
 
         # Build the documentation based on above sorting
         if req:
@@ -186,9 +194,8 @@ class PropertyMetaclass(type):
         classdict['__doc__'] = doc_str
 
         # Create the new class
-        newcls = super(PropertyMetaclass, mcs).__new__(
-            mcs, name, bases, classdict
-        )
+        newcls = super(PropertyMetaclass,
+                       mcs).__new__(mcs, name, bases, classdict)
 
         # Update the class defaults to include inherited values
         _defaults = dict()
@@ -279,11 +286,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, val in iteritems(kwargs):
             prop = self._props.get(key, None)
             if not prop and not hasattr(self, key):
-                raise AttributeError("Keyword input '{}' is not a known "
-                                     "property or attribute".format(key))
+                raise AttributeError(
+                    "Keyword input '{}' is not a known "
+                    "property or attribute".format(key)
+                )
             if isinstance(prop, basic.DynamicProperty):
-                raise AttributeError("Dynamic property '{} cannot be set on "
-                                     "init".format(key))
+                raise AttributeError(
+                    "Dynamic property '{} cannot be set on "
+                    "init".format(key)
+                )
             setattr(self, key, val)
 
     def _get(self, name):
@@ -304,11 +315,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._backend[name] = change['value']
         if prev is utils.undefined and change['value'] is utils.undefined:
             pass
-        elif(
-                prev is utils.undefined or
-                change['value'] is utils.undefined or
-                not self._props[name].equal(prev, change['value'])
-        ):
+        elif (prev is utils.undefined or change['value'] is utils.undefined
+              or not self._props[name].equal(prev, change['value'])):
             change.update(name=name, previous=prev, mode='observe_change')
             self._notify(change)
         change.update(name=name, previous=prev, mode='observe_set')
@@ -326,11 +334,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     self._reset(key)
             return
         if name not in self._props:
-            raise AttributeError("Input name '{}' is not a known "
-                                 "property or attribute".format(name))
+            raise AttributeError(
+                "Input name '{}' is not a known "
+                "property or attribute".format(name)
+            )
         if not isinstance(self._props[name], basic.Property):
-            raise AttributeError("Cannot reset GettableProperty "
-                                 "'{}'".format(name))
+            raise AttributeError(
+                "Cannot reset GettableProperty "
+                "'{}'".format(name)
+            )
         if name in self._defaults:
             val = self._defaults[name]
         else:
@@ -363,8 +375,9 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, prop in iteritems(self._props):
             value = self._get(key)
             if value is not None:
-                change = dict(name=key, previous=value, value=value,
-                              mode='validate')
+                change = dict(
+                    name=key, previous=value, value=value, mode='validate'
+                )
                 self._notify(change)
                 if not prop.equal(value, change['value']):
                     raise ValueError(
@@ -395,21 +408,27 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           serializers.
         """
         if getattr(self, '_getting_serialized', False):
-            raise utils.SelfReferenceError('Object contains unserializable '
-                                           'self reference')
+            raise utils.SelfReferenceError(
+                'Object contains unserializable '
+                'self reference'
+            )
         self._getting_serialized = True
         try:
-            kwargs.update({
-                'include_class': include_class,
-                'save_dynamic': save_dynamic
-            })
+            kwargs.update(
+                {
+                    'include_class': include_class,
+                    'save_dynamic': save_dynamic
+                }
+            )
             if save_dynamic:
                 prop_source = self._props
             else:
                 prop_source = self._backend
             data = (
-                (key, self._props[key].serialize(getattr(self, key), **kwargs))
-                for key in prop_source
+                (
+                    key,
+                    self._props[key].serialize(getattr(self, key), **kwargs)
+                ) for key in prop_source
             )
             json_dict = {k: v for k, v in data if v is not None}
             if include_class:
@@ -458,9 +477,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if unused and verbose:
-            warn('Unused properties during deserialization: {}'.format(
-                ', '.join(unused)
-            ), RuntimeWarning)
+            warn(
+                'Unused properties during deserialization: {}'.format(
+                    ', '.join(unused)
+                ), RuntimeWarning
+            )
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, **kwargs)
@@ -479,13 +500,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def __reduce__(self):
         if getattr(self, '_getting_pickled', False):
-            raise utils.SelfReferenceError('Object contains unpicklable self '
-                                           'reference')
+            raise utils.SelfReferenceError(
+                'Object contains unpicklable self '
+                'reference'
+            )
         self._getting_pickled = True
         try:
             data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
             pickle_dict = {
-                k: pickle.dumps(v) for k, v in data if v is not None
+                k: pickle.dumps(v)
+                for k, v in data
+                if v is not None
             }
             return (self.__class__, (), pickle_dict)
         finally:
@@ -497,9 +522,11 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         Equivalence is determined by checking if all Property values on
         two instances are equal, using :code:`Property.equal`.
         """
-        warn('HasProperties.equal has been deprecated in favor of '
-             'properties.equal and will be removed in the next release',
-             FutureWarning)
+        warn(
+            'HasProperties.equal has been deprecated in favor of '
+            'properties.equal and will be removed in the next release',
+            FutureWarning
+        )
         return equal(self, other)
 
 
@@ -519,14 +546,12 @@ def equal(value_a, value_b):
         evaluate to equal, even if their property values and structure
         are equivalent.
     """
-    if (
-            not isinstance(value_a, HasProperties) or
-            not isinstance(value_b, HasProperties)
-    ):
+    if (not isinstance(value_a, HasProperties)
+            or not isinstance(value_b, HasProperties)):
         return value_a == value_b
     if getattr(value_a, '_testing_equality', False):
         return False
-    value_a._testing_equality = True                                           #pylint: disable=protected-access
+    value_a._testing_equality = True  #pylint: disable=protected-access
     try:
         if value_a is value_b:
             return True
@@ -537,16 +562,13 @@ def equal(value_a, value_b):
             prop_b = getattr(value_b, prop.name)
             if prop_a is None and prop_b is None:
                 continue
-            if (
-                    prop_a is not None and
-                    prop_b is not None and
-                    prop.equal(prop_a, prop_b)
-            ):
+            if (prop_a is not None and prop_b is not None
+                    and prop.equal(prop_a, prop_b)):
                 continue
             return False
         return True
     finally:
-        value_a._testing_equality = False                                      #pylint: disable=protected-access
+        value_a._testing_equality = False  #pylint: disable=protected-access
 
 
 def copy(value, **kwargs):
@@ -560,8 +582,10 @@ def copy(value, **kwargs):
     """
 
     if not isinstance(value, HasProperties):
-        raise ValueError('properties.copy may only be used to copy'
-                         'HasProperties instances')
+        raise ValueError(
+            'properties.copy may only be used to copy'
+            'HasProperties instances'
+        )
     kwargs.update({'include_class': kwargs.get('include_class', True)})
     kwargs.update({'trusted': kwargs.get('trusted', True)})
     return value.__class__.deserialize(value.serialize(**kwargs), **kwargs)

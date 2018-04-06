@@ -8,8 +8,8 @@ import unittest
 import properties
 import traitlets
 
-class TestLink(unittest.TestCase):
 
+class TestLink(unittest.TestCase):
     def _test_link(self, class_a, class_b):
 
         hp1 = class_a()
@@ -28,11 +28,15 @@ class TestLink(unittest.TestCase):
         hp2.a = 10
         assert hp1.a == 5
 
-        my_dlink = properties.directional_link((hp1, 'a'), (hp2, 'a'), update_now=True)
+        my_dlink = properties.directional_link(
+            (hp1, 'a'), (hp2, 'a'), update_now=True
+        )
         assert hp2.a == 5
         my_dlink.unlink()
 
-        my_dlink = properties.directional_link((hp1, 'a'), (hp2, 'a'), update_now=True, transform=lambda x: 2*x)
+        my_dlink = properties.directional_link(
+            (hp1, 'a'), (hp2, 'a'), update_now=True, transform=lambda x: 2 * x
+        )
         assert hp2.a == 10
 
         my_dlink.unlink()
@@ -54,7 +58,9 @@ class TestLink(unittest.TestCase):
         hp3 = class_b(a=0)
         hp4 = class_a(a=100)
 
-        my_link = properties.link((hp1, 'a'), (hp2, 'a'), (hp3, 'a'), (hp4, 'a'))
+        my_link = properties.link(
+            (hp1, 'a'), (hp2, 'a'), (hp3, 'a'), (hp4, 'a')
+        )
         hp4.a = 100
         assert hp1.a == 5
         assert hp2.a == 10
@@ -69,14 +75,18 @@ class TestLink(unittest.TestCase):
 
         hp1.a = 5
 
-        my_link = properties.link((hp1, 'a'), (hp2, 'a'), (hp3, 'a'), update_now=True)
+        my_link = properties.link(
+            (hp1, 'a'), (hp2, 'a'), (hp3, 'a'), update_now=True
+        )
         assert hp2.a == 5
         assert hp3.a == 5
 
         my_link.unlink()
 
         hp3.a = 10
-        my_link = properties.link((hp1, 'a'), (hp2, 'a'), (hp3, 'a'), update_now=True)
+        my_link = properties.link(
+            (hp1, 'a'), (hp2, 'a'), (hp3, 'a'), update_now=True
+        )
         assert hp3.a == 5
 
         my_link.unlink()
@@ -94,9 +104,7 @@ class TestLink(unittest.TestCase):
         assert hp1.a == 100
         my_link.unlink()
 
-
     def test_link(self):
-
         class HP(properties.HasProperties):
             a = properties.Integer('a')
 
@@ -109,7 +117,6 @@ class TestLink(unittest.TestCase):
         self._test_link(HT, HT)
 
     def test_link_properties(self):
-
         class HP(properties.HasProperties):
             a = properties.Integer('a')
 
@@ -129,7 +136,6 @@ class TestLink(unittest.TestCase):
         my_link.unlink()
 
     def test_link_errors(self):
-
         class HP(properties.HasProperties):
             a = properties.Integer('a')
             b = properties.Integer('b')
@@ -140,11 +146,13 @@ class TestLink(unittest.TestCase):
         with self.assertRaises(ValueError):
             properties.link((hp, 'a'))
         with self.assertRaises(ValueError):
-            properties.link((hp, 'a'), (hp, 'b'), transform=lambda x: 2*x)
+            properties.link((hp, 'a'), (hp, 'b'), transform=lambda x: 2 * x)
         with self.assertRaises(ValueError):
             properties.directional_link((hp, 'a'), (hp, 'b'), transform='add')
         with self.assertRaises(ValueError):
-            properties.directional_link((hp, 'a'), (hp, 'b'), transform=lambda x, y, z: x)
+            properties.directional_link(
+                (hp, 'a'), (hp, 'b'), transform=lambda x, y, z: x
+            )
         with self.assertRaises(ValueError):
             properties.directional_link(hp, 'a')
         with self.assertRaises(ValueError):
@@ -156,7 +164,9 @@ class TestLink(unittest.TestCase):
         with self.assertRaises(ValueError):
             properties.directional_link((hp, 'a'), (hp, 'a'))
         with self.assertRaises(ValueError):
-            properties.link((hp, 'a'), (hp, 'b'), (hp, 'c'), (hp, 'a'), (hp, 'd'))
+            properties.link(
+                (hp, 'a'), (hp, 'b'), (hp, 'c'), (hp, 'a'), (hp, 'd')
+            )
 
 
 if __name__ == '__main__':

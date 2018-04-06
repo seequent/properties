@@ -25,7 +25,6 @@ class HP3(properties.HasProperties):
 
 
 class TestSerialization(unittest.TestCase):
-
     def test_pickle(self):
         hp1 = HP1(a=10)
         hp2 = HP2(inst1=hp1)
@@ -52,13 +51,7 @@ class TestSerialization(unittest.TestCase):
                 }
             }
         }
-        hp3_dict_no_class = {
-            'inst2': {
-                'inst1': {
-                    'a': 10
-                }
-            }
-        }
+        hp3_dict_no_class = {'inst2': {'inst1': {'a': 10}}}
 
         assert hp3.serialize() == hp3_dict
         assert hp3.serialize(include_class=False) == hp3_dict_no_class
@@ -82,9 +75,13 @@ class TestSerialization(unittest.TestCase):
             )
             assert len(w) == 3
             assert issubclass(w[2].category, RuntimeWarning)
-            assert isinstance(properties.HasProperties.deserialize(
-                {'__class__': 'HP9'}, trusted=True
-            ), properties.HasProperties)
+            assert isinstance(
+                properties.HasProperties.deserialize(
+                    {
+                        '__class__': 'HP9'
+                    }, trusted=True
+                ), properties.HasProperties
+            )
             assert len(w) == 4
             assert issubclass(w[3].category, RuntimeWarning)
 
@@ -98,7 +95,6 @@ class TestSerialization(unittest.TestCase):
             HP1.deserialize(5)
 
     def test_immutable_serial(self):
-
         class UidModel(properties.HasProperties):
             uid = properties.Uuid('unique id')
 
@@ -107,7 +103,6 @@ class TestSerialization(unittest.TestCase):
         assert properties.equal(um1, um2)
 
     def test_none_serial(self):
-
         class ManyProperties(properties.HasProperties):
             mystr = properties.String(
                 'my string',
@@ -136,7 +131,6 @@ class TestSerialization(unittest.TestCase):
 
         many = ManyProperties()
         assert many.serialize(include_class=False) == {}
-
 
     def test_serializer(self):
 
@@ -169,8 +163,6 @@ class TestSerialization(unittest.TestCase):
 
         def just_the_classname(value):
             return value.__class__.__name__
-
-
 
         class ManyProperties(properties.HasProperties):
             mystr = properties.String(
@@ -233,7 +225,6 @@ class TestSerialization(unittest.TestCase):
         assert many.myunion == '1PH'
 
     def test_dynamic_serial(self):
-
         class DynamicModel(properties.HasProperties):
             a = properties.Integer('')
             b = properties.Renamed('a')
@@ -251,9 +242,12 @@ class TestSerialization(unittest.TestCase):
         dm_skip_dynamic = dm1.serialize()
 
         assert dm_skip_dynamic == {'__class__': 'DynamicModel', 'a': 5}
-        assert dm_save_dynamic == {'__class__': 'DynamicModel',
-                                  'a': 5, 'b': 5, 'c': 5}
-
+        assert dm_save_dynamic == {
+            '__class__': 'DynamicModel',
+            'a': 5,
+            'b': 5,
+            'c': 5
+        }
 
         dm2 = DynamicModel.deserialize(dm_skip_dynamic)
         assert properties.equal(dm1, dm2)

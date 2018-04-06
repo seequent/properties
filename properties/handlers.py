@@ -11,7 +11,7 @@ from .utils import everything
 LISTENER_TYPES = {'validate', 'observe_set', 'observe_change'}
 
 
-class listeners_disabled(object):                                              #pylint: disable=invalid-name, too-few-public-methods
+class listeners_disabled(object):  #pylint: disable=invalid-name, too-few-public-methods
     """Context manager for disabling all HasProperties listeners
 
     Code that runs inside this context manager will not fire HasProperties
@@ -63,7 +63,7 @@ class listeners_disabled(object):                                              #
         listeners_disabled._quarantine = self._previous_state
 
 
-class validators_disabled(listeners_disabled):                                 #pylint: disable=invalid-name, too-few-public-methods
+class validators_disabled(listeners_disabled):  #pylint: disable=invalid-name, too-few-public-methods
     """Context manager for disabling all property change validators
 
     This context manager behaves like :class:`properties.listeners_disabled`,
@@ -74,7 +74,7 @@ class validators_disabled(listeners_disabled):                                 #
         super(validators_disabled, self).__init__({'validate'})
 
 
-class observers_disabled(listeners_disabled):                                  #pylint: disable=invalid-name, too-few-public-methods
+class observers_disabled(listeners_disabled):  #pylint: disable=invalid-name, too-few-public-methods
     """Context manager for disabling all property change observers
 
     This context manager behaves like :class:`properties.listeners_disabled`,
@@ -82,8 +82,8 @@ class observers_disabled(listeners_disabled):                                  #
     """
 
     def __init__(self):
-        super(observers_disabled, self).__init__({'observe_set',
-                                                  'observe_change'})
+        super(observers_disabled,
+              self).__init__({'observe_set', 'observe_change'})
 
 
 def _set_listener(instance, obs):
@@ -100,10 +100,8 @@ def _set_listener(instance, obs):
 
 def _get_listeners(instance, change):
     """Gets listeners of changed Property on a HasProperties instance"""
-    if (
-            change['mode'] not in listeners_disabled._quarantine and           #pylint: disable=protected-access
-            change['name'] in instance._listeners
-    ):
+    if (change['mode'] not in listeners_disabled._quarantine and  #pylint: disable=protected-access
+            change['name'] in instance._listeners):
         return instance._listeners[change['name']][change['mode']]
     return []
 
@@ -162,7 +160,7 @@ class Observer(object):
         self._mode = value
 
 
-class ClassValidator(object):                                                  #pylint: disable=too-few-public-methods
+class ClassValidator(object):  #pylint: disable=too-few-public-methods
     """Acts as a listener on class validation
 
     Observers are initialized by the :code:`observer` and :code:`validator`

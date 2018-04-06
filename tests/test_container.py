@@ -11,55 +11,60 @@ import properties
 
 
 class TestContainer(unittest.TestCase):
-
     def test_tuple(self):
 
         with self.assertRaises(TypeError):
             properties.Tuple('bad string tuple', prop=str)
         with self.assertRaises(TypeError):
-            properties.Tuple('bad max', properties.Integer(''),
-                            max_length=-10)
+            properties.Tuple('bad max', properties.Integer(''), max_length=-10)
         with self.assertRaises(TypeError):
-            properties.Tuple('bad max', properties.Integer(''),
-                            max_length='ten')
+            properties.Tuple(
+                'bad max', properties.Integer(''), max_length='ten'
+            )
         with self.assertRaises(TypeError):
-            mytuple = properties.Tuple('bad max', properties.Integer(''),
-                                     min_length=20)
+            mytuple = properties.Tuple(
+                'bad max', properties.Integer(''), min_length=20
+            )
             mytuple.max_length = 10
         with self.assertRaises(TypeError):
-            properties.Tuple('bad min', properties.Integer(''),
-                            min_length=-10)
+            properties.Tuple('bad min', properties.Integer(''), min_length=-10)
         with self.assertRaises(TypeError):
-            properties.Tuple('bad min', properties.Integer(''),
-                            min_length='ten')
+            properties.Tuple(
+                'bad min', properties.Integer(''), min_length='ten'
+            )
         with self.assertRaises(TypeError):
-            mytuple = properties.Tuple('bad min', properties.Integer(''),
-                                     max_length=10)
+            mytuple = properties.Tuple(
+                'bad min', properties.Integer(''), max_length=10
+            )
             mytuple.min_length = 20
         with self.assertRaises(AttributeError):
-            properties.Tuple('bad observe', properties.Integer(''),
-                            observe_mutations=5)
+            properties.Tuple(
+                'bad observe', properties.Integer(''), observe_mutations=5
+            )
         with self.assertRaises(TypeError):
-            properties.Tuple('bad coerce', properties.Integer(''),
-                            coerce=5)
+            properties.Tuple('bad coerce', properties.Integer(''), coerce=5)
 
         class HasPropsDummy(properties.HasProperties):
             pass
 
-        mytuple = properties.Tuple('dummy has properties tuple',
-                                 prop=HasPropsDummy)
+        mytuple = properties.Tuple(
+            'dummy has properties tuple', prop=HasPropsDummy
+        )
         assert isinstance(mytuple.prop, properties.Instance)
         assert mytuple.prop.instance_class is HasPropsDummy
 
         class HasDummyTuple(properties.HasProperties):
-            mytuple = properties.Tuple('dummy has properties tuple',
-                                     prop=HasPropsDummy)
+            mytuple = properties.Tuple(
+                'dummy has properties tuple', prop=HasPropsDummy
+            )
 
         assert HasDummyTuple()._props['mytuple'].name == 'mytuple'
         assert HasDummyTuple()._props['mytuple'].prop.name == 'mytuple'
 
         class HasIntTuple(properties.HasProperties):
-            aaa = properties.Tuple('tuple of ints', properties.Integer(''), default=tuple)
+            aaa = properties.Tuple(
+                'tuple of ints', properties.Integer(''), default=tuple
+            )
 
         li = HasIntTuple()
         li.aaa = (1, 2, 3)
@@ -75,16 +80,17 @@ class TestContainer(unittest.TestCase):
         li2 = HasIntTuple()
         assert li1.aaa == li2.aaa
         assert li1.aaa is li2.aaa
-        li1.aaa += (1,)
+        li1.aaa += (1, )
         assert li1.aaa is not li2.aaa
 
         class HasCoercedIntTuple(properties.HasProperties):
-            aaa = properties.Tuple('tuple of ints', properties.Integer(''),
-                                   coerce=True)
+            aaa = properties.Tuple(
+                'tuple of ints', properties.Integer(''), coerce=True
+            )
 
         li = HasCoercedIntTuple()
         li.aaa = 1
-        assert li.aaa == (1,)
+        assert li.aaa == (1, )
         li.aaa = [1, 2, 3]
         assert li.aaa == (1, 2, 3)
         li.aaa = {1, 2, 3}
@@ -95,19 +101,21 @@ class TestContainer(unittest.TestCase):
         assert li.aaa == (3, 2, 1)
 
         class HasConstrianedTuple(properties.HasProperties):
-            aaa = properties.Tuple('tuple of ints', properties.Integer(''),
-                                  min_length=2)
+            aaa = properties.Tuple(
+                'tuple of ints', properties.Integer(''), min_length=2
+            )
 
         li = HasConstrianedTuple()
         li.aaa = (1, 2, 3)
         li.validate()
-        li.aaa = (1,)
+        li.aaa = (1, )
         with self.assertRaises(ValueError):
             li.validate()
 
         class HasConstrianedTuple(properties.HasProperties):
-            aaa = properties.Tuple('tuple of ints', properties.Integer(''),
-                                  max_length=2)
+            aaa = properties.Tuple(
+                'tuple of ints', properties.Integer(''), max_length=2
+            )
 
         li = HasConstrianedTuple()
         li.aaa = (1, 2)
@@ -117,8 +125,12 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasColorTuple(properties.HasProperties):
-            ccc = properties.Tuple('tuple of colors', properties.Color(''),
-                                   min_length=2, max_length=2)
+            ccc = properties.Tuple(
+                'tuple of colors',
+                properties.Color(''),
+                min_length=2,
+                max_length=2
+            )
 
         li = HasColorTuple()
         li.ccc = ('red', '#00FF00')
@@ -132,10 +144,15 @@ class TestContainer(unittest.TestCase):
         class HasIntA(properties.HasProperties):
             a = properties.Integer('int a', required=True)
 
-        assert properties.Tuple.to_json(
-            (HasIntA(a=5), HasIntA(a=10))
-        ) == [{'__class__': 'HasIntA', 'a': 5},
-              {'__class__': 'HasIntA', 'a': 10}]
+        assert properties.Tuple.to_json((HasIntA(a=5), HasIntA(a=10))) == [
+            {
+                '__class__': 'HasIntA',
+                'a': 5
+            }, {
+                '__class__': 'HasIntA',
+                'a': 10
+            }
+        ]
 
         assert li.serialize(include_class=False) == {
             'ccc': [[255, 0, 0], [0, 255, 0]]
@@ -145,7 +162,15 @@ class TestContainer(unittest.TestCase):
             mytuple = properties.Tuple('tuple of HasIntA', HasIntA)
 
         deser_tuple = HasIntATuple.deserialize(
-            {'mytuple': [{'a': 0}, {'a': 10}, {'a': 100}]}
+            {
+                'mytuple': [{
+                    'a': 0
+                }, {
+                    'a': 10
+                }, {
+                    'a': 100
+                }]
+            }
         ).mytuple
         assert isinstance(deser_tuple, tuple)
         assert len(deser_tuple) == 3
@@ -161,9 +186,7 @@ class TestContainer(unittest.TestCase):
 
         assert HasIntATuple._props['mytuple'].deserialize(None) is None
 
-        assert properties.Tuple(
-            '', properties.Instance('', HasIntA)
-        ).equal(
+        assert properties.Tuple('', properties.Instance('', HasIntA)).equal(
             (HasIntA(a=1), HasIntA(a=2)), (HasIntA(a=1), HasIntA(a=2))
         )
         assert not properties.Tuple(
@@ -172,11 +195,11 @@ class TestContainer(unittest.TestCase):
             (HasIntA(a=1), HasIntA(a=2)),
             (HasIntA(a=1), HasIntA(a=2), HasIntA(a=3))
         )
-        assert not properties.Tuple(
-            '', properties.Instance('', HasIntA)
-        ).equal(
-            (HasIntA(a=1), HasIntA(a=2)), (HasIntA(a=1), HasIntA(a=3))
-        )
+        assert not properties.Tuple('', properties.Instance('', HasIntA)
+                                    ).equal(
+                                        (HasIntA(a=1), HasIntA(a=2)),
+                                        (HasIntA(a=1), HasIntA(a=3))
+                                    )
         assert not properties.Tuple('', properties.Integer('')).equal(5, 5)
 
         class HasOptPropTuple(properties.HasProperties):
@@ -191,17 +214,17 @@ class TestContainer(unittest.TestCase):
             hopt.validate()
 
         with self.assertRaises(ValueError):
-            hopt.mytuple = (None,)
+            hopt.mytuple = (None, )
 
         with self.assertRaises(ValueError):
-            hopt.mytuple = (properties.undefined,)
+            hopt.mytuple = (properties.undefined, )
 
-        hopt._backend = {'mytuple': (properties.undefined,)}
+        hopt._backend = {'mytuple': (properties.undefined, )}
 
         with self.assertRaises(ValueError):
             hopt.validate()
 
-        hopt.mytuple = (True,)
+        hopt.mytuple = (True, )
 
         del hopt.mytuple
 
@@ -214,7 +237,6 @@ class TestContainer(unittest.TestCase):
         ut = UntypedTuple(mytuple=(1, 'hi', UntypedTuple))
         ut.validate()
 
-
     def test_list(self):
         self._test_list(True)
         self._test_list(False)
@@ -224,50 +246,62 @@ class TestContainer(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.List('bad string list', prop=str)
         with self.assertRaises(TypeError):
-            properties.List('bad max', properties.Integer(''),
-                            max_length=-10)
+            properties.List('bad max', properties.Integer(''), max_length=-10)
         with self.assertRaises(TypeError):
-            properties.List('bad max', properties.Integer(''),
-                            max_length='ten')
+            properties.List(
+                'bad max', properties.Integer(''), max_length='ten'
+            )
         with self.assertRaises(TypeError):
-            mylist = properties.List('bad max', properties.Integer(''),
-                                     min_length=20)
+            mylist = properties.List(
+                'bad max', properties.Integer(''), min_length=20
+            )
             mylist.max_length = 10
         with self.assertRaises(TypeError):
-            properties.List('bad min', properties.Integer(''),
-                            min_length=-10)
+            properties.List('bad min', properties.Integer(''), min_length=-10)
         with self.assertRaises(TypeError):
-            properties.List('bad min', properties.Integer(''),
-                            min_length='ten')
+            properties.List(
+                'bad min', properties.Integer(''), min_length='ten'
+            )
         with self.assertRaises(TypeError):
-            mylist = properties.List('bad min', properties.Integer(''),
-                                     max_length=10)
+            mylist = properties.List(
+                'bad min', properties.Integer(''), max_length=10
+            )
             mylist.min_length = 20
         with self.assertRaises(TypeError):
-            properties.List('bad observe', properties.Integer(''),
-                            observe_mutations=5)
+            properties.List(
+                'bad observe', properties.Integer(''), observe_mutations=5
+            )
         with self.assertRaises(TypeError):
-            properties.List('bad coerce', properties.Integer(''),
-                            coerce=5)
+            properties.List('bad coerce', properties.Integer(''), coerce=5)
 
         class HasPropsDummy(properties.HasProperties):
             pass
 
-        mylist = properties.List('dummy has properties list',
-                                 prop=HasPropsDummy, observe_mutations=om)
+        mylist = properties.List(
+            'dummy has properties list',
+            prop=HasPropsDummy,
+            observe_mutations=om
+        )
         assert isinstance(mylist.prop, properties.Instance)
         assert mylist.prop.instance_class is HasPropsDummy
 
         class HasDummyList(properties.HasProperties):
-            mylist = properties.List('dummy has properties list',
-                                     prop=HasPropsDummy, observe_mutations=om)
+            mylist = properties.List(
+                'dummy has properties list',
+                prop=HasPropsDummy,
+                observe_mutations=om
+            )
 
         assert HasDummyList()._props['mylist'].name == 'mylist'
         assert HasDummyList()._props['mylist'].prop.name == 'mylist'
 
         class HasIntList(properties.HasProperties):
-            aaa = properties.List('list of ints', properties.Integer(''),
-                                  observe_mutations=om, default=list)
+            aaa = properties.List(
+                'list of ints',
+                properties.Integer(''),
+                observe_mutations=om,
+                default=list
+            )
 
         li = HasIntList()
         li.aaa = [1, 2, 3]
@@ -285,8 +319,12 @@ class TestContainer(unittest.TestCase):
         assert li1.aaa is not li2.aaa
 
         class HasCoercedIntList(properties.HasProperties):
-            aaa = properties.List('list of ints', properties.Integer(''),
-                                  observe_mutations=om, coerce=True)
+            aaa = properties.List(
+                'list of ints',
+                properties.Integer(''),
+                observe_mutations=om,
+                coerce=True
+            )
 
         li = HasCoercedIntList()
         li.aaa = 1
@@ -298,8 +336,12 @@ class TestContainer(unittest.TestCase):
         assert all(val in li.aaa for val in [1, 2, 3])
 
         class HasConstrianedList(properties.HasProperties):
-            aaa = properties.List('list of ints', properties.Integer(''),
-                                  min_length=2, observe_mutations=om)
+            aaa = properties.List(
+                'list of ints',
+                properties.Integer(''),
+                min_length=2,
+                observe_mutations=om
+            )
 
         li = HasConstrianedList()
         li.aaa = [1, 2, 3]
@@ -309,8 +351,12 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasConstrianedList(properties.HasProperties):
-            aaa = properties.List('list of ints', properties.Integer(''),
-                                  max_length=2, observe_mutations=om)
+            aaa = properties.List(
+                'list of ints',
+                properties.Integer(''),
+                max_length=2,
+                observe_mutations=om
+            )
 
         li = HasConstrianedList()
         li.aaa = [1, 2]
@@ -320,8 +366,9 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasColorList(properties.HasProperties):
-            ccc = properties.List('list of colors', properties.Color(''),
-                                  observe_mutations=om)
+            ccc = properties.List(
+                'list of colors', properties.Color(''), observe_mutations=om
+            )
 
         li = HasColorList()
         li.ccc = ['red', '#00FF00']
@@ -337,10 +384,16 @@ class TestContainer(unittest.TestCase):
         class HasIntA(properties.HasProperties):
             a = properties.Integer('int a', required=True)
 
-        assert properties.List.to_json(
-            [HasIntA(a=5), HasIntA(a=10)]
-        ) == [{'__class__': 'HasIntA', 'a': 5},
-              {'__class__': 'HasIntA', 'a': 10}]
+        assert properties.List.to_json([HasIntA(a=5),
+                                        HasIntA(a=10)]) == [
+                                            {
+                                                '__class__': 'HasIntA',
+                                                'a': 5
+                                            }, {
+                                                '__class__': 'HasIntA',
+                                                'a': 10
+                                            }
+                                        ]
 
         assert li.serialize(include_class=False) == {
             'ccc': [[255, 0, 0], [0, 255, 0]]
@@ -354,11 +407,20 @@ class TestContainer(unittest.TestCase):
                 li.validate()
 
         class HasIntAList(properties.HasProperties):
-            mylist = properties.List('list of HasIntA', HasIntA,
-                                     observe_mutations=om)
+            mylist = properties.List(
+                'list of HasIntA', HasIntA, observe_mutations=om
+            )
 
         deser_list = HasIntAList.deserialize(
-            {'mylist': [{'a': 0}, {'a': 10}, {'a': 100}]}
+            {
+                'mylist': [{
+                    'a': 0
+                }, {
+                    'a': 10
+                }, {
+                    'a': 100
+                }]
+            }
         ).mylist
         assert isinstance(deser_list, list)
         assert len(deser_list) == 3
@@ -367,8 +429,9 @@ class TestContainer(unittest.TestCase):
         assert isinstance(deser_list[2], HasIntA) and deser_list[2].a == 100
 
         class HasOptionalList(properties.HasProperties):
-            mylist = properties.List('', properties.Bool(''), required=False,
-                                     observe_mutations=om)
+            mylist = properties.List(
+                '', properties.Bool(''), required=False, observe_mutations=om
+            )
 
         hol = HasOptionalList()
         hol.validate()
@@ -378,21 +441,25 @@ class TestContainer(unittest.TestCase):
         assert properties.List(
             '', properties.Instance('', HasIntA), observe_mutations=om
         ).equal(
-            [HasIntA(a=1), HasIntA(a=2)], [HasIntA(a=1), HasIntA(a=2)]
+            [HasIntA(a=1), HasIntA(a=2)],
+            [HasIntA(a=1), HasIntA(a=2)]
         )
         assert not properties.List(
             '', properties.Instance('', HasIntA), observe_mutations=om
         ).equal(
             [HasIntA(a=1), HasIntA(a=2)],
-            [HasIntA(a=1), HasIntA(a=2), HasIntA(a=3)]
+            [HasIntA(a=1), HasIntA(a=2),
+             HasIntA(a=3)]
         )
         assert not properties.List(
             '', properties.Instance('', HasIntA), observe_mutations=om
         ).equal(
-            [HasIntA(a=1), HasIntA(a=2)], [HasIntA(a=1), HasIntA(a=3)]
+            [HasIntA(a=1), HasIntA(a=2)],
+            [HasIntA(a=1), HasIntA(a=3)]
         )
-        assert not properties.List('', properties.Integer(''),
-                                   observe_mutations=om).equal(5, 5)
+        assert not properties.List(
+            '', properties.Integer(''), observe_mutations=om
+        ).equal(5, 5)
 
         class HasOptPropList(properties.HasProperties):
             mylist = properties.List(
@@ -406,17 +473,27 @@ class TestContainer(unittest.TestCase):
             hopl.validate()
 
         with self.assertRaises(ValueError):
-            hopl.mylist = [None,]
+            hopl.mylist = [
+                None,
+            ]
 
         with self.assertRaises(ValueError):
-            hopl.mylist = [properties.undefined,]
+            hopl.mylist = [
+                properties.undefined,
+            ]
 
-        hopl._backend = {'mylist': [properties.undefined,]}
+        hopl._backend = {
+            'mylist': [
+                properties.undefined,
+            ]
+        }
 
         with self.assertRaises(ValueError):
             hopl.validate()
 
-        hopl.mylist = [True,]
+        hopl.mylist = [
+            True,
+        ]
 
         del hopl.mylist[0]
         hopl.validate()
@@ -435,50 +512,58 @@ class TestContainer(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.Set('bad string set', prop=str)
         with self.assertRaises(TypeError):
-            properties.Set('bad max', properties.Integer(''),
-                            max_length=-10)
+            properties.Set('bad max', properties.Integer(''), max_length=-10)
         with self.assertRaises(TypeError):
-            properties.Set('bad max', properties.Integer(''),
-                            max_length='ten')
+            properties.Set('bad max', properties.Integer(''), max_length='ten')
         with self.assertRaises(TypeError):
-            myset = properties.Set('bad max', properties.Integer(''),
-                                     min_length=20)
+            myset = properties.Set(
+                'bad max', properties.Integer(''), min_length=20
+            )
             myset.max_length = 10
         with self.assertRaises(TypeError):
-            properties.Set('bad min', properties.Integer(''),
-                            min_length=-10)
+            properties.Set('bad min', properties.Integer(''), min_length=-10)
         with self.assertRaises(TypeError):
-            properties.Set('bad min', properties.Integer(''),
-                            min_length='ten')
+            properties.Set('bad min', properties.Integer(''), min_length='ten')
         with self.assertRaises(TypeError):
-            myset = properties.Set('bad min', properties.Integer(''),
-                                     max_length=10)
+            myset = properties.Set(
+                'bad min', properties.Integer(''), max_length=10
+            )
             myset.min_length = 20
         with self.assertRaises(TypeError):
-            properties.Set('bad observe', properties.Integer(''),
-                            observe_mutations=5)
+            properties.Set(
+                'bad observe', properties.Integer(''), observe_mutations=5
+            )
         with self.assertRaises(TypeError):
-            properties.Set('bad coerce', properties.Integer(''),
-                            coerce=5)
+            properties.Set('bad coerce', properties.Integer(''), coerce=5)
 
         class HasPropsDummy(properties.HasProperties):
             pass
 
-        myset = properties.Set('dummy has properties set',
-                                 prop=HasPropsDummy, observe_mutations=om)
+        myset = properties.Set(
+            'dummy has properties set',
+            prop=HasPropsDummy,
+            observe_mutations=om
+        )
         assert isinstance(myset.prop, properties.Instance)
         assert myset.prop.instance_class is HasPropsDummy
 
         class HasDummySet(properties.HasProperties):
-            myset = properties.Set('dummy has properties set',
-                                     prop=HasPropsDummy, observe_mutations=om)
+            myset = properties.Set(
+                'dummy has properties set',
+                prop=HasPropsDummy,
+                observe_mutations=om
+            )
 
         assert HasDummySet()._props['myset'].name == 'myset'
         assert HasDummySet()._props['myset'].prop.name == 'myset'
 
         class HasIntSet(properties.HasProperties):
-            aaa = properties.Set('set of ints', properties.Integer(''),
-                                  observe_mutations=om, default=set)
+            aaa = properties.Set(
+                'set of ints',
+                properties.Integer(''),
+                observe_mutations=om,
+                default=set
+            )
 
         li = HasIntSet()
         li.aaa = {1, 2, 3}
@@ -496,8 +581,12 @@ class TestContainer(unittest.TestCase):
         assert li1.aaa is not li2.aaa
 
         class HasCoercedIntSet(properties.HasProperties):
-            aaa = properties.Set('set of ints', properties.Integer(''),
-                                 observe_mutations=om, coerce=True)
+            aaa = properties.Set(
+                'set of ints',
+                properties.Integer(''),
+                observe_mutations=om,
+                coerce=True
+            )
 
         li = HasCoercedIntSet()
         li.aaa = 1
@@ -508,8 +597,12 @@ class TestContainer(unittest.TestCase):
         assert li.aaa == {1, 2, 3}
 
         class HasConstrianedSet(properties.HasProperties):
-            aaa = properties.Set('set of ints', properties.Integer(''),
-                                  min_length=2, observe_mutations=om)
+            aaa = properties.Set(
+                'set of ints',
+                properties.Integer(''),
+                min_length=2,
+                observe_mutations=om
+            )
 
         li = HasConstrianedSet()
         li.aaa = {1, 2, 3}
@@ -519,8 +612,12 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasConstrianedSet(properties.HasProperties):
-            aaa = properties.Set('set of ints', properties.Integer(''),
-                                  max_length=2, observe_mutations=om)
+            aaa = properties.Set(
+                'set of ints',
+                properties.Integer(''),
+                max_length=2,
+                observe_mutations=om
+            )
 
         li = HasConstrianedSet()
         li.aaa = {1, 2}
@@ -530,8 +627,9 @@ class TestContainer(unittest.TestCase):
             li.validate()
 
         class HasColorSet(properties.HasProperties):
-            ccc = properties.Set('set of colors', properties.Color(''),
-                                  observe_mutations=om)
+            ccc = properties.Set(
+                'set of colors', properties.Color(''), observe_mutations=om
+            )
 
         li = HasColorSet()
         li.ccc = {'red', '#00FF00'}
@@ -547,24 +645,49 @@ class TestContainer(unittest.TestCase):
 
         hia_json = properties.Set.to_json({HasIntA(a=5), HasIntA(a=10)})
         assert (
-            hia_json == [{'__class__': 'HasIntA', 'a': 5},
-                         {'__class__': 'HasIntA', 'a': 10}] or
-            hia_json == [{'__class__': 'HasIntA', 'a': 10},
-                         {'__class__': 'HasIntA', 'a': 5}]
+            hia_json == [
+                {
+                    '__class__': 'HasIntA',
+                    'a': 5
+                }, {
+                    '__class__': 'HasIntA',
+                    'a': 10
+                }
+            ] or hia_json == [
+                {
+                    '__class__': 'HasIntA',
+                    'a': 10
+                }, {
+                    '__class__': 'HasIntA',
+                    'a': 5
+                }
+            ]
         )
 
         li_ser = li.serialize(include_class=False)
         assert (
-            li_ser == {'ccc': [[255, 0, 0], [0, 255, 0]]} or
-            li_ser == {'ccc': [[0, 255, 0], [255, 0, 0]]}
+            li_ser == {
+                'ccc': [[255, 0, 0], [0, 255, 0]]
+            } or li_ser == {
+                'ccc': [[0, 255, 0], [255, 0, 0]]
+            }
         )
 
         class HasIntASet(properties.HasProperties):
-            myset = properties.Set('set of HasIntA', HasIntA,
-                                     observe_mutations=om)
+            myset = properties.Set(
+                'set of HasIntA', HasIntA, observe_mutations=om
+            )
 
         deser_set = HasIntASet.deserialize(
-            {'myset': [{'a': 0}, {'a': 10}, {'a': 100}]}
+            {
+                'myset': [{
+                    'a': 0
+                }, {
+                    'a': 10
+                }, {
+                    'a': 100
+                }]
+            }
         ).myset
         assert isinstance(deser_set, set)
         assert len(deser_set) == 3
@@ -572,8 +695,9 @@ class TestContainer(unittest.TestCase):
         assert {val.a for val in deser_set} == {0, 10, 100}
 
         class HasOptionalSet(properties.HasProperties):
-            myset = properties.Set('', properties.Bool(''), required=False,
-                                     observe_mutations=om)
+            myset = properties.Set(
+                '', properties.Bool(''), required=False, observe_mutations=om
+            )
 
         hol = HasOptionalSet()
         hol.validate()
@@ -583,28 +707,32 @@ class TestContainer(unittest.TestCase):
         assert properties.Set(
             '', properties.Instance('', HasIntA), observe_mutations=om
         ).equal(
-            {HasIntA(a=1), HasIntA(a=2)}, {HasIntA(a=1), HasIntA(a=2)}
+            {HasIntA(a=1), HasIntA(a=2)},
+            {HasIntA(a=1), HasIntA(a=2)}
         )
         assert not properties.Set(
             '', properties.Instance('', HasIntA), observe_mutations=om
         ).equal(
             {HasIntA(a=1), HasIntA(a=2)},
-            {HasIntA(a=1), HasIntA(a=2), HasIntA(a=3)}
+            {HasIntA(a=1), HasIntA(a=2),
+             HasIntA(a=3)}
         )
         assert not properties.Set(
             '', properties.Instance('', HasIntA), observe_mutations=om
         ).equal(
-            {HasIntA(a=1), HasIntA(a=2)}, {HasIntA(a=1), HasIntA(a=3)}
+            {HasIntA(a=1), HasIntA(a=2)},
+            {HasIntA(a=1), HasIntA(a=3)}
         )
-        assert not properties.Set('', properties.Integer(''),
-                                   observe_mutations=om).equal(5, 5)
+        assert not properties.Set(
+            '', properties.Integer(''), observe_mutations=om
+        ).equal(5, 5)
 
     def test_basic_vs_advanced_list(self):
-
         class HasLists(properties.HasProperties):
             basic = properties.List('', properties.Integer(''))
-            advanced = properties.List('', properties.Integer(''),
-                                       observe_mutations=True)
+            advanced = properties.List(
+                '', properties.Integer(''), observe_mutations=True
+            )
 
             def __init__(self, **kwargs):
                 self._basic_tic = 0
@@ -725,11 +853,11 @@ class TestContainer(unittest.TestCase):
         assert hl._advanced_tic == 15
 
     def test_basic_vs_advanced_set(self):
-
         class HasSets(properties.HasProperties):
             basic = properties.Set('', properties.Integer(''))
-            advanced = properties.Set('', properties.Integer(''),
-                                       observe_mutations=True)
+            advanced = properties.Set(
+                '', properties.Integer(''), observe_mutations=True
+            )
 
             def __init__(self, **kwargs):
                 self._basic_tic = 0
@@ -849,7 +977,6 @@ class TestContainer(unittest.TestCase):
         assert hl.advanced == {1, 2}
         assert hl._advanced_tic == 15
 
-
     def test_dict(self):
         self._test_dict(True)
         self._test_dict(False)
@@ -861,25 +988,30 @@ class TestContainer(unittest.TestCase):
         with self.assertRaises(TypeError):
             properties.Dictionary('bad string set', value_prop=str)
         with self.assertRaises(TypeError):
-            properties.Dictionary('bad observe', properties.Integer(''),
-                            observe_mutations=5)
+            properties.Dictionary(
+                'bad observe', properties.Integer(''), observe_mutations=5
+            )
 
         class HasPropsDummy(properties.HasProperties):
             pass
 
-        mydict = properties.Dictionary('dummy has properties set',
-                                key_prop=properties.String(''),
-                                value_prop=HasPropsDummy,
-                                observe_mutations=om)
+        mydict = properties.Dictionary(
+            'dummy has properties set',
+            key_prop=properties.String(''),
+            value_prop=HasPropsDummy,
+            observe_mutations=om
+        )
         assert isinstance(mydict.key_prop, properties.String)
         assert isinstance(mydict.value_prop, properties.Instance)
         assert mydict.value_prop.instance_class is HasPropsDummy
 
         class HasDummyDict(properties.HasProperties):
-            mydict = properties.Dictionary('dummy has properties set',
-                                     key_prop=properties.String(''),
-                                     value_prop=HasPropsDummy,
-                                     observe_mutations=om)
+            mydict = properties.Dictionary(
+                'dummy has properties set',
+                key_prop=properties.String(''),
+                value_prop=HasPropsDummy,
+                observe_mutations=om
+            )
 
         assert HasDummyDict()._props['mydict'].name == 'mydict'
         assert HasDummyDict()._props['mydict'].key_prop.name == 'mydict'
@@ -903,16 +1035,16 @@ class TestContainer(unittest.TestCase):
         assert li1.aaa == li2.aaa
         assert li1.aaa is not li2.aaa
 
-
         class HasInt(properties.HasProperties):
             myint = properties.Integer('my integer')
 
-
         class HasFunnyDict(properties.HasProperties):
-            mydict = properties.Dictionary('my dict',
-                                     key_prop=properties.Color(''),
-                                     value_prop=HasInt,
-                                     observe_mutations=om)
+            mydict = properties.Dictionary(
+                'my dict',
+                key_prop=properties.Color(''),
+                value_prop=HasInt,
+                observe_mutations=om
+            )
 
         hfd = HasFunnyDict()
         hfd.mydict = {'red': HasInt(myint=5)}
@@ -946,14 +1078,12 @@ class TestContainer(unittest.TestCase):
         self._test_nested_observed(False)
 
     def _test_nested_observed(self, om):
-
         class HasNestedList(properties.HasProperties):
 
             nested_list = properties.List(
                 'This is not a great idea...',
-                properties.List('',
-                    properties.Integer(''),
-                    observe_mutations=True
+                properties.List(
+                    '', properties.Integer(''), observe_mutations=True
                 ),
                 observe_mutations=om,
             )
@@ -970,7 +1100,6 @@ class TestContainer(unittest.TestCase):
         assert hnl.nested_list == [[10, 2, 3, 0], [4, 5, 6], [7, 8, 9]]
 
     def test_container_class_retention(self):
-
         class HasCollections(properties.HasProperties):
             tuple_unobs = properties.Tuple('')
             dict_unobs = properties.Dictionary('')
@@ -1016,6 +1145,7 @@ class TestContainer(unittest.TestCase):
         assert isinstance(hc.set_obs, SillySet)
         hc.set_obs.add(1)
         assert isinstance(hc.set_obs, SillySet)
+
 
 if __name__ == '__main__':
     unittest.main()

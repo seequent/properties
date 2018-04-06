@@ -14,54 +14,88 @@ from .. import basic
 from .. import utils
 
 if PY2:
-    from types import ClassType                                                #pylint: disable=no-name-in-module
+    from types import ClassType  #pylint: disable=no-name-in-module
     CLASS_TYPES = (type, ClassType)
 else:
-    CLASS_TYPES = (type,)
+    CLASS_TYPES = (type, )
 
 CONTAINERS = (list, tuple, set)
 try:
     import numpy as np
-    CONTAINERS += (np.ndarray,)
+    CONTAINERS += (np.ndarray, )
 except ImportError:
     pass
-
 
 OBSERVABLE_REGISTRY = {}
 MUTATOR_CATEGORIES = {
     '_mutators': [
-        'add', 'append', 'clear', 'difference_update', 'discard',
-        'extend', 'insert', 'intersection_update', 'pop', 'popitem',
-        'remove', 'reverse', 'setdefault', 'sort',
-        'symmetric_difference_update', 'update', '__delitem__',
-        '__delslice__', '__setitem__', '__setslice__',
+        'add',
+        'append',
+        'clear',
+        'difference_update',
+        'discard',
+        'extend',
+        'insert',
+        'intersection_update',
+        'pop',
+        'popitem',
+        'remove',
+        'reverse',
+        'setdefault',
+        'sort',
+        'symmetric_difference_update',
+        'update',
+        '__delitem__',
+        '__delslice__',
+        '__setitem__',
+        '__setslice__',
     ],
     '_operators': [
-        'copy', 'difference', 'fromkeys', 'intersection',
-        'symmetric_difference', 'union', '__add__', '__and__', '__mul__',
-        '__or__', '__rand__', '__rmul__', '__ror__', '__rsub__', '__rxor__',
-        '__sub__', '__xor__',
+        'copy',
+        'difference',
+        'fromkeys',
+        'intersection',
+        'symmetric_difference',
+        'union',
+        '__add__',
+        '__and__',
+        '__mul__',
+        '__or__',
+        '__rand__',
+        '__rmul__',
+        '__ror__',
+        '__rsub__',
+        '__rxor__',
+        '__sub__',
+        '__xor__',
     ],
     '_ioperators': [
-        '__iadd__', '__iand__', '__imul__', '__ior__', '__isub__', '__ixor__',
+        '__iadd__',
+        '__iand__',
+        '__imul__',
+        '__ior__',
+        '__isub__',
+        '__ixor__',
     ],
 }
 
+
 def add_properties_callbacks(cls):
     """Class decorator to add change notifications to builtin containers"""
-    for name in cls._mutators:                                                 #pylint: disable=protected-access
+    for name in cls._mutators:  #pylint: disable=protected-access
         if not hasattr(cls, name):
             continue
         setattr(cls, name, properties_mutator(cls, name))
-    for name in cls._operators:                                                #pylint: disable=protected-access
+    for name in cls._operators:  #pylint: disable=protected-access
         if not hasattr(cls, name):
             continue
         setattr(cls, name, properties_operator(cls, name))
-    for name in cls._ioperators:                                               #pylint: disable=protected-access
+    for name in cls._ioperators:  #pylint: disable=protected-access
         if not hasattr(cls, name):
             continue
         setattr(cls, name, properties_mutator(cls, name, True))
     return cls
+
 
 def properties_mutator(cls, name, ioper=False):
     """Wraps a mutating container method to add HasProperties notifications
@@ -73,11 +107,9 @@ def properties_mutator(cls, name, ioper=False):
 
     def wrapper(self, *args, **kwargs):
         """Mutate if not part of HasProperties; copy/modify/set otherwise"""
-        if (
-                getattr(self, '_instance', None) is None or
-                getattr(self, '_name', '') == '' or
-                self is not getattr(self._instance, self._name)
-        ):
+        if (getattr(self, '_instance', None) is None
+                or getattr(self, '_name', '') == ''
+                or self is not getattr(self._instance, self._name)):
             return getattr(super(cls, self), name)(*args, **kwargs)
         else:
             copy = cls(self)
@@ -93,6 +125,7 @@ def properties_mutator(cls, name, ioper=False):
     wrapper.__doc__ = wrapped.__doc__
     return wrapper
 
+
 def properties_operator(cls, name):
     """Wraps a container operator to ensure container class is maintained"""
 
@@ -105,6 +138,7 @@ def properties_operator(cls, name):
     wrapper.__name__ = wrapped.__name__
     wrapper.__doc__ = wrapped.__doc__
     return wrapper
+
 
 def observable_copy(value, name, instance):
     """Return an observable container for HasProperties notifications
@@ -128,7 +162,7 @@ def observable_copy(value, name, instance):
         observable_class = add_properties_callbacks(
             type(container_class)(
                 str('Observable{}'.format(container_class.__name__)),
-                (container_class,),
+                (container_class, ),
                 MUTATOR_CATEGORIES,
             )
         )
@@ -138,19 +172,21 @@ def observable_copy(value, name, instance):
     value._instance = instance
     return value
 
+
 def validate_prop(value):
     """Validate Property instance for container items"""
-    if (
-            isinstance(value, CLASS_TYPES) and
-            issubclass(value, HasProperties)
-    ):
+    if (isinstance(value, CLASS_TYPES) and issubclass(value, HasProperties)):
         value = Instance('', value)
     if not isinstance(value, basic.Property):
-        raise TypeError('Contained prop must be a Property instance or '
-                        'HasProperties class')
+        raise TypeError(
+            'Contained prop must be a Property instance or '
+            'HasProperties class'
+        )
     if value.default is not utils.undefined:
-        warn('Contained prop default ignored: {}'.format(value.default),
-             RuntimeWarning)
+        warn(
+            'Contained prop default ignored: {}'.format(value.default),
+            RuntimeWarning
+        )
     return value
 
 
@@ -306,8 +342,7 @@ class Tuple(basic.Property):
             return self.serializer(value, **kwargs)
         if value is None:
             return None
-        serial_list = [self.prop.serialize(val, **kwargs)
-                       for val in value]
+        serial_list = [self.prop.serialize(val, **kwargs) for val in value]
         return serial_list
 
     def deserialize(self, value, **kwargs):
@@ -317,15 +352,15 @@ class Tuple(basic.Property):
             return self.deserializer(value, **kwargs)
         if value is None:
             return None
-        output_list = [self.prop.deserialize(val, **kwargs)
-                       for val in value]
+        output_list = [self.prop.deserialize(val, **kwargs) for val in value]
         return self._class_container(output_list)
 
     def equal(self, value_a, value_b):
         try:
             if len(value_a) == len(value_b):
-                equal_list = [self.prop.equal(a, b)
-                              for a, b in zip(value_a, value_b)]
+                equal_list = [
+                    self.prop.equal(a, b) for a, b in zip(value_a, value_b)
+                ]
                 return all(equal_list)
         except TypeError:
             pass
@@ -338,8 +373,8 @@ class Tuple(basic.Property):
         If the tuple contains HasProperties instances, they are serialized.
         """
         serial_list = [
-            val.serialize(**kwargs) if isinstance(val, HasProperties)
-            else val for val in value
+            val.serialize(**kwargs) if isinstance(val, HasProperties) else val
+            for val in value
         ]
         return serial_list
 
@@ -618,14 +653,15 @@ class Dictionary(basic.Property):
             (
                 self.key_prop.serialize(key, **kwargs),
                 self.value_prop.serialize(val, **kwargs)
-            )
-            for key, val in iteritems(value)
+            ) for key, val in iteritems(value)
         ]
         try:
             serial_dict = {key: val for key, val in serial_tuples}
         except TypeError as err:
-            raise TypeError('Dictionary property {} cannot be serialized - '
-                            'keys contain {}'.format(self.name, err))
+            raise TypeError(
+                'Dictionary property {} cannot be serialized - '
+                'keys contain {}'.format(self.name, err)
+            )
         return serial_dict
 
     def deserialize(self, value, **kwargs):
@@ -639,14 +675,15 @@ class Dictionary(basic.Property):
             (
                 self.key_prop.deserialize(key, **kwargs),
                 self.value_prop.deserialize(val, **kwargs)
-            )
-            for key, val in iteritems(value)
+            ) for key, val in iteritems(value)
         ]
         try:
             output_dict = {key: val for key, val in output_tuples}
         except TypeError as err:
-            raise TypeError('Dictionary property {} cannot be deserialized - '
-                            'keys contain {}'.format(self.name, err))
+            raise TypeError(
+                'Dictionary property {} cannot be deserialized - '
+                'keys contain {}'.format(self.name, err)
+            )
         return self._class_container(output_dict)
 
     def equal(self, value_a, value_b):
@@ -661,7 +698,6 @@ class Dictionary(basic.Property):
         except (KeyError, TypeError, AttributeError):
             return False
 
-
     @staticmethod
     def to_json(value, **kwargs):
         """Return a copy of the dictionary
@@ -670,8 +706,8 @@ class Dictionary(basic.Property):
         """
         serial_dict = {
             key: (
-                val.serialize(**kwargs) if isinstance(val, HasProperties)
-                else val
+                val.serialize(**kwargs)
+                if isinstance(val, HasProperties) else val
             )
             for key, val in iteritems(value)
         }

@@ -47,22 +47,26 @@ def filter_props(has_props_cls, input_dict, include_immutable=True):
         assert set(others) == {'hometown', 'email'}
     """
     props_dict = {
-        k: v for k, v in iter(input_dict.items()) if (
+        k: v
+        for k, v in iter(input_dict.items())
+        if (
             k in has_props_cls._props and (
-                include_immutable or
-                any(
+                include_immutable or any(
                     hasattr(has_props_cls._props[k], att)
                     for att in ('required', 'new_name')
                 )
             )
         )
     }
-    others_dict = {k: v for k, v in iter(input_dict.items())
-                   if k not in props_dict}
+    others_dict = {
+        k: v
+        for k, v in iter(input_dict.items())
+        if k not in props_dict
+    }
     return (props_dict, others_dict)
 
 
-class stop_recursion_with(object):                                             #pylint: disable=invalid-name, too-few-public-methods
+class stop_recursion_with(object):  #pylint: disable=invalid-name, too-few-public-methods
     """Decorator for HasProperties methods that may call themselves
 
     This prevents infinite recursion by running the original method the
@@ -83,9 +87,10 @@ class stop_recursion_with(object):                                             #
     """
 
     def __init__(self, backup):
-        warn('properties.stop_recursion_with has been deprecated. Please '
-             'use easier-to-understand try/finally block.',
-             FutureWarning)
+        warn(
+            'properties.stop_recursion_with has been deprecated. Please '
+            'use easier-to-understand try/finally block.', FutureWarning
+        )
 
         self.backup = backup
         self.held_objects = []
@@ -123,7 +128,7 @@ class SelfReferenceError(Exception):
     """Exception type to be raised with infinite recursion problems"""
 
 
-class Sentinel(object):                                                        #pylint: disable=too-few-public-methods
+class Sentinel(object):  #pylint: disable=too-few-public-methods
     """Basic object with name and doc for specifying singletons
 
     **Avalable Sentinels**:
@@ -135,10 +140,11 @@ class Sentinel(object):                                                        #
     * :code:`properties.everything` - Sentinel representing all available
       properties. This is used when specifying observed properties.
     """
+
     def __init__(self, name, doc):
         self.name = name
         self.doc = doc
 
 
-undefined = Sentinel('undefined', 'undefined value for properties.')           #pylint: disable=invalid-name
-everything = Sentinel('everything', 'value representing all properties.')      #pylint: disable=invalid-name
+undefined = Sentinel('undefined', 'undefined value for properties.')  #pylint: disable=invalid-name
+everything = Sentinel('everything', 'value representing all properties.')  #pylint: disable=invalid-name

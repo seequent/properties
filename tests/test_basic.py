@@ -18,7 +18,6 @@ import six
 
 
 class TestBasic(unittest.TestCase):
-
     def test_base_functionality(self):
 
         with self.assertRaises(AttributeError):
@@ -40,7 +39,10 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(TypeError):
             GettablePropOpt._props['mygp'].terms = {'one': 1, 'two': 2}
         with self.assertRaises(TypeError):
-            GettablePropOpt._props['mygp'].doc = {'args': (1,), 'otherargs': 5}
+            GettablePropOpt._props['mygp'].doc = {
+                'args': (1, ),
+                'otherargs': 5
+            }
 
         gpo = GettablePropOpt()
         with self.assertRaises(AttributeError):
@@ -53,7 +55,7 @@ class TestBasic(unittest.TestCase):
         assert gpo.validate()
         assert gpo._props['mygp'].terms.name == 'mygp'
         assert gpo._props['mygp'].terms.cls is properties.GettableProperty
-        assert gpo._props['mygp'].terms.args == ('gettable prop',)
+        assert gpo._props['mygp'].terms.args == ('gettable prop', )
         assert gpo._props['mygp'].terms.kwargs == {}
         assert gpo._props['mygp'].terms.meta == {}
 
@@ -82,10 +84,12 @@ class TestBasic(unittest.TestCase):
 
         assert properties.equal(PropOpts(), PropOpts())
         assert properties.equal(PropOpts(myprop=5), PropOpts(myprop=5))
-        assert not properties.equal(PropOpts(myprop=5, maybe_none=3),
-                                    PropOpts(myprop=5))
-        assert properties.equal(PropOpts(myprop=5, maybe_none=3),
-                                PropOpts(myprop=5, maybe_none=3))
+        assert not properties.equal(
+            PropOpts(myprop=5, maybe_none=3), PropOpts(myprop=5)
+        )
+        assert properties.equal(
+            PropOpts(myprop=5, maybe_none=3), PropOpts(myprop=5, maybe_none=3)
+        )
         assert not properties.equal(PropOpts(myprop=5), PropOpts())
         assert not properties.equal(PropOpts(myprop=5), PropOpts(myprop=6))
         assert not properties.equal(None, PropOpts(myprop=6))
@@ -94,10 +98,12 @@ class TestBasic(unittest.TestCase):
 
         assert properties.Property('').equal(5, 5)
         assert not properties.Property('').equal(5, 'hi')
-        assert properties.Property('').equal(np.array([1., 2.]),
-                                             np.array([1., 2.]))
-        assert not properties.Property('').equal(np.array([1., 2.]),
-                                                 np.array([3., 4.]))
+        assert properties.Property('').equal(
+            np.array([1., 2.]), np.array([1., 2.])
+        )
+        assert not properties.Property('').equal(
+            np.array([1., 2.]), np.array([3., 4.])
+        )
 
         class NoAttributes(properties.HasProperties):
             a = properties.Integer('a')
@@ -111,14 +117,15 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             na.a = 5
 
-
     def test_docstrings(self):
 
         with self.assertRaises(AttributeError):
+
             class BadDocOrder(properties.HasProperties):
                 _doc_order = 5
 
         with self.assertRaises(AttributeError):
+
             class BadDocOrder(properties.HasProperties):
                 _doc_order = ['myprop', 'another_prop']
                 myprop = properties.Property('empty property')
@@ -165,6 +172,7 @@ class TestBasic(unittest.TestCase):
             _doc_order = None
 
         with self.assertRaises(AttributeError):
+
             class BadDocPrivate(properties.HasProperties):
                 _doc_private = 'yes'
 
@@ -185,14 +193,12 @@ class TestBasic(unittest.TestCase):
 
         assert UndocPrivate().__doc__ == ''
 
-
     def test_bool(self):
 
         for boolean in (properties.Bool, properties.Boolean):
             self._test_bool_with(boolean)
 
     def _test_bool_with(self, boolean):
-
         class BoolOpts(properties.HasProperties):
             mybool = boolean('My bool')
 
@@ -290,8 +296,13 @@ class TestBasic(unittest.TestCase):
         assert np.isnan(properties.Float.from_json('nan'))
         assert np.isinf(properties.Float.from_json('inf'))
 
-        serialized = {'myint': 1, 'myfloat': 1., 'myfloatmin': 10.,
-                      'myfloatmax': 10., 'myfloatrange': 10.}
+        serialized = {
+            'myint': 1,
+            'myfloat': 1.,
+            'myfloatmin': 10.,
+            'myfloatmax': 10.,
+            'myfloatrange': 10.
+        }
         self.assertEqual(nums.serialize(include_class=False), serialized)
         assert NumOpts.deserialize(serialized).myfloatrange == 10.
 
@@ -301,7 +312,6 @@ class TestBasic(unittest.TestCase):
         assert not properties.Float('').equal('hi', 'hi')
 
     def test_complex(self):
-
         class ComplexOpts(properties.HasProperties):
             mycomplex = properties.Complex('My complex')
 
@@ -311,23 +321,24 @@ class TestBasic(unittest.TestCase):
             comp.mycomplex = 'hi'
 
         comp.mycomplex = 1
-        assert comp.mycomplex == (1+0j)
+        assert comp.mycomplex == (1 + 0j)
         comp.mycomplex = 2.5j
-        assert comp.mycomplex == (0+2.5j)
-        comp.mycomplex = (5+2j)
+        assert comp.mycomplex == (0 + 2.5j)
+        comp.mycomplex = (5 + 2j)
 
-        assert properties.Complex.to_json(5+2j) == '(5+2j)'
+        assert properties.Complex.to_json(5 + 2j) == '(5+2j)'
         assert properties.Complex.to_json(5) == '5'
         assert properties.Complex.to_json(2j) == '2j'
 
-        assert properties.Complex.from_json('(5+2j)') == (5+2j)
+        assert properties.Complex.from_json('(5+2j)') == (5 + 2j)
 
-        self.assertEqual(comp.serialize(include_class=False),
-                         {'mycomplex': '(5+2j)'})
+        self.assertEqual(
+            comp.serialize(include_class=False), {'mycomplex': '(5+2j)'}
+        )
         assert ComplexOpts.deserialize({'mycomplex': '(0+1j)'}).mycomplex == 1j
 
-        assert properties.Complex('').equal((1+1j), (1+1j))
-        assert not properties.Complex('').equal((1+1j), 1)
+        assert properties.Complex('').equal((1 + 1j), (1 + 1j))
+        assert not properties.Complex('').equal((1 + 1j), 1)
         assert not properties.Complex('').equal('hi', 'hi')
 
     def test_string(self):
@@ -344,10 +355,12 @@ class TestBasic(unittest.TestCase):
         class StringOpts(properties.HasProperties):
             mystring = properties.String('My string')
             mystringstrip = properties.String('My stripped string', strip=' ')
-            mystringupper = properties.String('My upper string',
-                                              change_case='upper')
-            mystringlower = properties.String('My lower string',
-                                              change_case='lower')
+            mystringupper = properties.String(
+                'My upper string', change_case='upper'
+            )
+            mystringlower = properties.String(
+                'My lower string', change_case='lower'
+            )
 
         strings = StringOpts()
 
@@ -366,15 +379,17 @@ class TestBasic(unittest.TestCase):
         assert properties.String.from_json('a string') == 'a string'
 
         self.assertEqual(len(strings.serialize(include_class=False)), 4)
-        self.assertEqual(strings.serialize(include_class=False), {
-            'mystring': 'a string',
-            'mystringstrip': 'a string',
-            'mystringupper': 'A STRING',
-            'mystringlower': 'a string',
-        })
-        assert StringOpts.deserialize(
-            {'mystringupper': 'a string'}
-        ).mystringupper == 'A STRING'
+        self.assertEqual(
+            strings.serialize(include_class=False), {
+                'mystring': 'a string',
+                'mystringstrip': 'a string',
+                'mystringupper': 'A STRING',
+                'mystringlower': 'a string',
+            }
+        )
+        assert StringOpts.deserialize({
+            'mystringupper': 'a string'
+        }).mystringupper == 'A STRING'
 
         strings.mystring = u'∏Øˆ∏ØÎ'
         assert strings.mystring == u'∏Øˆ∏ØÎ'
@@ -390,8 +405,9 @@ class TestBasic(unittest.TestCase):
 
         class StringOpts(properties.HasProperties):
             mystring = properties.String('email', regex=r'.+\@.+\..+')
-            anotherstring = properties.String('one character',
-                                              regex=re.compile(r'^.$'))
+            anotherstring = properties.String(
+                'one character', regex=re.compile(r'^.$')
+            )
 
         strings = StringOpts()
         strings.mystring = 'test@test.com'
@@ -427,9 +443,11 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(TypeError):
             choiceprop.descriptions = {'a': 'letter a', 'b': 'letter b'}
         with self.assertRaises(TypeError):
-            choiceprop.descriptions = {'a': 'letter a',
-                                       'b': 'letter b',
-                                       'd': 'letter d'}
+            choiceprop.descriptions = {
+                'a': 'letter a',
+                'b': 'letter b',
+                'd': 'letter d'
+            }
         with self.assertRaises(TypeError):
             choiceprop.descriptions = {'a': 1, 'b': 2, 'c': 3}
 
@@ -445,19 +463,23 @@ class TestBasic(unittest.TestCase):
                 'list of choices', ['a', 'e', 'i', 'o', 'u']
             )
             mychoicedict = properties.StringChoice(
-                'dict of choices', {'vowel': ['a', 'e', 'i', 'o', 'u'],
-                                    'maybe': 'y'}
+                'dict of choices', {
+                    'vowel': ['a', 'e', 'i', 'o', 'u'],
+                    'maybe': 'y'
+                }
             )
             mychoicetuple = properties.StringChoice(
                 'tuple of choices', ('a', 'e', 'i', 'o', 'u')
             )
             mychoiceset = properties.StringChoice(
                 'set of choices', {'a', 'e', 'i', 'o', 'u'},
-                descriptions={'a': 'The first letter of the alphabet',
-                              'e': 'A really great vowel',
-                              'i': 'This letter is also a word!',
-                              'o': 'Another excellent vowel',
-                              'u': 'Less useful vowel'}
+                descriptions={
+                    'a': 'The first letter of the alphabet',
+                    'e': 'A really great vowel',
+                    'i': 'This letter is also a word!',
+                    'o': 'Another excellent vowel',
+                    'u': 'Less useful vowel'
+                }
             )
             mysensitive = properties.StringChoice(
                 'bad case', ['a', 'A', 'b'], True
@@ -477,19 +499,20 @@ class TestBasic(unittest.TestCase):
         assert choices.mychoicedict == 'vowel'
         choices.mychoicedict = 'maybe'
 
-        self.assertEquals(choices.serialize(include_class=False), {
-            'mychoicelist': 'o',
-            'mychoicedict': 'maybe'
-        })
-        assert StrChoicesOpts.deserialize(
-            {'mychoicedict': 'a'}
-        ).mychoicedict == 'vowel'
+        self.assertEquals(
+            choices.serialize(include_class=False), {
+                'mychoicelist': 'o',
+                'mychoicedict': 'maybe'
+            }
+        )
+        assert StrChoicesOpts.deserialize({
+            'mychoicedict': 'a'
+        }).mychoicedict == 'vowel'
 
         assert properties.StringChoice('', {}).equal('equal', 'equal')
         assert not properties.StringChoice('', {}).equal('equal', 'EQUAL')
 
     def test_color(self):
-
         class ColorOpts(properties.HasProperties):
             mycolor = properties.Color('My color')
 
@@ -519,17 +542,17 @@ class TestBasic(unittest.TestCase):
             col.mycolor = [-10, 0, 0]
 
         col.mycolor = 'red'
-        self.assertEqual(col.serialize(include_class=False),
-                         {'mycolor': [255, 0, 0]})
-        assert ColorOpts.deserialize(
-            {'mycolor': [0, 10, 20]}
-        ).mycolor == (0, 10, 20)
+        self.assertEqual(
+            col.serialize(include_class=False), {'mycolor': [255, 0, 0]}
+        )
+        assert ColorOpts.deserialize({
+            'mycolor': [0, 10, 20]
+        }).mycolor == (0, 10, 20)
 
         assert properties.Color('').equal((0, 10, 20), (0, 10, 20))
         assert not properties.Color('').equal((0, 10, 20), [0, 10, 20])
 
     def test_datetime(self):
-
         class DateTimeOpts(properties.HasProperties):
             mydate = properties.DateTime('my date')
 
@@ -547,21 +570,26 @@ class TestBasic(unittest.TestCase):
         dttm.mydate = '2010-01-02T00:00:00Z'
         assert dttm.mydate == datetime.datetime(2010, 1, 2)
 
-        assert properties.DateTime.to_json(dttm.mydate) == '2010-01-02T00:00:00Z'
+        assert properties.DateTime.to_json(
+            dttm.mydate
+        ) == '2010-01-02T00:00:00Z'
 
-        self.assertEqual(dttm.serialize(include_class=False),
-                         {'mydate': '2010-01-02T00:00:00Z'})
-        assert DateTimeOpts.deserialize(
-            {'mydate': '2010-01-02'}
-        ).mydate == datetime.datetime(2010, 1, 2)
+        self.assertEqual(
+            dttm.serialize(include_class=False),
+            {'mydate': '2010-01-02T00:00:00Z'}
+        )
+        assert DateTimeOpts.deserialize({
+            'mydate': '2010-01-02'
+        }).mydate == datetime.datetime(2010, 1, 2)
 
-        assert properties.DateTime('').equal(datetime.datetime(2010, 1, 2),
-                                             datetime.datetime(2010, 1, 2))
-        assert not properties.DateTime('').equal(datetime.datetime(2010, 1, 2),
-                                                 datetime.datetime(2010, 1, 3))
+        assert properties.DateTime('').equal(
+            datetime.datetime(2010, 1, 2), datetime.datetime(2010, 1, 2)
+        )
+        assert not properties.DateTime('').equal(
+            datetime.datetime(2010, 1, 2), datetime.datetime(2010, 1, 3)
+        )
 
     def test_uid(self):
-
         class UidModel(properties.HasProperties):
             uid = properties.Uuid('my uuid')
 
@@ -596,7 +624,8 @@ class TestBasic(unittest.TestCase):
         class FileOpt(properties.HasProperties):
             myfile_read = properties.File('a readonly file', 'r')
             myfile_write = properties.File(
-                'a writable file', 'w',
+                'a writable file',
+                'w',
                 valid_modes=('w', 'w+', 'r+', 'a', 'a+')
             )
             myfile_writebin = properties.File('a write-only binary file', 'wb')
@@ -698,6 +727,7 @@ class TestBasic(unittest.TestCase):
     def test_renamed(self):
 
         with self.assertRaises(TypeError):
+
             class BadRenamed(properties.HasProperties):
                 new_prop = properties.Renamed('no_good')
 
@@ -735,6 +765,7 @@ class TestBasic(unittest.TestCase):
         )
 
         with self.assertRaises(TypeError):
+
             class MyHasProps(properties.HasProperties):
                 my_int = properties.Integer('My integer')
 
@@ -755,12 +786,14 @@ class TestBasic(unittest.TestCase):
         assert myp.my_int == 5
         assert MyHasProps._props['not_my_int'].doc == ''
         assert properties.equal(
-            MyHasProps.deserialize({'my_int': 5}),
-            MyHasProps.deserialize({'not_my_int': 5})
+            MyHasProps.deserialize({
+                'my_int': 5
+            }), MyHasProps.deserialize({
+                'not_my_int': 5
+            })
         )
 
     def test_copy(self):
-
         class HasProps2(properties.HasProperties):
             my_list = properties.List('my list', properties.Bool(''))
             five = properties.GettableProperty('five', default=5)
@@ -786,6 +819,7 @@ class TestBasic(unittest.TestCase):
         assert hp1.my_hp2 is not hp1_copy.my_hp2
         assert hp1.my_hp2.my_list is not hp1_copy.my_hp2.my_list
         assert hp1.my_hp2.my_array is not hp1_copy.my_hp2.my_array
+
 
 if __name__ == '__main__':
     unittest.main()
