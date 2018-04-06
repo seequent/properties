@@ -30,17 +30,19 @@ EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
     name='properties',
     version='0.4.0',
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('tests', )),
     install_requires=['six'],
     extras_require=EXTRAS,
     author='Seequent',
     author_email='it@seequent.com',
-    description=('properties: an organizational aid and wrapper for '
-                 'validation and tab completion of class properties'),
+    description=(
+        'properties: an organizational aid and wrapper for '
+        'validation and tab completion of class properties'
+    ),
     long_description=LONG_DESCRIPTION,
     keywords='declarative, properties, traits',
-    url='https://github.com/aranzgeo/properties',
-    download_url='https://github.com/aranzgeo/properties',
+    url='https://github.com/seequent/properties',
+    download_url='https://github.com/seequent/properties',
     classifiers=CLASSIFIERS,
     platforms=['Windows', 'Linux', 'Solaris', 'Mac OS-X', 'Unix'],
     use_2to3=False,
