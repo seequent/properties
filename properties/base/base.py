@@ -285,11 +285,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             for key, val in iteritems(kwargs):
                 prop = self._props.get(key, None)
                 if not prop and not hasattr(self, key):
-                    raise AttributeError("Keyword input '{}' is not a known "
-                                         "property or attribute".format(key))
+                    raise AttributeError(
+                        "Keyword input '{}' is not a known  property or "
+                        "attribute of {}".format(key, self.__class__.__name__)
+                    )
                 if isinstance(prop, basic.DynamicProperty):
-                    raise AttributeError("Dynamic property '{}' cannot be "
-                                         "set on init".format(key))
+                    raise AttributeError(
+                        "Dynamic property '{}' of {} cannot be set on "
+                        "init".format(key, self.__class__.__name__)
+                    )
                 try:
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
@@ -482,7 +486,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     @classmethod
     def deserialize(cls, value, trusted=False, strict=False,                   #pylint: disable=too-many-locals
-                    assert_valid=False, **kwargs):
+                    assert_valid=False, instance=None, **kwargs):
         """Creates **HasProperties** instance from serialized dictionary
 
         This uses the Property deserializers to deserialize all
@@ -505,6 +509,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           is False.
         * **assert_valid** - Require deserialized instance to be valid.
           Default is False.
+        * **instance** - Existing HasProperties instance to deserialize
+          dictionary into. Default is None, and a new instance is created.
         * Any other keyword arguments will be passed through to the Property
           deserializers.
         """
@@ -519,7 +525,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             raise utils.ValidationError(
                 'Class name {} from input dictionary does not match input '
                 'class {}'.format(input_class, cls.__name__))
-        kwargs.update({'trusted': trusted, 'strict': strict})
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if unused and strict:
@@ -528,18 +533,23 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     ', '.join(unused)
                 )
             )
+        kwargs.update({'trusted': trusted, 'strict': strict})
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, **kwargs)
         mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
-            newinst = cls(**mutable)
+            if instance is None:
+                instance = cls(**mutable)
+            else:
+                for key, val in iteritems(mutable):
+                    setattr(instance, key, val)
         for key, val in iteritems(immutable):
-            valid_val = cls._props[key].validate(newinst, val)
-            newinst._backend[key] = valid_val
-        if assert_valid and not newinst.validate():
+            valid_val = cls._props[key].validate(instance, val)
+            instance._backend[key] = valid_val
+        if assert_valid and not instance.validate():
             raise utils.ValidationError('Deserialized instance is not valid')
-        return newinst
+        return instance
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):
