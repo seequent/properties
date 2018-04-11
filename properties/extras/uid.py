@@ -31,6 +31,8 @@ class HasUID(base.HasProperties):
 
     @handlers.validator('uid')
     def _ensure_unique(self, change):
+        if self.uid == change['value']:
+            return True
         if change['value'] in self._INSTANCES:
             raise utils.ValidationError(
                 message='Uid already used: {}'.format(change['value']),
@@ -132,6 +134,7 @@ class HasUID(base.HasProperties):
                 instance=new_inst,
                 **kwargs
             )
+        cls._INSTANCES[uid] = registry[uid]
         return registry[uid]
 
 

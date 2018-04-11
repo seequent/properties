@@ -45,6 +45,8 @@ class TestUID(unittest.TestCase):
         recursive_uid = RecursiveUID.deserialize(serial_dict)
         assert recursive_uid.instance is recursive_uid
 
+        assert recursive_uid.validate()
+
     def test_pointer(self):
 
         class HasPointer(HasUID):
