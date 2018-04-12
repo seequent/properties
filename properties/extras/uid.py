@@ -164,7 +164,7 @@ class Pointer(base.Instance):
     def validate(self, instance, value):
         if isinstance(value, string_types):
             if value in self.instance_class._INSTANCES:
-                return self.instance_class._INSTANCES.get(value)
+                value = self.instance_class._INSTANCES.get(value)
             elif self.enforce_uid:
                 raise utils.ValidationError(
                     message='Unknown uid for {} property: {}'.format(
@@ -174,7 +174,8 @@ class Pointer(base.Instance):
                     prop=self.name,
                     instance=instance,
                 )
-            return value
+            else:
+                return value
         return super(Pointer, self).validate(instance, value)
 
     def sphinx_class(self):
