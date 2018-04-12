@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 import unittest
 
 import properties
@@ -43,17 +44,39 @@ class TestUID(unittest.TestCase):
             RecursiveUID.deserialize('hello')
 
         with self.assertRaises(ValueError):
-            RecursiveUID.deserialize(serial_dict.copy())
+            RecursiveUID.deserialize(serial_dict)
 
         RecursiveUID._INSTANCES.clear()
-        recursive_uid = RecursiveUID.deserialize(serial_dict.copy())
+        recursive_uid = RecursiveUID.deserialize(serial_dict)
         assert recursive_uid.instance is recursive_uid
         assert recursive_uid.validate()
 
         RecursiveUID._INSTANCES.clear()
         serial_dict['b']['instance'] = 'c'
         with self.assertRaises(ValueError):
-            RecursiveUID.deserialize(serial_dict.copy())
+            RecursiveUID.deserialize(serial_dict)
+
+        nested_uid = RecursiveUID(
+            uid='x',
+            instance=RecursiveUID(
+                uid='y',
+                instance=HasUID(
+                    uid='z',
+                ),
+            ),
+        )
+
+        serial_dict = nested_uid.serialize()
+        assert all([uid in serial_dict for uid in ['x', 'y', 'z', '__uid__']])
+
+        RecursiveUID._INSTANCES.clear()
+        less_nested_uid = RecursiveUID.deserialize(serial_dict, uid='y')
+        assert less_nested_uid.uid == 'y'
+        assert less_nested_uid.instance.uid == 'z'
+
+        serial_ordered_dict = nested_uid.serialize(registry=OrderedDict())
+        assert list(serial_ordered_dict.keys()) == ['__uid__', 'x', 'y', 'z']
+
 
     def test_pointer(self):
 

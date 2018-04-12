@@ -486,7 +486,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     @classmethod
     def deserialize(cls, value, trusted=False, strict=False,                   #pylint: disable=too-many-locals
-                    assert_valid=False, instance=None, **kwargs):
+                    assert_valid=False, **kwargs):
         """Creates **HasProperties** instance from serialized dictionary
 
         This uses the Property deserializers to deserialize all
@@ -509,8 +509,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           is False.
         * **assert_valid** - Require deserialized instance to be valid.
           Default is False.
-        * **instance** - Existing HasProperties instance to deserialize
-          dictionary into. Default is None, and a new instance is created.
         * Any other keyword arguments will be passed through to the Property
           deserializers.
         """
@@ -525,6 +523,13 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             raise utils.ValidationError(
                 'Class name {} from input dictionary does not match input '
                 'class {}'.format(input_class, cls.__name__))
+        instance = kwargs.pop('_instance', None)
+        if instance is not None and not isinstance(instance, cls):
+            raise utils.ValidationError(
+                'Input instance must be of class {}, not {}'.format(
+                    cls.__name__, instance.__class__.__name__
+                )
+            )
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if unused and strict:

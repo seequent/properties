@@ -1,20 +1,18 @@
-from six import iteritems, string_types, text_type
+"""Classes for dealing with HasProperties instances with unique IDs"""
 import uuid
+
+from six import string_types, text_type
 
 from .. import base, basic, handlers, utils
 from ..base.instance import CLASS_TYPES
 
 
 class HasUID(base.HasProperties):
-    """UidModel is a HasProperties class that includes unique ID
+    """HasUID is a HasProperties class that includes unique ID
 
     Adding a UID to HasProperties allows serialization of more complex
-    structures, including recursive self-references.
-
-    .. note::
-
-        The UID value is ignored when determining if two UidModels are
-        equal, and the UID does not persist on deserialization
+    structures, including recursive self-references. They are serialized
+    to a flat dictionary of UID/HasUID key/value pairs.
     """
 
     _REGISTRY = dict()
@@ -32,21 +30,21 @@ class HasUID(base.HasProperties):
     @handlers.validator('uid')
     def _ensure_unique(self, change):
         if self.uid == change['value']:
-            return True
-        if change['value'] in self._INSTANCES:
+            pass
+        elif change['value'] in self._INSTANCES:
             raise utils.ValidationError(
                 message='Uid already used: {}'.format(change['value']),
                 reason='invalid',
                 prop=change['name'],
                 instance=self,
             )
+        return True
 
     @handlers.observer('uid')
     def _update_instances(self, change):
         self._INSTANCES.update({change['value']: self})
 
-    def serialize(self, registry=None, include_class=True, save_dynamic=False,
-                  **kwargs):
+    def serialize(self, include_class=True, save_dynamic=False, **kwargs):
         """Serialize nested HasUID instances to a flat dictionary
 
         **Parameters**:
@@ -54,11 +52,15 @@ class HasUID(base.HasProperties):
         * **include_class** - If True (the default), the name of the class
           will also be saved to the serialized dictionary under key
           :code:`'__class__'`
-        * **registry** - The flat dictionary to save pointer references.
-          If None (the default), a new dictionary will be created.
+        * **save_dynamic** - If True, dynamic properties are written to
+          the serialized dict (default: False).
+        * You may also specify a **registry** - This is the flat dictionary
+          where UID/HasUID pairs are stored. By default, no registry need
+          be provided; a new dictionary will be created.
         * Any other keyword arguments will be passed through to the Property
           serializers.
         """
+        registry = kwargs.pop('registry', None)
         if registry is None:
             registry = dict()
         if not registry:
@@ -80,25 +82,29 @@ class HasUID(base.HasProperties):
         return key
 
     @classmethod
-    def deserialize(cls, value, registry=None, trusted=False, strict=False,
-                    **kwargs):
-        """Deserialize nested UidModels from flat pointer dictionary
+    def deserialize(cls, value, trusted=False, strict=False,
+                    assert_valid=False, **kwargs):
+        """Deserialize nested HasUID instance from flat pointer dictionary
 
         **Parameters**
 
-        * **uid** - The unique ID key that determines where deserialization
-          begins
-        * **registry** - Flat pointer dictionary produced by
-          :code:`serialize`. The registry is mutated during deserialziaton;
-          values are replaced by UidModel objects.
-        * **trusted** - If True (and if the input dictionary has
+        * **value** - Flat pointer dictionary produced by :code:`serialize`
+          with UID/HasUID key/value pairs. It also includes a
+          :code:`__uid__` key to specify the root HasUID instance.
+        * **trusted** - If True (and if the input dictionaries have
           :code:`'__class__'` keyword and this class is in the registry), the
           new **HasProperties** class will come from the dictionary.
           If False (the default), only the **HasProperties** class this
           method is called on will be constructed.
-        * **verbose** - Raise warnings if :code:`'__class__'` is not found in
-          the registry or of there are unused Property values in the input
-          dictionary. Default is True.
+        * **strict** - Requires :code:`'__class__'`, if present on the input
+          dictionary, to match the deserialized instance's class. Also
+          disallows unused properties in the input dictionary. Default
+          is False.
+        * **assert_valid** - Require deserialized instance to be valid.
+          Default is False.
+        * You may also specify an alternative **uid** - This allows a different
+          HasUID root instance to be specified. It overrides :code:`__uid__`
+          in the input dictionary.
         * Any other keyword arguments will be passed through to the Property
           deserializers.
 
@@ -109,10 +115,11 @@ class HasUID(base.HasProperties):
             fail if the init method has been overridden to require
             input parameters.
         """
+        registry = kwargs.pop('registry', None)
         if registry is None:
             if not isinstance(value, dict):
                 raise ValueError('HasUID must deserialize from dictionary')
-            registry = value
+            registry = value.copy()
             uid = kwargs.get('uid', registry.get('__uid__'))
         else:
             uid = value
@@ -131,7 +138,7 @@ class HasUID(base.HasProperties):
                 trusted=trusted,
                 strict=strict,
                 registry=registry,
-                instance=new_inst,
+                _instance=new_inst,
                 **kwargs
             )
         cls._INSTANCES[uid] = registry[uid]
@@ -139,20 +146,37 @@ class HasUID(base.HasProperties):
 
 
 class Pointer(base.Instance):
+    """Property for HasUID instances where string UID pointer may be used
+
+    **Available keywords** (in addition to those inherited from
+    :ref:`Instance <instance>`):
+
+    * **enforce_uid** - Require Pointer strings to resolve into instances.
+      If False, the default, the Pointer property may be set to an arbitrary
+      string; if True, the string must correspond to an existing UID.
+    """
 
     @property
     def instance_class(self):
-        """Allowed class for the Instance property"""
+        """Allowed class for the Pointer property
+
+        Must be a subclass of HasUID
+        """
         return self._instance_class
 
     @instance_class.setter
     def instance_class(self, value):
         if not isinstance(value, CLASS_TYPES) or not issubclass(value, HasUID):
-            raise TypeError('instance_class must be a HasUID class')
+            raise TypeError('instance_class must be a subclass of HasUID')
         self._instance_class = value
 
     @property
     def enforce_uid(self):
+        """Require Pointer strings to resolve into instances
+
+        If False, the default, the Pointer may be set to an arbitrary string;
+        if True, the string must correspond to an existing UID.
+        """
         return getattr(self, '_enforce_uid', False)
 
     @enforce_uid.setter
@@ -163,8 +187,8 @@ class Pointer(base.Instance):
 
     def validate(self, instance, value):
         if isinstance(value, string_types):
-            if value in self.instance_class._INSTANCES:
-                value = self.instance_class._INSTANCES.get(value)
+            if value in self.instance_class._INSTANCES:                        #pylint: disable=protected-access
+                value = self.instance_class._INSTANCES.get(value)              #pylint: disable=protected-access
             elif self.enforce_uid:
                 raise utils.ValidationError(
                     message='Unknown uid for {} property: {}'.format(
