@@ -17,6 +17,9 @@ install:
 script:
   - make tests
   - make test-docs
+  - if [ "$TRAVIS_BRANCH" = "master" -o "$TRAVIS_BRANCH" = "beta" ]; then
+      make lint;
+    fi
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
