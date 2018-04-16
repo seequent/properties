@@ -517,15 +517,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         cls = cls._deserialize_class(value.get('__class__'), trusted, strict)
         instance = kwargs.pop('_instance', None)
         if instance is not None and not isinstance(instance, cls):
-            raise utils.ValidationError(
-                'Input instance must be of class {}, not {}'.format(
+            raise ValueError(
+                'Input _instance must be of class {}, not {}'.format(
                     cls.__name__, instance.__class__.__name__
                 )
             )
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if unused and strict:
-            raise utils.ValidationError(
+            raise ValueError(
                 'Unused properties during deserialization: {}'.format(
                     ', '.join(unused)
                 )
@@ -556,7 +556,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         elif trusted and input_class in cls._REGISTRY:
             cls = cls._REGISTRY[input_class]
         elif strict:
-            raise utils.ValidationError(
+            raise ValueError(
                 'Class name {} from deserialization input dictionary does '
                 'not match input class {}'.format(input_class, cls.__name__))
         return cls
