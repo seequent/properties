@@ -44,6 +44,14 @@ class HasUID(base.HasProperties):
     def _update_instances(self, change):
         self._INSTANCES.update({change['value']: self})
 
+    @classmethod
+    def validate_uid(cls, uid):
+        return True
+
+    @classmethod
+    def get_by_uid(cls, uid):
+        return cls._INSTANCES.get(uid)
+
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
         """Serialize nested HasUID instances to a flat dictionary
 
@@ -131,7 +139,12 @@ class HasUID(base.HasProperties):
             raise ValueError('Invalid uid: {}'.format(uid))
         value = registry[uid]
         if not isinstance(value, HasUID):
-            new_inst = cls()
+            try:
+                input_class = value.get('__class__')
+            except AttributeError:
+                input_class = None
+            new_cls = cls._deserialize_class(input_class, trusted, strict)
+            new_inst = new_cls()
             registry.update({uid: new_inst})
             super(HasUID, cls).deserialize(
                 value=value,
@@ -157,20 +170,6 @@ class Pointer(base.Instance):
     """
 
     @property
-    def instance_class(self):
-        """Allowed class for the Pointer property
-
-        Must be a subclass of HasUID
-        """
-        return self._instance_class
-
-    @instance_class.setter
-    def instance_class(self, value):
-        if not isinstance(value, CLASS_TYPES) or not issubclass(value, HasUID):
-            raise TypeError('instance_class must be a subclass of HasUID')
-        self._instance_class = value
-
-    @property
     def enforce_uid(self):
         """Require Pointer strings to resolve into instances
 
@@ -187,8 +186,21 @@ class Pointer(base.Instance):
 
     def validate(self, instance, value):
         if isinstance(value, string_types):
-            if value in self.instance_class._INSTANCES:                        #pylint: disable=protected-access
-                value = self.instance_class._INSTANCES.get(value)              #pylint: disable=protected-access
+            if hasattr(self.instance_class, 'validate_uid'):
+                valid_uid = self.instance_class.validate_uid(value)
+                if valid_uid is False:
+                    raise utils.ValidationError(
+                        message='Invalid uid for class {}: {}'.format(
+                            self.instance_class.__name__, value
+                        ),
+                        reason='invalid',
+                        prop=self.name,
+                        instance=instance,
+                    )
+            if hasattr(self.instance_class, 'get_by_uid'):
+                new_value = self.instance_class.get_by_uid(value)
+            if new_value is not None:
+                value = new_value
             elif self.enforce_uid:
                 raise utils.ValidationError(
                     message='Unknown uid for {} property: {}'.format(

@@ -514,15 +514,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         """
         if not isinstance(value, dict):
             raise ValueError('HasProperties must deserialize from dictionary')
-        input_class = value.get('__class__')
-        if not input_class or input_class == cls.__name__:
-            pass
-        elif trusted and input_class in cls._REGISTRY:
-            cls = cls._REGISTRY[input_class]
-        elif strict:
-            raise utils.ValidationError(
-                'Class name {} from input dictionary does not match input '
-                'class {}'.format(input_class, cls.__name__))
+        cls = cls._deserialize_class(value.get('__class__'), trusted, strict)
         instance = kwargs.pop('_instance', None)
         if instance is not None and not isinstance(instance, cls):
             raise utils.ValidationError(
@@ -555,6 +547,19 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         if assert_valid and not instance.validate():
             raise utils.ValidationError('Deserialized instance is not valid')
         return instance
+
+    @classmethod
+    def _deserialize_class(cls, input_class, trusted=False, strict=False):
+        """Returns the HasProperties class to use for deserialization"""
+        if not input_class or input_class == cls.__name__:
+            pass
+        elif trusted and input_class in cls._REGISTRY:
+            cls = cls._REGISTRY[input_class]
+        elif strict:
+            raise utils.ValidationError(
+                'Class name {} from deserialization input dictionary does '
+                'not match input class {}'.format(input_class, cls.__name__))
+        return cls
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):

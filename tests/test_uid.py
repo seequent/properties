@@ -77,11 +77,15 @@ class TestUID(unittest.TestCase):
         serial_ordered_dict = nested_uid.serialize(registry=OrderedDict())
         assert list(serial_ordered_dict.keys()) == ['__uid__', 'x', 'y', 'z']
 
+        RecursiveUID._INSTANCES.clear()
+        uid_w = HasUID(uid='w')
+        serial_dict.pop('z')
+        serial_dict['y']['instance'] = 'w'
+        new_uid = RecursiveUID.deserialize(serial_dict, trusted=True)
+        assert new_uid.instance.instance is uid_w
+
 
     def test_pointer(self):
-
-        with self.assertRaises(TypeError):
-            Pointer('', object)
 
         class AnotherUID(HasUID):
             pass
