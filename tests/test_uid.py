@@ -117,9 +117,6 @@ class TestUID(unittest.TestCase):
 
     def test_enforce_uid(self):
 
-        with self.assertRaises(TypeError):
-            Pointer('', HasUID, enforce_uid=5)
-
         class AnotherUID(HasUID):
             pass
 
@@ -148,7 +145,54 @@ class TestUID(unittest.TestCase):
         with self.assertRaises(properties.ValidationError):
             has_pointer.other = has_uid.uid
 
+    def test_other_uid_methods(self):
 
+        class UnfollowedUID(properties.HasProperties):
+
+            long_uid = properties.String('uid')
+
+            @classmethod
+            def validate_uid(cls, value):
+                if value.split(':')[0] != cls.__name__:
+                    raise properties.ValidationError('class not in uid')
+
+        class HasUnfollowedUID(properties.HasProperties):
+
+            instance = Pointer('', UnfollowedUID, uid_prop='long_uid')
+
+        has_uid = HasUnfollowedUID()
+
+        has_uid.instance = 'UnfollowedUID:a'
+        with self.assertRaises(properties.ValidationError):
+            has_uid.instance = 'a'
+
+        class SillySingleton(properties.HasProperties):
+
+            uid = properties.String('uid', change_case='upper')
+
+            @classmethod
+            def get_by_uid(cls, value):
+                return getattr(cls, 'ONLY_INSTANCE', None)
+
+        class HasSillySingleton(properties.HasProperties):
+
+            instance = Pointer('', SillySingleton)
+
+        has_uid = HasSillySingleton()
+        has_uid.instance = 'something'
+        assert has_uid.instance == 'SOMETHING'
+
+        SillySingleton.ONLY_INSTANCE = SillySingleton()
+
+        has_uid.instance = 'another'
+        assert has_uid.instance is SillySingleton.ONLY_INSTANCE
+
+        class HasObjectPointer(properties.HasProperties):
+
+            instance = Pointer('', object)
+
+        has_uid = HasObjectPointer()
+        has_uid.instance = 'no_valiation'
 
 
 if __name__ == '__main__':

@@ -167,7 +167,11 @@ class Pointer(base.Instance):
     * **enforce_uid** - Require Pointer strings to resolve into instances.
       If False, the default, the Pointer property may be set to an arbitrary
       string; if True, the string must correspond to an existing UID.
+    * **uid_prop** - Property name of the UID property on instance_class.
+      The default is 'uid'.
     """
+
+    class_info = 'an instance or uid of an instance'
 
     @property
     def enforce_uid(self):
@@ -180,39 +184,49 @@ class Pointer(base.Instance):
 
     @enforce_uid.setter
     def enforce_uid(self, value):
-        if not isinstance(value, bool):
-            raise TypeError('enforce_uid must be a boolean')
-        self._enforce_uid = value
+        self._enforce_uid = bool(value)
+
+    @property
+    def uid_prop(self):
+        """Property name of the UID property on instance_class
+
+        The default is 'uid'
+        """
+        return getattr(self, '_uid_prop', 'uid')
+
+    @uid_prop.setter
+    def uid_prop(self, value):
+        self._uid_prop = text_type(value)
+
+    @property
+    def info(self):
+        info = '{} or a valid {} property of that class'.format(
+            super(Pointer, self).info, self.uid_prop
+        )
+        return info
 
     def validate(self, instance, value):
-        if isinstance(value, string_types):
-            if hasattr(self.instance_class, 'validate_uid'):
-                valid_uid = self.instance_class.validate_uid(value)
-                if valid_uid is False:
-                    raise utils.ValidationError(
-                        message='Invalid uid for class {}: {}'.format(
-                            self.instance_class.__name__, value
-                        ),
-                        reason='invalid',
-                        prop=self.name,
-                        instance=instance,
-                    )
-            if hasattr(self.instance_class, 'get_by_uid'):
-                new_value = self.instance_class.get_by_uid(value)
-            if new_value is not None:
-                value = new_value
-            elif self.enforce_uid:
-                raise utils.ValidationError(
-                    message='Unknown uid for {} property: {}'.format(
-                        self.name, value
-                    ),
-                    reason='invalid',
-                    prop=self.name,
-                    instance=instance,
-                )
+        instance_value = None
+        try:
+            if isinstance(value, string_types):
+                prop = getattr(
+                    self.instance_class, '_props', {}
+                ).get(self.uid_prop)
+                if prop:
+                    value = prop.validate(None, value)
+                if hasattr(self.instance_class, 'validate_uid'):
+                    self.instance_class.validate_uid(value)
+                if hasattr(self.instance_class, 'get_by_uid'):
+                    instance_value = self.instance_class.get_by_uid(value)
             else:
-                return value
-        return super(Pointer, self).validate(instance, value)
+                instance_value = value
+            if instance_value is not None:
+                return super(Pointer, self).validate(instance, instance_value)
+            if self.enforce_uid:
+                raise utils.ValidationError('uid is valid but unrecognized.')
+            return value
+        except utils.ValidationError as err:
+            self.error(instance, value, extra=text_type(err))
 
     def sphinx_class(self):
         """Description of the property, supplemental to the basic doc"""
