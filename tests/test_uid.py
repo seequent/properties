@@ -35,8 +35,8 @@ class TestUID(unittest.TestCase):
         recursive_uid.instance = recursive_uid
 
         serial_dict = recursive_uid.serialize()
-        assert '__uid__' in serial_dict
-        assert serial_dict['__uid__'] == 'b'
+        assert '__root__' in serial_dict
+        assert serial_dict['__root__'] == 'b'
         assert 'b' in serial_dict
         assert serial_dict['b'] == {'uid': 'b', 'instance': 'b', '__class__': 'RecursiveUID'}
 
@@ -67,15 +67,15 @@ class TestUID(unittest.TestCase):
         )
 
         serial_dict = nested_uid.serialize()
-        assert all([uid in serial_dict for uid in ['x', 'y', 'z', '__uid__']])
+        assert all([uid in serial_dict for uid in ['x', 'y', 'z', '__root__']])
 
         RecursiveUID._INSTANCES.clear()
-        less_nested_uid = RecursiveUID.deserialize(serial_dict, uid='y')
+        less_nested_uid = RecursiveUID.deserialize(serial_dict, root='y')
         assert less_nested_uid.uid == 'y'
         assert less_nested_uid.instance.uid == 'z'
 
         serial_ordered_dict = nested_uid.serialize(registry=OrderedDict())
-        assert list(serial_ordered_dict.keys()) == ['__uid__', 'x', 'y', 'z']
+        assert list(serial_ordered_dict.keys()) == ['__root__', 'x', 'y', 'z']
 
         RecursiveUID._INSTANCES.clear()
         uid_w = HasUID(uid='w')

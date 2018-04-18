@@ -73,7 +73,7 @@ class HasUID(base.HasProperties):
             registry = dict()
         if not registry:
             root = True
-            registry.update({'__uid__': self.uid})
+            registry.update({'__root__': self.uid})
         else:
             root = False
         key = self.uid
@@ -98,7 +98,7 @@ class HasUID(base.HasProperties):
 
         * **value** - Flat pointer dictionary produced by :code:`serialize`
           with UID/HasUID key/value pairs. It also includes a
-          :code:`__uid__` key to specify the root HasUID instance.
+          :code:`__root__` key to specify the root HasUID instance.
         * **trusted** - If True (and if the input dictionaries have
           :code:`'__class__'` keyword and this class is in the registry), the
           new **HasProperties** class will come from the dictionary.
@@ -110,8 +110,8 @@ class HasUID(base.HasProperties):
           is False.
         * **assert_valid** - Require deserialized instance to be valid.
           Default is False.
-        * You may also specify an alternative **uid** - This allows a different
-          HasUID root instance to be specified. It overrides :code:`__uid__`
+        * You may also specify an alternative **root** - This allows a different
+          HasUID root instance to be specified. It overrides :code:`__root__`
           in the input dictionary.
         * Any other keyword arguments will be passed through to the Property
           deserializers.
@@ -128,7 +128,7 @@ class HasUID(base.HasProperties):
             if not isinstance(value, dict):
                 raise ValueError('HasUID must deserialize from dictionary')
             registry = value.copy()
-            uid = kwargs.get('uid', registry.get('__uid__'))
+            uid = kwargs.get('root', registry.get('__root__'))
         else:
             uid = value
         if uid in cls._INSTANCES and uid not in registry:
