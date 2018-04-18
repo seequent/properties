@@ -115,14 +115,14 @@ class TestUID(unittest.TestCase):
         with self.assertRaises(properties.ValidationError):
             has_pointer.other = has_uid.uid
 
-    def test_enforce_uid(self):
+    def test_require_load(self):
 
         class AnotherUID(HasUID):
             pass
 
         class HasStrictPointer(HasUID):
 
-            other = Pointer('', AnotherUID, enforce_uid=True)
+            other = Pointer('', AnotherUID, require_load=True)
 
         has_pointer = HasStrictPointer()
         has_uid = HasUID()
@@ -171,7 +171,7 @@ class TestUID(unittest.TestCase):
             uid = properties.String('uid', change_case='upper')
 
             @classmethod
-            def get_by_uid(cls, value):
+            def load(cls, value):
                 return getattr(cls, 'ONLY_INSTANCE', None)
 
         class HasSillySingleton(properties.HasProperties):

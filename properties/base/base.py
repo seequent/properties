@@ -549,16 +549,17 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         return instance
 
     @classmethod
-    def _deserialize_class(cls, input_class, trusted=False, strict=False):
+    def _deserialize_class(cls, input_class, trusted, strict):
         """Returns the HasProperties class to use for deserialization"""
         if not input_class or input_class == cls.__name__:
-            pass
+            return cls
         elif trusted and input_class in cls._REGISTRY:
-            cls = cls._REGISTRY[input_class]
+            return cls._REGISTRY[input_class]
         elif strict:
             raise ValueError(
                 'Class name {} from deserialization input dictionary does '
-                'not match input class {}'.format(input_class, cls.__name__))
+                'not match input class {}'.format(input_class, cls.__name__)
+            )
         return cls
 
     def __setstate__(self, newstate):

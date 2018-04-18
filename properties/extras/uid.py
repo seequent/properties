@@ -33,7 +33,7 @@ class HasUID(base.HasProperties):
             pass
         elif change['value'] in self._INSTANCES:
             raise utils.ValidationError(
-                message='Uid already used: {}'.format(change['value']),
+                message='UID already used: {}'.format(change['value']),
                 reason='invalid',
                 prop=change['name'],
                 instance=self,
@@ -46,10 +46,20 @@ class HasUID(base.HasProperties):
 
     @classmethod
     def validate_uid(cls, uid):
+        """Assert if a given UID is valid
+
+        This is used by Pointer properties to validate a UID
+        without necessarily loading the corresponding instance.
+        """
         return True
 
     @classmethod
-    def get_by_uid(cls, uid):
+    def load(cls, uid):
+        """Load an instance given a UID
+
+        This is used by Pointer properties to retrieve instances
+        from UIDs.
+        """
         return cls._INSTANCES.get(uid)
 
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
@@ -118,7 +128,7 @@ class HasUID(base.HasProperties):
 
         .. note::
 
-            UidModel instances are constructed with no input arguments
+            HasUID instances are constructed with no input arguments
             (ie :code:`cls()` is called). This means deserialization will
             fail if the init method has been overridden to require
             input parameters.
@@ -134,9 +144,9 @@ class HasUID(base.HasProperties):
         if uid in cls._INSTANCES and uid not in registry:
             return cls._INSTANCES[uid]
         elif uid in cls._INSTANCES:
-            raise ValueError('Uid already used: {}'.format(uid))
+            raise ValueError('UID already used: {}'.format(uid))
         elif uid not in registry:
-            raise ValueError('Invalid uid: {}'.format(uid))
+            raise ValueError('Invalid UID: {}'.format(uid))
         value = registry[uid]
         if not isinstance(value, HasUID):
             try:
@@ -174,17 +184,17 @@ class Pointer(base.Instance):
     class_info = 'an instance or uid of an instance'
 
     @property
-    def enforce_uid(self):
+    def require_load(self):
         """Require Pointer strings to resolve into instances
 
         If False, the default, the Pointer may be set to an arbitrary string;
         if True, the string must correspond to an existing UID.
         """
-        return getattr(self, '_enforce_uid', False)
+        return getattr(self, '_require_load', False)
 
-    @enforce_uid.setter
-    def enforce_uid(self, value):
-        self._enforce_uid = bool(value)
+    @require_load.setter
+    def require_load(self, value):
+        self._require_load = bool(value)
 
     @property
     def uid_prop(self):
@@ -192,7 +202,7 @@ class Pointer(base.Instance):
 
         The default is 'uid'
         """
-        return getattr(self, '_uid_prop', 'uid')
+        return getattr(self, '_', 'uid')
 
     @uid_prop.setter
     def uid_prop(self, value):
@@ -216,14 +226,14 @@ class Pointer(base.Instance):
                     value = prop.validate(None, value)
                 if hasattr(self.instance_class, 'validate_uid'):
                     self.instance_class.validate_uid(value)
-                if hasattr(self.instance_class, 'get_by_uid'):
-                    instance_value = self.instance_class.get_by_uid(value)
+                if hasattr(self.instance_class, 'load'):
+                    instance_value = self.instance_class.load(value)
             else:
                 instance_value = value
             if instance_value is not None:
                 return super(Pointer, self).validate(instance, instance_value)
-            if self.enforce_uid:
-                raise utils.ValidationError('uid is valid but unrecognized.')
+            if self.require_load:
+                raise utils.ValidationError('UID is valid but unrecognized.')
             return value
         except utils.ValidationError as err:
             self.error(instance, value, extra=text_type(err))
