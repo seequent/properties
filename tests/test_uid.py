@@ -106,14 +106,13 @@ class TestUID(unittest.TestCase):
 
         has_pointer.other = properties.undefined
         has_pointer.other = another_uid.uid
-        assert has_pointer.other is another_uid
+        assert has_pointer.other == another_uid.uid
 
         has_pointer.other = properties.undefined
         with self.assertRaises(properties.ValidationError):
             has_pointer.other = has_uid
 
-        with self.assertRaises(properties.ValidationError):
-            has_pointer.other = has_uid.uid
+        has_pointer.other = has_uid.uid
 
     def test_require_load(self):
 
@@ -122,14 +121,14 @@ class TestUID(unittest.TestCase):
 
         class HasStrictPointer(HasUID):
 
-            other = Pointer('', AnotherUID, require_load=True)
+            other = Pointer('', AnotherUID, load=True)
 
         has_pointer = HasStrictPointer()
         has_uid = HasUID()
         another_uid = AnotherUID()
 
-        with self.assertRaises(properties.ValidationError):
-            has_pointer.other = 'silly_pointer'
+        has_pointer.other = 'silly_pointer'
+        assert has_pointer.other == 'silly_pointer'
 
         has_pointer.other = another_uid
         assert has_pointer.other is another_uid
@@ -176,7 +175,7 @@ class TestUID(unittest.TestCase):
 
         class HasSillySingleton(properties.HasProperties):
 
-            instance = Pointer('', SillySingleton)
+            instance = Pointer('', SillySingleton, load=True)
 
         has_uid = HasSillySingleton()
         has_uid.instance = 'something'

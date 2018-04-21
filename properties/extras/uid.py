@@ -174,31 +174,41 @@ class Pointer(base.Instance):
     **Available keywords** (in addition to those inherited from
     :ref:`Instance <instance>`):
 
-    * **enforce_uid** - Require Pointer strings to resolve into instances.
-      If False, the default, the Pointer property may be set to an arbitrary
-      string; if True, the string must correspond to an existing UID.
-    * **uid_prop** - Property name of the UID property on instance_class.
-      The default is 'uid'.
+    * **load** - Attempt to load instances from UID on validation
+      If True, when the Pointer property is assigned a valid UID,
+      it will then attempt to call :code:`self.instance_class.load(uid)`
+      If this method is defined, it must return a valid instance
+      which will replace the UID as the Pointer value. If this method
+      is not defined or if it returns None, the Pointer property maintains
+      the UID value. Default is False, meaning there is no attempt to
+      load the instance.
+    * **uid_prop** - Property or attribute name of the UID property on
+      instance_class. The default is 'uid'.
     """
 
     class_info = 'an instance or uid of an instance'
 
     @property
-    def require_load(self):
-        """Require Pointer strings to resolve into instances
+    def load(self):
+        """Attempt to load instances from UID on validation
 
-        If False, the default, the Pointer may be set to an arbitrary string;
-        if True, the string must correspond to an existing UID.
+        If True, when the Pointer property is assigned a valid UID,
+        it will then attempt to call :code:`self.instance_class.load(uid)`
+        If this method is defined, it must return a valid instance
+        which will replace the UID as the Pointer value. If this method
+        is not defined or if it returns None, the Pointer property maintains
+        the UID value. Default is False, meaning there is no attempt to
+        load the instance.
         """
-        return getattr(self, '_require_load', False)
+        return getattr(self, '_load', False)
 
-    @require_load.setter
-    def require_load(self, value):
-        self._require_load = bool(value)
+    @load.setter
+    def load(self, value):
+        self._load = bool(value)
 
     @property
     def uid_prop(self):
-        """Property name of the UID property on instance_class
+        """Property or attribute name of the UID property on instance_class
 
         The default is 'uid'
         """
@@ -217,8 +227,8 @@ class Pointer(base.Instance):
 
     def validate(self, instance, value):
         instance_value = None
-        try:
-            if isinstance(value, string_types):
+        if isinstance(value, string_types):
+            try:
                 prop = getattr(
                     self.instance_class, '_props', {}
                 ).get(self.uid_prop)
@@ -226,17 +236,17 @@ class Pointer(base.Instance):
                     value = prop.validate(None, value)
                 if hasattr(self.instance_class, 'validate_uid'):
                     self.instance_class.validate_uid(value)
-                if hasattr(self.instance_class, 'load'):
+                if self.load and hasattr(self.instance_class, 'load'):
                     instance_value = self.instance_class.load(value)
-            else:
-                instance_value = value
-            if instance_value is not None:
-                return super(Pointer, self).validate(instance, instance_value)
-            if self.require_load:
-                raise utils.ValidationError('UID is valid but unrecognized.')
-            return value
-        except utils.ValidationError as err:
-            self.error(instance, value, extra=text_type(err))
+            except utils.ValidationError as err:
+                self.error(instance, value, extra=text_type(err))
+        else:
+            if value is None:
+                self.error(instance, value)
+            instance_value = value
+        if instance_value is not None:
+            return super(Pointer, self).validate(instance, instance_value)
+        return value
 
     def sphinx_class(self):
         """Description of the property, supplemental to the basic doc"""
