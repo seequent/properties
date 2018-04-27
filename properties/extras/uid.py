@@ -248,6 +248,24 @@ class Pointer(base.Instance):
             return super(Pointer, self).validate(instance, instance_value)
         return value
 
+    def deserialize(self, value, **kwargs):
+        """Deserialize instance from JSON value
+
+        If a deserializer is registered, that is used. Otherwise, if the
+        instance_class is a HasProperties subclass, an instance can be
+        deserialized from a dictionary.
+        """
+        kwargs.update({'trusted': kwargs.get('trusted', False)})
+        if self.deserializer is not None:
+            return self.deserializer(value, **kwargs)
+        if value is None:
+            return None
+        if isinstance(value, string_types):
+            return value
+        if issubclass(self.instance_class, base.HasProperties):
+            return self.instance_class.deserialize(value, **kwargs)
+        return self.from_json(value, **kwargs)
+
     def sphinx_class(self):
         """Description of the property, supplemental to the basic doc"""
         classdoc = super(Pointer, self).sphinx_class()
