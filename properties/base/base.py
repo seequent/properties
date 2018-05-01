@@ -513,7 +513,12 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           deserializers.
         """
         if not isinstance(value, dict):
-            raise ValueError('HasProperties must deserialize from dictionary')
+            raise ValueError(
+                'HasProperties class {} must deserialize from dictionary, '
+                'not input of type {}'.format(
+                    cls.__name__, value.__class__.__name__
+                )
+            )
         cls = cls._deserialize_class(value.get('__class__'), trusted, strict)
         instance = kwargs.pop('_instance', None)
         if instance is not None and not isinstance(instance, cls):
