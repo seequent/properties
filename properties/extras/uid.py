@@ -227,7 +227,9 @@ class Pointer(base.Instance):
 
     def validate(self, instance, value):
         instance_value = None
-        if isinstance(value, string_types):
+        if value is None:
+            self.error(instance, value)
+        elif isinstance(value, string_types):
             try:
                 prop = getattr(
                     self.instance_class, '_props', {}
@@ -241,8 +243,6 @@ class Pointer(base.Instance):
             except utils.ValidationError as err:
                 self.error(instance, value, extra=text_type(err))
         else:
-            if value is None:
-                self.error(instance, value)
             instance_value = value
         if instance_value is not None:
             return super(Pointer, self).validate(instance, instance_value)

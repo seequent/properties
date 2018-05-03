@@ -114,6 +114,32 @@ class TestUID(unittest.TestCase):
 
         has_pointer.other = has_uid.uid
 
+        class HasName(properties.HasProperties):
+
+            name = properties.String('Name')
+
+        class HasPointerToo(properties.HasProperties):
+
+            other = Pointer('', HasName)
+
+        has_pointer = HasPointerToo.deserialize({
+            '__class__': 'HasPointerToo',
+            'other': 'serious_pointer',
+        })
+        assert has_pointer.other == 'serious_pointer'
+
+        has_pointer = HasPointerToo.deserialize({
+            '__class__': 'HasPointerToo',
+            'other': {
+                '__class__': 'HasName',
+                'name': 'some_name',
+            }
+        })
+        assert isinstance(has_pointer.other, HasName)
+
+        with self.assertRaises(ValueError):
+            HasPointerToo.deserialize({'other': None})
+
     def test_require_load(self):
 
         class AnotherUID(HasUID):
