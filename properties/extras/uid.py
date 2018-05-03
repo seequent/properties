@@ -4,7 +4,6 @@ import uuid
 from six import string_types, text_type
 
 from .. import base, basic, handlers, utils
-from ..base.instance import CLASS_TYPES
 
 
 class HasUID(base.HasProperties):
@@ -45,7 +44,7 @@ class HasUID(base.HasProperties):
         self._INSTANCES.update({change['value']: self})
 
     @classmethod
-    def validate_uid(cls, uid):
+    def validate_uid(cls, uid):                                                #pylint: disable=unused-argument
         """Assert if a given UID is valid
 
         This is used by Pointer properties to validate a UID
