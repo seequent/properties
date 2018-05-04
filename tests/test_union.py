@@ -149,6 +149,7 @@ class TestUnion(unittest.TestCase):
             u = properties.Union(
                 doc='unambiguous',
                 props=[SomeProps, DifferentProps],
+                strict_instances=True,
             )
 
         dp = {'u': {'c': 1, 'd': 2}, 'v': 'extra'}
@@ -161,6 +162,7 @@ class TestUnion(unittest.TestCase):
             u = properties.Union(
                 doc='ambiguous',
                 props=[SomeProps, SameProps],
+                strict_instances=True,
             )
 
         sp = {'u': {'a': 1, 'b': 2}}
@@ -192,7 +194,6 @@ class TestUnion(unittest.TestCase):
             u = properties.Union(
                 doc='unambiguous',
                 props=[SomeProps, DifferentProps],
-                strict_instances=False,
             )
 
         lu = LenientUnion.deserialize(dp_extra)
