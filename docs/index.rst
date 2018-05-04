@@ -12,6 +12,7 @@
     content/property
     content/builtin
     content/utils
+    content/extras
 
 
 Indices and tables
