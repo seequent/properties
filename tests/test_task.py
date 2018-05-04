@@ -8,7 +8,7 @@ import sys
 import unittest
 
 import properties
-from properties.task import BaseResult, Task, PermanentTaskFailure
+from properties.extras import BaseResult, Task, PermanentTaskFailure
 
 
 class TestTask(unittest.TestCase):

@@ -131,7 +131,19 @@ ErrorTuple = namedtuple(
 )
 
 class ValidationError(ValueError):
-    """Exception type to be raised during property validation"""
+    """Exception type to be raised during property validation
+
+    **Parameters**
+
+    * **message** - Detailed description of the error cause
+    * **reason** - Short reason for the error
+    * **prop** - Name of property related to the error
+    * **instance** - HasProperties instance related to the error
+
+    These inputs are stored as a tuple and passed to the
+    :code:`instance._error_hook` method, which may be overridden on
+    the HasProperties class for custom error behavior.
+    """
 
     def __init__(self, message, reason=None, prop=None, instance=None,
                  _error_tuples=None):

@@ -285,11 +285,15 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             for key, val in iteritems(kwargs):
                 prop = self._props.get(key, None)
                 if not prop and not hasattr(self, key):
-                    raise AttributeError("Keyword input '{}' is not a known "
-                                         "property or attribute".format(key))
+                    raise AttributeError(
+                        "Keyword input '{}' is not a known  property or "
+                        "attribute of {}".format(key, self.__class__.__name__)
+                    )
                 if isinstance(prop, basic.DynamicProperty):
-                    raise AttributeError("Dynamic property '{}' cannot be "
-                                         "set on init".format(key))
+                    raise AttributeError(
+                        "Dynamic property '{}' of {} cannot be set on "
+                        "init".format(key, self.__class__.__name__)
+                    )
                 try:
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
@@ -509,37 +513,59 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           deserializers.
         """
         if not isinstance(value, dict):
-            raise ValueError('HasProperties must deserialize from dictionary')
-        input_class = value.get('__class__')
-        if not input_class or input_class == cls.__name__:
-            pass
-        elif trusted and input_class in cls._REGISTRY:
-            cls = cls._REGISTRY[input_class]
-        elif strict:
-            raise utils.ValidationError(
-                'Class name {} from input dictionary does not match input '
-                'class {}'.format(input_class, cls.__name__))
-        kwargs.update({'trusted': trusted, 'strict': strict})
+            raise ValueError(
+                'HasProperties class {} must deserialize from dictionary, '
+                'not input of type {}'.format(
+                    cls.__name__, value.__class__.__name__
+                )
+            )
+        cls = cls._deserialize_class(value.get('__class__'), trusted, strict)
+        instance = kwargs.pop('_instance', None)
+        if instance is not None and not isinstance(instance, cls):
+            raise ValueError(
+                'Input _instance must be of class {}, not {}'.format(
+                    cls.__name__, instance.__class__.__name__
+                )
+            )
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
         if unused and strict:
-            raise utils.ValidationError(
+            raise ValueError(
                 'Unused properties during deserialization: {}'.format(
                     ', '.join(unused)
                 )
             )
+        kwargs.update({'trusted': trusted, 'strict': strict})
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, **kwargs)
         mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
-            newinst = cls(**mutable)
+            if instance is None:
+                instance = cls(**mutable)
+            else:
+                for key, val in iteritems(mutable):
+                    setattr(instance, key, val)
         for key, val in iteritems(immutable):
-            valid_val = cls._props[key].validate(newinst, val)
-            newinst._backend[key] = valid_val
-        if assert_valid and not newinst.validate():
+            valid_val = cls._props[key].validate(instance, val)
+            instance._backend[key] = valid_val
+        if assert_valid and not instance.validate():
             raise utils.ValidationError('Deserialized instance is not valid')
-        return newinst
+        return instance
+
+    @classmethod
+    def _deserialize_class(cls, input_class, trusted, strict):
+        """Returns the HasProperties class to use for deserialization"""
+        if not input_class or input_class == cls.__name__:
+            return cls
+        elif trusted and input_class in cls._REGISTRY:
+            return cls._REGISTRY[input_class]
+        elif strict:
+            raise ValueError(
+                'Class name {} from deserialization input dictionary does '
+                'not match input class {}'.format(input_class, cls.__name__)
+            )
+        return cls
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):

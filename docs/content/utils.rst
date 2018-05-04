@@ -7,4 +7,6 @@ Utilities
 
 .. autofunction:: properties.filter_props
 
+.. autoclass:: properties.ValidationError
+
 .. autoclass:: properties.SelfReferenceError

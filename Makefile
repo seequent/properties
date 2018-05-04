@@ -29,4 +29,3 @@ test-docs:
 
 tests:
 	nosetests --logging-level=INFO --with-coverage --cover-package=$(PACKAGE_NAME)
-	make lint
