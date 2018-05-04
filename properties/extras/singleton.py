@@ -11,10 +11,6 @@ class SingletonMetaclass(PropertyMetaclass):
         """Look up an instance by name in the registry, or make a new one"""
         if name in cls._SINGLETONS:
             oldinst = cls._SINGLETONS[name]
-            if oldinst.__class__ is not cls:
-                raise ValueError('Singleton {} is class {}, not {}'.format(
-                    name, oldinst.__class__.__name__, cls.__name__,
-                ))
             return oldinst
         newinst = super(SingletonMetaclass, cls).__call__(name, **kwargs)
         cls._SINGLETONS[name] = newinst
@@ -23,6 +19,13 @@ class SingletonMetaclass(PropertyMetaclass):
 
 class Singleton(six.with_metaclass(SingletonMetaclass, HasProperties)):
     """Class that only allows one instance for each identifying name
+
+    These instances are stored on the :code:`_SINGLETONS` attribute of
+    the class. You may create a new registry of singletons by
+    redefining this attribute on a subclass. Also, this means multiple
+    singleton classes may be present on a registry, therefore the class
+    you use to access the singleton may not be the class of the returned
+    singleton.
 
     Each singleton must be initialized with a name. You can type-check and
     validate this value by including a 'name' property on your class. The

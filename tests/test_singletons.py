@@ -31,8 +31,8 @@ class TestSingleton(unittest.TestCase):
         class AnotherSingleton(Singleton):
             pass
 
-        with self.assertRaises(ValueError):
-            AnotherSingleton('a')
+        assert AnotherSingleton('a') is a
+        assert AnotherSingleton('a').__class__ is Singleton
 
     def test_hassingleton(self):
 
