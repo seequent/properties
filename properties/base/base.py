@@ -394,7 +394,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 except GENERIC_ERRORS as err:
                     if not self._non_validation_error:
                         self._non_validation_error = err
-                    continue
             if self._validation_error_tuples:
                 self._error_hook(self._validation_error_tuples)
                 msgs = ['Validation failed:']
