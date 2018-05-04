@@ -86,7 +86,7 @@ class TestSerialization(unittest.TestCase):
         with self.assertRaises(ValueError):
             HP1.deserialize(5)
 
-        with self.assertRaises(properties.ValidationError):
+        with self.assertRaises(ValueError):
             properties.HasProperties.deserialize(hp3_dict, strict=True)
         assert isinstance(
             HP3.deserialize(hp3_dict, strict=True), HP3
@@ -102,7 +102,7 @@ class TestSerialization(unittest.TestCase):
             },
             'b': 1,
         }
-        with self.assertRaises(properties.ValidationError):
+        with self.assertRaises(ValueError):
             HP3.deserialize(hp3_extra, strict=True)
         assert isinstance(HP3.deserialize({}), HP3)
         with self.assertRaises(properties.ValidationError):
@@ -137,7 +137,7 @@ class TestSerialization(unittest.TestCase):
         }
 
         assert isinstance(HP3.deserialize(hp3_subextra, assert_valid=True), HP3)
-        with self.assertRaises(properties.ValidationError):
+        with self.assertRaises(ValueError):
             HP3.deserialize(hp3_subextra, strict=True)
 
         class Invalid(properties.HasProperties):
@@ -148,6 +148,9 @@ class TestSerialization(unittest.TestCase):
         assert isinstance(Invalid.deserialize({}), Invalid)
         with self.assertRaises(properties.ValidationError):
             Invalid.deserialize({}, assert_valid=True)
+
+        with self.assertRaises(ValueError):
+            HP3.deserialize(hp3_dict, _instance=Invalid())
 
 
     def test_immutable_serial(self):
