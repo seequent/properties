@@ -5,7 +5,7 @@ from ..base import HasProperties, PropertyMetaclass
 
 
 class SingletonMetaclass(PropertyMetaclass):
-    """Metaclass to produce singleton behavior"""
+    """Metaclass to produce singleton behavior using a singleton registry"""
 
     def __call__(cls, name, *args, **kwargs):
         """Look up an instance by name in the registry, or make a new one"""
