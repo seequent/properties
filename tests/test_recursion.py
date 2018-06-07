@@ -9,6 +9,15 @@ import unittest
 import properties
 
 
+class HasInteger(properties.HasProperties):
+    my_int = properties.Integer('an int')
+
+class HasHasProps(properties.HasProperties):
+    my_hp = properties.Instance('dangerous', properties.HasProperties)
+
+class HasHasPropsList(properties.HasProperties):
+    my_list = properties.List('dangerous', properties.HasProperties)
+
 class TestRecursion(unittest.TestCase):
 
     def test_basic_recursion(self):
@@ -45,15 +54,6 @@ class TestRecursion(unittest.TestCase):
 
     def test_list_recursion(self):
 
-        class HasInteger(properties.HasProperties):
-            my_int = properties.Integer('an int')
-
-        class HasHasProps(properties.HasProperties):
-            my_hp = properties.Instance('dangerous', properties.HasProperties)
-
-        class HasHasPropsList(properties.HasProperties):
-            my_list = properties.List('dangerous', properties.HasProperties)
-
         hi_valid = HasInteger(my_int=5)
         hi_invalid = HasInteger()
         hhp = HasHasProps()
@@ -79,8 +79,7 @@ class TestRecursion(unittest.TestCase):
         with self.assertRaises(properties.SelfReferenceError):
             hhpl.serialize()
 
-        with self.assertRaises(properties.SelfReferenceError):
-            pickle.dumps(hhpl)
+        pickle.dumps(hhpl)
 
 
 if __name__ == '__main__':
