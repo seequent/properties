@@ -20,6 +20,8 @@ if PY2:
 else:
     CLASS_TYPES = (type,)
 
+GENERIC_ERRORS = (ValueError, KeyError, TypeError, AttributeError)
+
 
 class PropertyMetaclass(type):
     """Metaclass to establish behavior of **HasProperties** classes
@@ -230,7 +232,7 @@ class PropertyMetaclass(type):
         object.__setattr__(obj, '_listeners', dict())
 
         # Register the listeners
-        for _, val in iteritems(obj._prop_observers):
+        for val in itervalues(obj._prop_observers):
             handlers._set_listener(obj, val)
 
         # Set the GettableProperties from defaults - these are only set here
@@ -276,15 +278,44 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
 
     def __init__(self, **kwargs):
         # Set the keyword arguments with change notifications
-        for key, val in iteritems(kwargs):
-            prop = self._props.get(key, None)
-            if not prop and not hasattr(self, key):
-                raise AttributeError("Keyword input '{}' is not a known "
-                                     "property or attribute".format(key))
-            if isinstance(prop, basic.DynamicProperty):
-                raise AttributeError("Dynamic property '{} cannot be set on "
-                                     "init".format(key))
-            setattr(self, key, val)
+        self._getting_validated = True
+        self._validation_error_tuples = []
+        self._non_validation_error = None
+        try:
+            for key, val in iteritems(kwargs):
+                prop = self._props.get(key, None)
+                if not prop and not hasattr(self, key):
+                    raise AttributeError(
+                        "Keyword input '{}' is not a known  property or "
+                        "attribute of {}".format(key, self.__class__.__name__)
+                    )
+                if isinstance(prop, basic.DynamicProperty):
+                    raise AttributeError(
+                        "Dynamic property '{}' of {} cannot be set on "
+                        "init".format(key, self.__class__.__name__)
+                    )
+                try:
+                    setattr(self, key, val)
+                except utils.ValidationError as val_err:
+                    self._validation_error_tuples += val_err.error_tuples
+                except GENERIC_ERRORS as err:
+                    if not self._non_validation_error:
+                        self._non_validation_error = err
+                    continue
+            if self._validation_error_tuples:
+                self._error_hook(self._validation_error_tuples)
+                msgs = ['Initialization failed:']
+                msgs += [val.message for val in self._validation_error_tuples]
+                raise utils.ValidationError(
+                    message='\n- '.join(msgs),
+                    _error_tuples=self._validation_error_tuples,
+                )
+            elif self._non_validation_error:
+                raise self._non_validation_error                               #pylint: disable=raising-bad-type
+        finally:
+            self._getting_validated = False
+            self._validation_error_tuples = None
+            self._non_validation_error = None
 
     def _get(self, name):
         return self._backend.get(name, None)
@@ -318,7 +349,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         """Revert specified property to default value
 
         If no property is specified, all properties are returned to default.
-        If silent is True, notifications will not be fired.
         """
         if name is None:
             for key in self._props:
@@ -343,38 +373,73 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         """Call all registered class validator methods
 
         These are all methods decorated with :code:`@properties.validator`.
-        Validator methods are expected to raise an error if they fail.
+        Validator methods are expected to raise a ValidationError if they
+        fail.
         """
         if getattr(self, '_getting_validated', False):
             return True
         self._getting_validated = True
+        self._validation_error_tuples = []
+        self._non_validation_error = None
         try:
             for val in itervalues(self._class_validators):
-                valid = val.func(self)
-                if valid is False:
-                    raise ValueError('Validation failed')
+                try:
+                    valid = val.func(self)
+                    if valid is False:
+                        raise utils.ValidationError(
+                            'Validation failed', None, None, self
+                        )
+                except utils.ValidationError as val_err:
+                    self._validation_error_tuples += val_err.error_tuples
+                except GENERIC_ERRORS as err:
+                    if not self._non_validation_error:
+                        self._non_validation_error = err
+            if self._validation_error_tuples:
+                self._error_hook(self._validation_error_tuples)
+                msgs = ['Validation failed:']
+                msgs += [val.message for val in self._validation_error_tuples]
+                raise utils.ValidationError(
+                    message='\n- '.join(msgs),
+                    _error_tuples=self._validation_error_tuples,
+                )
+            elif self._non_validation_error:
+                raise self._non_validation_error                               #pylint: disable=raising-bad-type
             return True
         finally:
             self._getting_validated = False
+            self._validation_error_tuples = None
+            self._non_validation_error = None
 
     @handlers.validator
     def _validate_props(self):
         """Assert that all the properties are valid on validate()"""
         for key, prop in iteritems(self._props):
-            value = self._get(key)
-            if value is not None:
-                change = dict(name=key, previous=value, value=value,
-                              mode='validate')
-                self._notify(change)
-                if not prop.equal(value, change['value']):
-                    raise ValueError(
-                        'Invalid value for property {}: {}'.format(key, value)
-                    )
-            if not prop.assert_valid(self):
-                raise ValueError(
-                    'Invalid value for property {}: {}'.format(key, value)
-                )
+            try:
+                value = self._get(key)
+                err_msg = 'Invalid value for property {}: {}'.format(key, value)
+                if value is not None:
+                    change = dict(name=key, previous=value, value=value,
+                                  mode='validate')
+                    self._notify(change)
+                    if not prop.equal(value, change['value']):
+                        raise utils.ValidationError(err_msg, 'invalid',
+                                                    prop.name, self)
+                if not prop.assert_valid(self):
+                    raise utils.ValidationError(err_msg, 'invalid',
+                                                prop.name, self)
+            except utils.ValidationError as val_err:
+                if getattr(self, '_validation_error_tuples', None) is not None:
+                    self._validation_error_tuples += val_err.error_tuples
+                else:
+                    raise
         return True
+
+    def _error_hook(self, error_tuples):
+        """Method called when property validation fails
+
+        This allows HasProperties classes to customize how the
+        validation error is handled.
+        """
 
     def serialize(self, include_class=True, save_dynamic=False, **kwargs):
         """Serializes a **HasProperties** instance to dictionary
@@ -419,7 +484,8 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
             self._getting_serialized = False
 
     @classmethod
-    def deserialize(cls, value, trusted=False, verbose=True, **kwargs):
+    def deserialize(cls, value, trusted=False, strict=False,                   #pylint: disable=too-many-locals
+                    assert_valid=False, **kwargs):
         """Creates **HasProperties** instance from serialized dictionary
 
         This uses the Property deserializers to deserialize all
@@ -436,41 +502,69 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
           new **HasProperties** class will come from the dictionary.
           If False (the default), only the **HasProperties** class this
           method is called on will be constructed.
-        * **verbose** - Raise warnings if :code:`'__class__'` is not found in
-          the registry or of there are unused Property values in the input
-          dictionary. Default is True.
+        * **strict** - Requires :code:`'__class__'`, if present on the input
+          dictionary, to match the deserialized instance's class. Also
+          disallows unused properties in the input dictionary. Default
+          is False.
+        * **assert_valid** - Require deserialized instance to be valid.
+          Default is False.
         * Any other keyword arguments will be passed through to the Property
           deserializers.
         """
         if not isinstance(value, dict):
-            raise ValueError('HasProperties must deserialize from dictionary')
-        if trusted and '__class__' in value:
-            if value['__class__'] in cls._REGISTRY:
-                cls = cls._REGISTRY[value['__class__']]
-            elif verbose:
-                warn(
-                    'Class name {rcl} not found in _REGISTRY. Using class '
-                    '{cl} for deserialize.'.format(
-                        rcl=value['__class__'], cl=cls.__name__
-                    ), RuntimeWarning
+            raise ValueError(
+                'HasProperties class {} must deserialize from dictionary, '
+                'not input of type {}'.format(
+                    cls.__name__, value.__class__.__name__
                 )
-        kwargs.update({'trusted': trusted, 'verbose': verbose})
+            )
+        cls = cls._deserialize_class(value.get('__class__'), trusted, strict)
+        instance = kwargs.pop('_instance', None)
+        if instance is not None and not isinstance(instance, cls):
+            raise ValueError(
+                'Input _instance must be of class {}, not {}'.format(
+                    cls.__name__, instance.__class__.__name__
+                )
+            )
         state, unused = utils.filter_props(cls, value, True)
         unused.pop('__class__', None)
-        if unused and verbose:
-            warn('Unused properties during deserialization: {}'.format(
-                ', '.join(unused)
-            ), RuntimeWarning)
+        if unused and strict:
+            raise ValueError(
+                'Unused properties during deserialization: {}'.format(
+                    ', '.join(unused)
+                )
+            )
+        kwargs.update({'trusted': trusted, 'strict': strict})
         newstate = {}
         for key, val in iteritems(state):
             newstate[key] = cls._props[key].deserialize(val, **kwargs)
         mutable, immutable = utils.filter_props(cls, newstate, False)
         with handlers.listeners_disabled():
-            newinst = cls(**mutable)
+            if instance is None:
+                instance = cls(**mutable)
+            else:
+                for key, val in iteritems(mutable):
+                    setattr(instance, key, val)
         for key, val in iteritems(immutable):
-            valid_val = cls._props[key].validate(newinst, val)
-            newinst._backend[key] = valid_val
-        return newinst
+            valid_val = cls._props[key].validate(instance, val)
+            instance._backend[key] = valid_val
+        if assert_valid and not instance.validate():
+            raise utils.ValidationError('Deserialized instance is not valid')
+        return instance
+
+    @classmethod
+    def _deserialize_class(cls, input_class, trusted, strict):
+        """Returns the HasProperties class to use for deserialization"""
+        if not input_class or input_class == cls.__name__:
+            return cls
+        elif trusted and input_class in cls._REGISTRY:
+            return cls._REGISTRY[input_class]
+        elif strict:
+            raise ValueError(
+                'Class name {} from deserialization input dictionary does '
+                'not match input class {}'.format(input_class, cls.__name__)
+            )
+        return cls
 
     def __setstate__(self, newstate):
         for key, val in iteritems(newstate):

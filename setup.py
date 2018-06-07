@@ -23,15 +23,15 @@ with open('README.rst') as f:
     LONG_DESCRIPTION = ''.join(f.readlines())
 
 EXTRAS = {
-    'math': ['numpy>=1.7', 'vectormath>=0.1.1'],
-    'image': ['matplotlib', 'pypng']
+    'math': ['numpy>=1.7', 'vectormath==0.1.4'],
+    'image': ['pypng']
 }
 EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
     name='properties',
-    version='0.4.0',
+    version='0.5.0',
     packages=find_packages(exclude=('tests',)),
-    install_requires=['six'],
+    install_requires=['six>=1.7.3'],
     extras_require=EXTRAS,
     author='Seequent',
     author_email='it@seequent.com',
@@ -39,8 +39,8 @@ setup(
                  'validation and tab completion of class properties'),
     long_description=LONG_DESCRIPTION,
     keywords='declarative, properties, traits',
-    url='https://github.com/aranzgeo/properties',
-    download_url='https://github.com/aranzgeo/properties',
+    url='https://github.com/seequent/properties',
+    download_url='https://github.com/seequent/properties',
     classifiers=CLASSIFIERS,
     platforms=['Windows', 'Linux', 'Solaris', 'Mac OS-X', 'Unix'],
     use_2to3=False,
