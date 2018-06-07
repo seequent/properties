@@ -207,6 +207,29 @@ class TestHandlers(unittest.TestCase):
         with self.assertRaises(ValidateError):
             el.a = 10
 
+    def test_external_class_validator(self):
+
+        class AddValidator(properties.HasProperties):
+
+            a = properties.Integer('')
+
+        class ArbitraryError(ValueError):
+            pass
+
+        def raise_arbitrary_error(hp_inst):
+            raise ArbitraryError('')
+
+        av = AddValidator(a=1)
+        av.validate()
+
+        AddValidator._class_validators.update({
+            'raise_arbitrary_error': properties.handlers.ClassValidator(
+                func=raise_arbitrary_error,
+            )
+        })
+
+        with self.assertRaises(ArbitraryError):
+            av.validate()
 
 if __name__ == '__main__':
     unittest.main()
