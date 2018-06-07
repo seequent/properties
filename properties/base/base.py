@@ -5,7 +5,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from collections import OrderedDict
-import pickle
 from warnings import warn
 
 from six import iteritems, itervalues, PY2, string_types, with_metaclass
