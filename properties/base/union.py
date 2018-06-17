@@ -237,7 +237,9 @@ class Union(basic.Property):
                     return prop.deserialize(value, **kwargs)
         for prop in self.props:
             try:
-                return prop.deserialize(value, **kwargs)
+                out_val = prop.deserialize(value, **kwargs)
+                prop.validate(None, out_val)
+                return out_val
             except GENERIC_ERRORS:
                 continue
         return self.from_json(value, **kwargs)
