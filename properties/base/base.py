@@ -5,10 +5,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from collections import OrderedDict
-import pickle
 from warnings import warn
 
-from six import iteritems, itervalues, PY2, with_metaclass
+from six import iteritems, itervalues, PY2, string_types, with_metaclass
 
 from .. import basic
 from .. import handlers
@@ -121,6 +120,7 @@ class PropertyMetaclass(type):
         observer_dict.update(validator_dict)
         for key, handler in iteritems(observer_dict):
             classdict[key] = handler.func
+            handler.func = key
 
         # Determine if private properties should be documented or just public
         _doc_private = False
@@ -226,7 +226,6 @@ class PropertyMetaclass(type):
         This allows subclasses of :code:`HasProperties` to override
         the init method without worrying about breaking setup.
         """
-
         obj = cls.__new__(cls, *args, **kwargs)
         object.__setattr__(obj, '_backend', dict())
         object.__setattr__(obj, '_listeners', dict())
@@ -323,7 +322,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     def _notify(self, change):
         listeners = handlers._get_listeners(self, change)
         for listener in listeners:
-            listener.func(self, change)
+            if isinstance(listener.func, string_types):
+                getattr(self, listener.func)(change)
+            else:
+                listener.func(self, change)
 
     def _set(self, name, value):
         prev = self._backend.get(name, utils.undefined)
@@ -384,7 +386,10 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         try:
             for val in itervalues(self._class_validators):
                 try:
-                    valid = val.func(self)
+                    if isinstance(val.func, string_types):
+                        valid = getattr(self, val.func)()
+                    else:
+                        valid = val.func(self)
                     if valid is False:
                         raise utils.ValidationError(
                             'Validation failed', None, None, self
@@ -565,25 +570,6 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 'not match input class {}'.format(input_class, cls.__name__)
             )
         return cls
-
-    def __setstate__(self, newstate):
-        for key, val in iteritems(newstate):
-            valid_val = self._props[key].validate(self, pickle.loads(val))
-            self._backend[key] = valid_val
-
-    def __reduce__(self):
-        if getattr(self, '_getting_pickled', False):
-            raise utils.SelfReferenceError('Object contains unpicklable self '
-                                           'reference')
-        self._getting_pickled = True
-        try:
-            data = ((k, self._get(v.name)) for k, v in iteritems(self._props))
-            pickle_dict = {
-                k: pickle.dumps(v) for k, v in data if v is not None
-            }
-            return (self.__class__, (), pickle_dict)
-        finally:
-            self._getting_pickled = False
 
     def equal(self, other):
         """Determine if two **HasProperties** instances are equivalent
