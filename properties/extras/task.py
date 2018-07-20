@@ -8,7 +8,11 @@ from ..base import HasProperties, Instance
 from ..basic import Bool, Float, String
 
 
-class BaseResult(HasProperties):
+class BaseInput(HasProperties):
+    """HasProperties object with input parameters for a computation"""
+
+
+class BaseOutput(HasProperties):
     """HasProperties object with the result of a computation"""
 
     success = Bool(
@@ -36,17 +40,33 @@ class TaskStatus(HasProperties):
     )
 
 
-class Task(HasProperties):
-    """HasProperties class for defining a computational task
+class BaseTask(object):
+    """Cass for defining a computational task
 
-    Required inputs may be specified as properties on a Task. The Result
-    class is also defined on the Task. The Task is initiated by calling
-    the instance.
+    Input and Output class must be subclasses of BaseInput and
+    BaseOutput respectively. Task is executed by
     """
 
     _REGISTRY = dict()
 
-    Result = BaseResult
+    Input = BaseInput
+    Output = BaseOutput
+
+    def __call__(self, **kwargs):
+        input_obj = self.Input.deserialize(kwargs)
+        input_obj.validate()
+        output_obj = self.run(input_obj)
+        if not isinstance(output_obj, BaseOutput):
+            raise ValidationError(
+                message='Invalid task output class: {}'.format(
+                    ouput_obj.__class__.__name__,
+                ),
+                reason='invalid_class',
+                instance=output_obj,
+            )
+        output_obj.validate()
+        return output_obj.serialize(include_class=False)
+
 
     def report_status(self, status):
         """Hook for reporting the task status towards completion"""
@@ -57,13 +77,34 @@ class Task(HasProperties):
             message=status.message if status.message else '',
         ))
 
-    def __call__(self):
-        """Execute the compute task"""
+    def process_output(self, output_obj):
+        """Processes valid output object into desired task output
+
+        By default, this serializes the output to a dictionary.
+        """
+        return output_obj.serialize(include_class=False)
+
+
+
+    def run(self, input_obj):
+        """Execution logic for the task
+
+        To run a task, create an instance of the task, then
+        call the instance with the required input parameters.
+        This will construct and validate an Input object.
+
+        :code:`run` receives this Input object. It then must process
+        the inputs and return an Output object.
+        """
         raise NotImplementedError('Override in client classes')
 
 
 class TaskException(Exception):
     """An exception related to a computational task"""
+
+
+class TemporaryTaskFailure(TaskException):
+    """An exception that should be retried"""
 
 
 class PermanentTaskFailure(TaskException):
