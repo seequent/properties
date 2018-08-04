@@ -227,7 +227,6 @@ class TestSerialization(unittest.TestCase):
             return value.__class__.__name__
 
 
-
         class ManyProperties(properties.HasProperties):
             mystr = properties.String(
                 'my string',
@@ -289,6 +288,36 @@ class TestSerialization(unittest.TestCase):
         assert many.myunion == '1PH'
 
         assert isinstance(ManyProperties.deserialize({'mystr': 'hi'}), ManyProperties)
+
+
+        def kwarg_multiplier(value, **kwargs):
+            mult = kwargs.get('mult', 1)
+            return value * mult
+
+        def kwarg_divider(value, **kwargs):
+            mult = kwargs.get('mult', 1)
+            return value / mult
+
+        class HasInt(properties.HasProperties):
+
+            my_int = properties.Integer(
+                'Integer serialized as mult',
+                serializer=kwarg_multiplier,
+                deserializer=kwarg_divider,
+            )
+
+        hi = HasInt(my_int=5)
+
+        hi_ser = hi.serialize()
+        assert hi_ser['my_int'] == 5
+        hi_copy = HasInt.deserialize(hi_ser)
+        assert hi_copy.my_int == 5
+
+        hi_ser = hi.serialize(mult=2)
+        assert hi_ser['my_int'] == 10
+        hi_copy = HasInt.deserialize(hi_ser, mult=2)
+        assert hi_copy.my_int == 5
+
 
     def test_dynamic_serial(self):
 

@@ -167,16 +167,19 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def serializer(self, value):
         if not callable(value):
             raise TypeError('serializer must be a callable')
-        if hasattr(value, '__code__') and value.__code__.co_argcount == 1:
-            def ignore_kwargs(func):
-                """Wrap a function to allow unused kwargs"""
-                @wraps(func)
-                def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
-                    """Perform a function on a value, ignoring kwargs"""
+
+        def allow_kwargs_bypass(func):
+            """Wrap a function to allow unused kwargs"""
+            @wraps(func)
+            def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
+                """Perform a function on a value, ignoring kwargs"""
+                try:
+                    return func(val, **kwargs)
+                except TypeError:
                     return func(val)
-                return wrapped
-            value = ignore_kwargs(value)
-        self._serializer = value
+            return wrapped
+
+        self._serializer = allow_kwargs_bypass(value)
 
     @property
     def deserializer(self):
@@ -187,16 +190,19 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def deserializer(self, value):
         if not callable(value):
             raise TypeError('deserializer must be a callable')
-        if hasattr(value, '__code__') and value.__code__.co_argcount == 1:
-            def ignore_kwargs(func):
-                """Wrap a function to allow unused kwargs"""
-                @wraps(func)
-                def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
-                    """Perform a function on a value, ignoring kwargs"""
+
+        def allow_kwargs_bypass(func):
+            """Wrap a function to allow unused kwargs"""
+            @wraps(func)
+            def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
+                """Perform a function on a value, ignoring kwargs"""
+                try:
+                    return func(val, **kwargs)
+                except TypeError:
                     return func(val)
-                return wrapped
-            value = ignore_kwargs(value)
-        self._deserializer = value
+            return wrapped
+
+        self._deserializer = allow_kwargs_bypass(value)
 
     @property
     def meta(self):
