@@ -32,6 +32,29 @@ PropertyTerms = collections.namedtuple(
 )
 
 
+def accept_kwargs(func):
+    """Wrap a function that may not accept kwargs so they are accepted
+
+    The output function will always have call signature of
+    :code:`func(val, **kwargs)`, whereas the original function may have
+    call signatures of :code:`func(val)` or :code:`func(val, **kwargs)`.
+    In the case of the former, rather than erroring, kwargs are just
+    ignored.
+
+    This method is called on serializer/deserializer function; these
+    functions always receive kwargs from serialize, but by using this,
+    the original functions may simply take a single value.
+    """
+    @wraps(func)
+    def wrapped(val, **kwargs):
+        """Perform a function on a value, ignoring kwargs if necessary"""
+        try:
+            return func(val, **kwargs)
+        except TypeError:
+            return func(val)
+    return wrapped
+
+
 class ArgumentWrangler(type):
     """Stores arguments to Property initialization for later use"""
 
@@ -167,42 +190,18 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
     def serializer(self, value):
         if not callable(value):
             raise TypeError('serializer must be a callable')
-
-        def allow_kwargs_bypass(func):
-            """Wrap a function to allow unused kwargs"""
-            @wraps(func)
-            def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
-                """Perform a function on a value, ignoring kwargs"""
-                try:
-                    return func(val, **kwargs)
-                except TypeError:
-                    return func(val)
-            return wrapped
-
-        self._serializer = allow_kwargs_bypass(value)
+        self._serializer = accept_kwargs(value)
 
     @property
     def deserializer(self):
-        """Callable to serialize the Property"""
+        """Callable to deserialize the Property"""
         return getattr(self, '_deserializer', None)
 
     @deserializer.setter
     def deserializer(self, value):
         if not callable(value):
             raise TypeError('deserializer must be a callable')
-
-        def allow_kwargs_bypass(func):
-            """Wrap a function to allow unused kwargs"""
-            @wraps(func)
-            def wrapped(val, **kwargs):                                    #pylint: disable=unused-argument
-                """Perform a function on a value, ignoring kwargs"""
-                try:
-                    return func(val, **kwargs)
-                except TypeError:
-                    return func(val)
-            return wrapped
-
-        self._deserializer = allow_kwargs_bypass(value)
+        self._deserializer = accept_kwargs(value)
 
     @property
     def meta(self):
