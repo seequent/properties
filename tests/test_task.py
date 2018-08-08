@@ -52,6 +52,15 @@ class TestTask(unittest.TestCase):
         with self.assertRaises(ValueError):
             BaseTask().report_status(.5)
 
+        class BrokenTask(AddTask):
+
+            def run(self, input_obj):
+                return 0
+
+        broken = BrokenTask()
+        with self.assertRaises(properties.ValidationError):
+            broken(addend_a=0., addend_b=10.)
+
 
 if __name__ == '__main__':
     unittest.main()

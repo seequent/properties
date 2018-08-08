@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 from ..base import HasProperties, Instance
 from ..basic import Bool, Float, String
+from ..utils import ValidationError
 
 
 class BaseInput(HasProperties):
@@ -41,7 +42,7 @@ class TaskStatus(HasProperties):
 
 
 class BaseTask(object):
-    """Cass for defining a computational task
+    """Class for defining a computational task
 
     Input and Output class must be subclasses of BaseInput and
     BaseOutput respectively. Task is executed by
@@ -59,14 +60,16 @@ class BaseTask(object):
         if not isinstance(output_obj, BaseOutput):
             raise ValidationError(
                 message='Invalid task output class: {}'.format(
-                    ouput_obj.__class__.__name__,
+                    output_obj.__class__.__name__,
                 ),
                 reason='invalid_class',
-                instance=output_obj,
+                instance=(
+                    output_obj if isinstance(output_obj, HasProperties)
+                    else None
+                ),
             )
         output_obj.validate()
-        return output_obj.serialize(include_class=False)
-
+        return self.process_output(output_obj)
 
     def report_status(self, status):
         """Hook for reporting the task status towards completion"""
@@ -83,8 +86,6 @@ class BaseTask(object):
         By default, this serializes the output to a dictionary.
         """
         return output_obj.serialize(include_class=False)
-
-
 
     def run(self, input_obj):
         """Execution logic for the task
