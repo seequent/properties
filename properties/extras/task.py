@@ -55,6 +55,12 @@ class BaseTask(object):
     Output = BaseOutput
 
     def __call__(self, **kwargs):
+        """Execute the task
+
+        Keyword arguments are used to construct Input instance. This is
+        validated and  passed to :code:`run`. The Output of :code:`run`
+        is validated, passed to :code:`process_output`, and returned.
+        """
         input_obj = self.Input.deserialize(kwargs)
         input_obj.validate()
         output_obj = self.run(input_obj)
