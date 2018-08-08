@@ -44,8 +44,9 @@ class TaskStatus(HasProperties):
 class BaseTask(object):
     """Class for defining a computational task
 
-    Input and Output class must be subclasses of BaseInput and
-    BaseOutput respectively. Task is executed by
+    Input and Output class attributes must be subclasses of BaseInput and
+    BaseOutput respectively. Task is executed by calling an instance
+    of the task with Input property/value pairs as keyword arguments.
     """
 
     _REGISTRY = dict()
@@ -81,7 +82,10 @@ class BaseTask(object):
         ))
 
     def process_output(self, output_obj):
-        """Processes valid output object into desired task output
+        """Processes valid Output object into desired task output
+
+        This method is executed during :code:`__call__` on the output of
+        :code:`run`.
 
         By default, this serializes the output to a dictionary.
         """
@@ -90,12 +94,14 @@ class BaseTask(object):
     def run(self, input_obj):
         """Execution logic for the task
 
-        To run a task, create an instance of the task, then
+        This method must be overridden in Task subclasses
+
+        To run a Task, create an instance of the Task, then
         call the instance with the required input parameters.
         This will construct and validate an Input object.
 
-        :code:`run` receives this Input object. It then must process
-        the inputs and return an Output object.
+        :code:`run` receives this validated Input object. It then must
+        process the inputs and return an Output object.
         """
         raise NotImplementedError('Override in client classes')
 
@@ -105,8 +111,8 @@ class TaskException(Exception):
 
 
 class TemporaryTaskFailure(TaskException):
-    """An exception that should be retried"""
+    """An exception indicating Task should be retried"""
 
 
 class PermanentTaskFailure(TaskException):
-    """An exception that should not be retried"""
+    """An exception indicating Task should not be retried"""
