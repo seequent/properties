@@ -99,6 +99,9 @@ class Instance(basic.Property):
             if isinstance(value, self.instance_class):
                 return value
             elif isinstance(value, dict):
+                classname = value.get('__class__', None)
+                if classname == self.instance_class.__name__:
+                    value.pop('__class__')
                 return self.instance_class(**value)
             return self.instance_class(value)
         except (ValueError, KeyError, TypeError):
