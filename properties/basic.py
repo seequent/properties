@@ -747,7 +747,7 @@ class Boolean(Property):
             value = value.upper()
             if value in ('TRUE', 'Y', 'YES', 'ON'):
                 return True
-            elif value in ('FALSE', 'N', 'NO', 'OFF'):
+            if value in ('FALSE', 'N', 'NO', 'OFF'):
                 return False
         if isinstance(value, int):
             return value
@@ -1172,8 +1172,7 @@ class Color(Property):
     def validate(self, instance, value):
         """Check if input is valid color and converts to RGB"""
         if isinstance(value, string_types):
-            if value in COLORS_NAMED:
-                value = COLORS_NAMED[value]
+            value = COLORS_NAMED.get(value, value)
             if value.upper() == 'RANDOM':
                 value = random.choice(COLORS_20)
             value = value.upper().lstrip('#')

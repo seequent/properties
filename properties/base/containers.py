@@ -79,14 +79,13 @@ def properties_mutator(cls, name, ioper=False):
                 self is not getattr(self._instance, self._name)
         ):
             return getattr(super(cls, self), name)(*args, **kwargs)
-        else:
-            copy = cls(self)
-            val = getattr(copy, name)(*args, **kwargs)
-            if not ioper:
-                setattr(self._instance, self._name, copy)
-            self._instance = None
-            self._name = ''
-            return val
+        copy = cls(self)
+        val = getattr(copy, name)(*args, **kwargs)
+        if not ioper:
+            setattr(self._instance, self._name, copy)
+        self._instance = None
+        self._name = ''
+        return val
 
     wrapped = getattr(cls, name)
     wrapper.__name__ = wrapped.__name__
