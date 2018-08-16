@@ -87,7 +87,7 @@ class BaseTask(object):
             message=status.message if status.message else '',
         ))
 
-    def process_output(self, output_obj):
+    def process_output(self, output_obj):                                      #pylint: disable=no-self-use
         """Processes valid Output object into desired task output
 
         This method is executed during :code:`__call__` on the output of
