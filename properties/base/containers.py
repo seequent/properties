@@ -79,14 +79,13 @@ def properties_mutator(cls, name, ioper=False):
                 self is not getattr(self._instance, self._name)
         ):
             return getattr(super(cls, self), name)(*args, **kwargs)
-        else:
-            copy = cls(self)
-            val = getattr(copy, name)(*args, **kwargs)
-            if not ioper:
-                setattr(self._instance, self._name, copy)
-            self._instance = None
-            self._name = ''
-            return val
+        copy = cls(self)
+        val = getattr(copy, name)(*args, **kwargs)
+        if not ioper:
+            setattr(self._instance, self._name, copy)
+        self._instance = None
+        self._name = ''
+        return val
 
     wrapped = getattr(cls, name)
     wrapper.__name__ = wrapped.__name__
@@ -184,7 +183,7 @@ class Tuple(basic.Property):
     @property
     def prop(self):
         """Property instance or HasProperties class allowed in the list"""
-        return getattr(self, '_prop', basic.Property(''))
+        return getattr(self, '_prop', basic.Property('', name=self.name))
 
     @prop.setter
     def prop(self, value):
@@ -512,7 +511,7 @@ class Dictionary(basic.Property):
     @property
     def key_prop(self):
         """Property type allowed for keys"""
-        return getattr(self, '_key_prop', basic.Property(''))
+        return getattr(self, '_key_prop', basic.Property('', name=self.name))
 
     @key_prop.setter
     def key_prop(self, value):
@@ -521,7 +520,7 @@ class Dictionary(basic.Property):
     @property
     def value_prop(self):
         """Property type allowed for values"""
-        return getattr(self, '_value_prop', basic.Property(''))
+        return getattr(self, '_value_prop', basic.Property('', name=self.name))
 
     @value_prop.setter
     def value_prop(self, value):
@@ -533,10 +532,8 @@ class Dictionary(basic.Property):
 
     @name.setter
     def name(self, value):
-        if self.key_prop:
-            self.key_prop.name = value
-        if self.value_prop:
-            self.value_prop.name = value
+        self.key_prop.name = value
+        self.value_prop.name = value
         self._name = value
 
     @property

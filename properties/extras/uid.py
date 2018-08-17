@@ -142,9 +142,9 @@ class HasUID(base.HasProperties):
             uid = value
         if uid in cls._INSTANCES and uid not in registry:
             return cls._INSTANCES[uid]
-        elif uid in cls._INSTANCES:
+        if uid in cls._INSTANCES:
             raise ValueError('UID already used: {}'.format(uid))
-        elif uid not in registry:
+        if uid not in registry:
             raise ValueError('Invalid UID: {}'.format(uid))
         value = registry[uid]
         if not isinstance(value, HasUID):

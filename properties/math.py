@@ -140,7 +140,7 @@ class Array(Property):
             if len(shape) != value.ndim:
                 continue
             for i, shp in enumerate(shape):
-                if shp != '*' and value.shape[i] != shp:
+                if shp not in ('*', value.shape[i]):
                     break
             else:
                 return value
