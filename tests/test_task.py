@@ -49,7 +49,7 @@ class TestTask(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             BaseTask()()
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             BaseTask().report_status(.5)
 
         class BrokenTask(AddTask):
