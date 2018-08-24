@@ -78,9 +78,9 @@ class BaseTask(object):
         output_obj.validate()
         return self.process_output(output_obj)
 
-    def report_status(self, status):
+    def report_status(self, **kwargs):
         """Hook for reporting the task status towards completion"""
-        status = Instance('', TaskStatus).validate(None, status)
+        status = Instance('', TaskStatus).validate(None, kwargs)
         print(r'{taskname} | {percent:>3}% | {message}'.format(
             taskname=self.__class__.__name__,
             percent=int(round(100*status.progress)),
