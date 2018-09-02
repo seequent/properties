@@ -211,7 +211,7 @@ class Pointer(base.Instance):
 
         The default is 'uid'
         """
-        return getattr(self, '_', 'uid')
+        return getattr(self, '_uid_prop', 'uid')
 
     @uid_prop.setter
     def uid_prop(self, value):
