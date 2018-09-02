@@ -1,5 +1,5 @@
 """Property classes for web-related concepts"""
-from six.moves.urllib.parse import ParseResult, urlparse
+from six.moves.urllib.parse import ParseResult, urlparse                       #pylint: disable=import-error
 
 from .. import basic
 
