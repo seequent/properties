@@ -10,7 +10,7 @@ class URL(basic.String):
     input URLs and possibly remove fragments and query params.
 
     **Available keywords** (in addition to those inherited from
-    :class:`String <properties.basic.String>`):
+    :class:`String <properties.String>`):
 
     * **remove_parameters** - Query params are stripped from input URL (default
       is False).
