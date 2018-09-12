@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import json
 from warnings import warn
 
-from six import PY2
+from six import PY2, text_type
 
 from .base import HasProperties, equal
 from .. import basic
@@ -101,8 +101,14 @@ class Instance(basic.Property):
             if isinstance(value, dict):
                 return self.instance_class(**value)
             return self.instance_class(value)
-        except (ValueError, KeyError, TypeError):
-            self.error(instance, value)
+        except (ValueError, KeyError, TypeError) as err:
+            if hasattr(err, 'error_tuples'):
+                extra = '({})'.format(' & '.join(
+                    err_tup.message for err_tup in err.error_tuples
+                ))
+            else:
+                extra = ''
+            self.error(instance, value, extra=extra)
 
     def assert_valid(self, instance, value=None):
         """Checks if valid, including HasProperty instances pass validation"""

@@ -340,13 +340,13 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 cls=instance.__class__.__name__,
             )
         message = (
-            '{prefix} must be {info}. A value of {val!r} {vtype!r} was '
-            'specified. {extra}'.format(
+            '{prefix} must be {info}. An invalid value of {val!r} {vtype!r} '
+            'was specified.{extra}'.format(
                 prefix=prefix,
                 info=self.info or 'corrected',
                 val=value,
                 vtype=type(value),
-                extra=extra,
+                extra=' {}'.format(extra) if extra else '',
             )
         )
         if issubclass(error_class, ValidationError):
