@@ -19,3 +19,4 @@ from .task import (
     TaskStatus,
 )
 from .uid import HasUID, Pointer
+from .web import URL
