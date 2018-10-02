@@ -1,4 +1,9 @@
 """Classes for dealing with HasProperties instances with unique IDs"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import uuid
 
 from six import string_types, text_type
