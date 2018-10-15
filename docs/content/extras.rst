@@ -10,6 +10,8 @@ importing :code:`properties.extras`.
   unique IDs and :code:`Pointer` property to refer to instances by
   unique ID.
 
+* :ref:`web` - Web-related Property classes
+
 * :ref:`singleton` - HasProperties class that creates only one instance
   for a given identifying name. Any instances with that name will
   be the same instance.
@@ -22,5 +24,6 @@ importing :code:`properties.extras`.
     :hidden:
 
     ./uid
+    ./web
     ./singleton
     ./task
