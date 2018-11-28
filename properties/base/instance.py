@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import json
 from warnings import warn
 
-from six import PY2, text_type
+from six import PY2
 
 from ..base import GENERIC_ERRORS, HasProperties, equal
 from .. import basic
