@@ -339,12 +339,17 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             prefix = prefix + ' of a {cls} instance'.format(
                 cls=instance.__class__.__name__,
             )
+        print_value = repr(value)
+        if len(print_value) > 107:
+            print_value = '{}  ...  {}'.format(
+                print_value[:50], print_value[-50:]
+            )
         message = (
-            '{prefix} must be {info}. An invalid value of {val!r} {vtype!r} '
-            'was specified.{extra}'.format(
+            '{prefix} must be {info}. An invalid value of {val} {vtype} was '
+            'specified. {extra}'.format(
                 prefix=prefix,
                 info=self.info or 'corrected',
-                val=value,
+                val=print_value,
                 vtype=type(value),
                 extra=' {}'.format(extra) if extra else '',
             )
