@@ -346,7 +346,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             )
         message = (
             '{prefix} must be {info}. An invalid value of {val} {vtype} was '
-            'specified. {extra}'.format(
+            'specified.{extra}'.format(
                 prefix=prefix,
                 info=self.info or 'corrected',
                 val=print_value,
@@ -737,7 +737,7 @@ class Boolean(Property):
             try:
                 value = bool(value)
             except ValueError:
-                self.error(instance, value)
+                self.error(instance, value, extra='Cannot cast to boolean.')
         if not isinstance(value, BOOLEAN_TYPES):
             self.error(instance, value)
         return value
@@ -770,7 +770,7 @@ def _in_bounds(prop, instance, value):
             (prop.min is not None and value < prop.min) or
             (prop.max is not None and value > prop.max)
     ):
-        prop.error(instance, value)
+        prop.error(instance, value, extra='Not within allowed range.')
 
 
 class Integer(Boolean):
@@ -816,9 +816,13 @@ class Integer(Boolean):
         try:
             intval = int(value)
             if not self.cast and abs(value - intval) > TOL:
-                self.error(instance, value)
+                self.error(
+                    instance=instance,
+                    value=value,
+                    extra='Not within tolerance range of {}.'.format(TOL),
+                )
         except (TypeError, ValueError):
-            self.error(instance, value)
+            self.error(instance, value, extra='Cannot cast to integer.')
         _in_bounds(self, instance, intval)
         return intval
 
@@ -866,9 +870,13 @@ class Float(Integer):
         try:
             floatval = float(value)
             if not self.cast and abs(value - floatval) > TOL:
-                self.error(instance, value)
+                self.error(
+                    instance=instance,
+                    value=value,
+                    extra='Not within tolerance range of {}.'.format(TOL),
+                )
         except (TypeError, ValueError):
-            self.error(instance, value)
+            self.error(instance, value, extra='Cannot cast to float.')
         _in_bounds(self, instance, floatval)
         return floatval
 
@@ -912,7 +920,11 @@ class Complex(Boolean):
                     abs(value.real - compval.real) > TOL or
                     abs(value.imag - compval.imag) > TOL
             ):
-                self.error(instance, value)
+                self.error(
+                    instance=instance,
+                    value=value,
+                    extra='Not within tolerance range of {}.'.format(TOL),
+                )
         except (TypeError, ValueError, AttributeError):
             self.error(instance, value)
         return compval
@@ -1017,7 +1029,7 @@ class String(Property):
         if not isinstance(value, string_types):
             self.error(instance, value)
         if self.regex is not None and self.regex.search(value) is None:        #pylint: disable=no-member
-            self.error(instance, value)
+            self.error(instance, value, extra='Regex does not match.')
         value = value.strip(self.strip)
         if self.change_case == 'upper':
             value = value.upper()
@@ -1158,7 +1170,7 @@ class StringChoice(Property):
             test_val = val if self.case_sensitive else [_.upper() for _ in val]
             if test_value == test_key or test_value in test_val:
                 return key
-        self.error(instance, value)
+        self.error(instance, value, extra='Not an available choice.')
 
 
 class Color(Property):
@@ -1231,11 +1243,19 @@ class DateTime(Property):
         if isinstance(value, datetime.datetime):
             return value
         if not isinstance(value, string_types):
-            self.error(instance, value)
+            self.error(
+                instance=instance,
+                value=value,
+                extra='Cannot convert non-strings to datetime.',
+            )
         try:
             return self.from_json(value)
         except ValueError:
-            self.error(instance, value)
+            self.error(
+                instance=instance,
+                value=value,
+                extra='Invalid format for converting to datetime.',
+            )
 
     @staticmethod
     def to_json(value, **kwargs):

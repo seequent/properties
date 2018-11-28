@@ -162,12 +162,22 @@ class Union(basic.Property):
 
     def validate(self, instance, value):
         """Check if value is a valid type of one of the Union props"""
+        error_messages = []
         for prop in self.props:
             try:
                 return prop.validate(instance, value)
-            except GENERIC_ERRORS:
-                continue
-        self.error(instance, value)
+            except GENERIC_ERRORS as err:
+                if hasattr(err, 'error_tuples'):
+                    error_messages += [
+                        err_tup.message for err_tup in err.error_tuples
+                    ]
+        if error_messages:
+            extra = 'Possible explanation:'
+            for message in error_messages:
+                extra += '\n    - {}'.format(message)
+        else:
+            extra = ''
+        self.error(instance, value, extra=extra)
 
     def assert_valid(self, instance, value=None):
         """Check if the Union has a valid value"""
@@ -178,19 +188,22 @@ class Union(basic.Property):
             value = instance._get(self.name)
             if value is None:
                 return True
+        error_messages = []
         for prop in self.props:
             try:
                 return prop.assert_valid(instance, value)
-            except GENERIC_ERRORS:
-                continue
-        message = (
-            'The "{name}" property of a {cls} instance has not been set '
-            'correctly'.format(
-                name=self.name,
-                cls=instance.__class__.__name__
-            )
-        )
-        raise utils.ValidationError(message, 'invalid', self.name, instance)
+            except GENERIC_ERRORS as err:
+                if hasattr(err, 'error_tuples'):
+                    error_messages += [
+                        err_tup.message for err_tup in err.error_tuples
+                    ]
+        if error_messages:
+            extra = 'Possible explanation:'
+            for message in error_messages:
+                extra += '\n    - {}'.format(message)
+        else:
+            extra = ''
+        self.error(instance, value, extra=extra)
 
     def serialize(self, value, **kwargs):
         """Return a serialized value
