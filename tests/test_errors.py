@@ -265,6 +265,24 @@ class TestErrors(unittest.TestCase):
         with self.assertRaises(SillyError):
             hsp.a = 'hi'
 
+    def test_long_error_truncated(self):
+
+        class HasInt(properties.HasProperties):
+
+            a = properties.Integer('')
+
+        hi = HasInt()
+        huge_dictionary = {
+            'a'*1000: [1]*1000,
+            'b'*1000: [2]*1000,
+            'c'*1000: [3]*1000,
+        }
+        with self.assertRaises(properties.ValidationError) as context:
+            hi.a = huge_dictionary
+
+        assert len(str(context.exception)) < 1000
+        assert '  ...  ' in str(context.exception)
+
 
 if __name__ == '__main__':
     unittest.main()
