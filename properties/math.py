@@ -311,11 +311,7 @@ class Vector3(BaseVector):
         """
         if isinstance(value, string_types):
             if value.upper() not in VECTOR_DIRECTIONS:
-                self.error(
-                    instance=instance,
-                    value=value,
-                    extra='Invalid vector string representation.',
-                )
+                self.error(instance, value)
             value = VECTOR_DIRECTIONS[value.upper()]
 
         return super(Vector3, self).validate(instance, value)
@@ -363,11 +359,7 @@ class Vector2(BaseVector):
                     value.upper() not in VECTOR_DIRECTIONS or
                     value.upper() in ('Z', '-Z', 'UP', 'DOWN')
             ):
-                self.error(
-                    instance=instance,
-                    value=value,
-                    extra='Invalid vector string representation.',
-                )
+                self.error(instance, value)
             value = VECTOR_DIRECTIONS[value.upper()][:2]
 
         return super(Vector2, self).validate(instance, value)
@@ -429,11 +421,7 @@ class Vector3Array(BaseVector):
         for i, val in enumerate(value):
             if isinstance(val, string_types):
                 if val.upper() not in VECTOR_DIRECTIONS:
-                    self.error(
-                        instance=instance,
-                        value=value,
-                        extra='Invalid vector string representation.',
-                    )
+                    self.error(instance, value)
                 value[i] = VECTOR_DIRECTIONS[val.upper()]
 
         return super(Vector3Array, self).validate(instance, value)
@@ -499,11 +487,7 @@ class Vector2Array(BaseVector):
                             val.upper() not in VECTOR_DIRECTIONS or
                             val.upper() in ('Z', '-Z', 'UP', 'DOWN')
                     ):
-                        self.error(
-                            instance=instance,
-                            value=value,
-                            extra='Invalid vector string representation.',
-                        )
+                        self.error(instance, value)
                     value[i] = VECTOR_DIRECTIONS[val.upper()][:2]
 
         return super(Vector2Array, self).validate(instance, value)

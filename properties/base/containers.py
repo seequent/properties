@@ -265,7 +265,7 @@ class Tuple(basic.Property):
         pointers.
         """
         if not self.coerce and not isinstance(value, self._class_container):
-            self.error(instance, value, extra='This is an incorrect type.')
+            self.error(instance, value)
         if self.coerce and not isinstance(value, CONTAINERS):
             value = [value]
         if not isinstance(value, self._class_container):
@@ -569,7 +569,7 @@ class Dictionary(basic.Property):
 
     def validate(self, instance, value):
         if not self.coerce and not isinstance(value, self._class_container):
-            self.error(instance, value, extra='This is an incorrect type.')
+            self.error(instance, value)
         if self.coerce:
             try:
                 value = self._class_container(value)
