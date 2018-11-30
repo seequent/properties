@@ -98,7 +98,7 @@ class Instance(basic.Property):
         try:
             if isinstance(value, self.instance_class):
                 return value
-            elif isinstance(value, dict):
+            if isinstance(value, dict):
                 return self.instance_class(**value)
             return self.instance_class(value)
         except (ValueError, KeyError, TypeError):

@@ -1,4 +1,9 @@
 """Classes for dealing with HasProperties instances with unique IDs"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import uuid
 
 from six import string_types, text_type
@@ -142,9 +147,9 @@ class HasUID(base.HasProperties):
             uid = value
         if uid in cls._INSTANCES and uid not in registry:
             return cls._INSTANCES[uid]
-        elif uid in cls._INSTANCES:
+        if uid in cls._INSTANCES:
             raise ValueError('UID already used: {}'.format(uid))
-        elif uid not in registry:
+        if uid not in registry:
             raise ValueError('Invalid UID: {}'.format(uid))
         value = registry[uid]
         if not isinstance(value, HasUID):
@@ -211,7 +216,7 @@ class Pointer(base.Instance):
 
         The default is 'uid'
         """
-        return getattr(self, '_', 'uid')
+        return getattr(self, '_uid_prop', 'uid')
 
     @uid_prop.setter
     def uid_prop(self, value):

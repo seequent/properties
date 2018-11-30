@@ -23,13 +23,13 @@ with open('README.rst') as f:
     LONG_DESCRIPTION = ''.join(f.readlines())
 
 EXTRAS = {
-    'math': ['numpy>=1.7', 'vectormath==0.1.4'],
+    'math': ['numpy>=1.7', 'vectormath>=0.1.4'],
     'image': ['pypng']
 }
 EXTRAS.update({'full': sum(EXTRAS.values(), [])})
 setup(
     name='properties',
-    version='0.5.1b0',
+    version='0.5.4',
     packages=find_packages(exclude=('tests',)),
     install_requires=['six>=1.7.3'],
     extras_require=EXTRAS,

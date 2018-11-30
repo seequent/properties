@@ -216,5 +216,19 @@ class TestUnion(unittest.TestCase):
         lu = LenientUnion.deserialize({'u': {'a': 'hi'}})
         assert isinstance(lu.u, DifferentProps)
 
+        class ValidateColorThenString(properties.HasProperties):
+            values = properties.Union(
+                'Values',
+                props=[
+                    properties.List('', properties.Color('')),
+                    properties.List('', properties.String('')),
+                ],
+            )
+
+        vcts = ValidateColorThenString(values=['hi', 'bye'])
+        out_vcts = ValidateColorThenString.deserialize(vcts.serialize())
+
+        assert out_vcts.values == ['hi', 'bye']
+
 if __name__ == '__main__':
     unittest.main()

@@ -523,15 +523,19 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     cls.__name__, value.__class__.__name__
                 )
             )
-        cls = cls._deserialize_class(value.get('__class__'), trusted, strict)
+        output_cls = cls._deserialize_class(
+            input_cls_name=value.get('__class__'),
+            trusted=trusted,
+            strict=strict,
+        )
         instance = kwargs.pop('_instance', None)
-        if instance is not None and not isinstance(instance, cls):
+        if instance is not None and not isinstance(instance, output_cls):
             raise ValueError(
                 'Input _instance must be of class {}, not {}'.format(
-                    cls.__name__, instance.__class__.__name__
+                    output_cls.__name__, instance.__class__.__name__
                 )
             )
-        state, unused = utils.filter_props(cls, value, True)
+        state, unused = utils.filter_props(output_cls, value, True)
         unused.pop('__class__', None)
         if unused and strict:
             raise ValueError(
@@ -542,32 +546,32 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         kwargs.update({'trusted': trusted, 'strict': strict})
         newstate = {}
         for key, val in iteritems(state):
-            newstate[key] = cls._props[key].deserialize(val, **kwargs)
-        mutable, immutable = utils.filter_props(cls, newstate, False)
+            newstate[key] = output_cls._props[key].deserialize(val, **kwargs)
+        mutable, immutable = utils.filter_props(output_cls, newstate, False)
         with handlers.listeners_disabled():
             if instance is None:
-                instance = cls(**mutable)
+                instance = output_cls(**mutable)
             else:
                 for key, val in iteritems(mutable):
                     setattr(instance, key, val)
         for key, val in iteritems(immutable):
-            valid_val = cls._props[key].validate(instance, val)
+            valid_val = output_cls._props[key].validate(instance, val)
             instance._backend[key] = valid_val
         if assert_valid and not instance.validate():
             raise utils.ValidationError('Deserialized instance is not valid')
         return instance
 
     @classmethod
-    def _deserialize_class(cls, input_class, trusted, strict):
+    def _deserialize_class(cls, input_cls_name, trusted, strict):
         """Returns the HasProperties class to use for deserialization"""
-        if not input_class or input_class == cls.__name__:
+        if not input_cls_name or input_cls_name == cls.__name__:
             return cls
-        elif trusted and input_class in cls._REGISTRY:
-            return cls._REGISTRY[input_class]
-        elif strict:
+        if trusted and input_cls_name in cls._REGISTRY:
+            return cls._REGISTRY[input_cls_name]
+        if strict:
             raise ValueError(
                 'Class name {} from deserialization input dictionary does '
-                'not match input class {}'.format(input_class, cls.__name__)
+                'not match input class {}'.format(input_cls_name, cls.__name__)
             )
         return cls
 

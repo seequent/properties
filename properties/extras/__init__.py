@@ -10,10 +10,13 @@ from __future__ import unicode_literals
 
 from .singleton import Singleton
 from .task import (
-    BaseResult,
+    BaseInput,
+    BaseOutput,
+    BaseTask,
     PermanentTaskFailure,
-    Task,
+    TemporaryTaskFailure,
     TaskException,
     TaskStatus,
 )
 from .uid import HasUID, Pointer
+from .web import URL

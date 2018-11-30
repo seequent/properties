@@ -89,7 +89,7 @@ from .utils import (
     ValidationError,
 )
 
-__version__ = '0.5.1b0'
+__version__ = '0.5.4'
 __author__ = 'Seequent'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2018 Seequent'

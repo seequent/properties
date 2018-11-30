@@ -8,44 +8,58 @@ import sys
 import unittest
 
 import properties
-from properties.extras import BaseResult, Task, PermanentTaskFailure
+from properties.extras import (
+    BaseInput, BaseOutput, BaseTask, PermanentTaskFailure,
+)
 
 
 class TestTask(unittest.TestCase):
 
     def test_task(self):
 
-        class AddTask(Task):
+        class AddTask(BaseTask):
 
-            addend_a = properties.Float('First add argument')
-            addend_b = properties.Float('Second add argument')
+            class Input(BaseInput):
+                addend_a = properties.Float('First add argument')
+                addend_b = properties.Float('Second add argument')
 
-            class Result(BaseResult):
+            class Output(BaseOutput):
                 value = properties.Float('Result of add operation')
 
-            def __call__(self):
+            def run(self, input_obj):
                 self.report_status({'progress': 0., 'message': 'Starting'})
-                if self.addend_a == self.addend_b:
+                if input_obj.addend_a == input_obj.addend_b:
                     raise PermanentTaskFailure()
-                return self.Result(value=self.addend_a + self.addend_b)
+                out = self.Output(
+                    value=input_obj.addend_a + input_obj.addend_b,
+                )
+                return out
 
-        add = AddTask(addend_a=0., addend_b=10.)
+        add = AddTask()
 
         sys.stdout = temp_out = StringIO()
-        result = add()
+        result = add(addend_a=0., addend_b=10.)
         sys.stdout = sys.__stdout__
         assert temp_out.getvalue() == 'AddTask |   0% | Starting\n'
-        assert result.value == 10.
+        assert result['value'] == 10.
 
-        add = AddTask(addend_a=5., addend_b=5.)
         with self.assertRaises(PermanentTaskFailure):
-            add()
+            add(addend_a=5., addend_b=5.)
 
         with self.assertRaises(NotImplementedError):
-            Task()()
+            BaseTask()()
 
         with self.assertRaises(ValueError):
-            Task().report_status(.5)
+            BaseTask().report_status(.5)
+
+        class BrokenTask(AddTask):
+
+            def run(self, input_obj):
+                return 0
+
+        broken = BrokenTask()
+        with self.assertRaises(properties.ValidationError):
+            broken(addend_a=0., addend_b=10.)
 
 
 if __name__ == '__main__':
