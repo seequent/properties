@@ -8,7 +8,7 @@ from warnings import warn
 
 from six import PY2
 
-from ..base import GENERIC_ERRORS, HasProperties, Instance
+from . import GENERIC_ERRORS, HasProperties, Instance
 from .. import basic
 from .. import utils
 

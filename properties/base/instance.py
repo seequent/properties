@@ -9,7 +9,7 @@ from warnings import warn
 
 from six import PY2
 
-from ..base import GENERIC_ERRORS, HasProperties, equal
+from . import GENERIC_ERRORS, HasProperties, equal
 from .. import basic
 from .. import utils
 
