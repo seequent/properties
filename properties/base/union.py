@@ -160,12 +160,16 @@ class Union(basic.Property):
                 warn('Union prop default ignored: {}'.format(prop.default),
                      RuntimeWarning)
 
-    def validate(self, instance, value):
-        """Check if value is a valid type of one of the Union props"""
+    def _try_prop_method(self, instance, value, method_name):
+        """Helper method to perform a method on each of the union props
+
+        This method gathers all errors and returns them at the end
+        if the method on each of the props fails.
+        """
         error_messages = []
         for prop in self.props:
             try:
-                return prop.validate(instance, value)
+                return getattr(prop, method_name)(instance, value)
             except GENERIC_ERRORS as err:
                 if hasattr(err, 'error_tuples'):
                     error_messages += [
@@ -179,6 +183,10 @@ class Union(basic.Property):
             extra = ''
         self.error(instance, value, extra=extra)
 
+    def validate(self, instance, value):
+        """Check if value is a valid type of one of the Union props"""
+        return self._try_prop_method(instance, value, 'validate')
+
     def assert_valid(self, instance, value=None):
         """Check if the Union has a valid value"""
         valid = super(Union, self).assert_valid(instance, value)
@@ -188,22 +196,7 @@ class Union(basic.Property):
             value = instance._get(self.name)
             if value is None:
                 return True
-        error_messages = []
-        for prop in self.props:
-            try:
-                return prop.assert_valid(instance, value)
-            except GENERIC_ERRORS as err:
-                if hasattr(err, 'error_tuples'):
-                    error_messages += [
-                        err_tup.message for err_tup in err.error_tuples
-                    ]
-        if error_messages:
-            extra = 'Possible explanation:'
-            for message in error_messages:
-                extra += '\n    - {}'.format(message)
-        else:
-            extra = ''
-        self.error(instance, value, extra=extra)
+        return self._try_prop_method(instance, value, 'assert_valid')
 
     def serialize(self, value, **kwargs):
         """Return a serialized value
