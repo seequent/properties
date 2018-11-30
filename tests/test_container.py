@@ -941,6 +941,9 @@ class TestContainer(unittest.TestCase):
         hcd.my_coerced_dict = key_val_list
         assert hcd.my_coerced_dict == {'a': 1, 'b': 2, 'c': 3}
 
+        with self.assertRaises(properties.ValidationError):
+            hcd.my_coerced_dict = 'a'
+
     def test_nested_observed(self):
         self._test_nested_observed(True)
         self._test_nested_observed(False)

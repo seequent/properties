@@ -9,7 +9,7 @@ from warnings import warn
 
 from six import PY2
 
-from .base import HasProperties, equal
+from . import GENERIC_ERRORS, HasProperties, equal
 from .. import basic
 from .. import utils
 
@@ -101,8 +101,14 @@ class Instance(basic.Property):
             if isinstance(value, dict):
                 return self.instance_class(**value)
             return self.instance_class(value)
-        except (ValueError, KeyError, TypeError):
-            self.error(instance, value)
+        except GENERIC_ERRORS as err:
+            if hasattr(err, 'error_tuples'):
+                extra = '({})'.format(' & '.join(
+                    err_tup.message for err_tup in err.error_tuples
+                ))
+            else:
+                extra = ''
+            self.error(instance, value, extra=extra)
 
     def assert_valid(self, instance, value=None):
         """Checks if valid, including HasProperty instances pass validation"""
