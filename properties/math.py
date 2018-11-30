@@ -421,7 +421,11 @@ class Vector3Array(BaseVector):
         for i, val in enumerate(value):
             if isinstance(val, string_types):
                 if val.upper() not in VECTOR_DIRECTIONS:
-                    self.error(instance, value)
+                    self.error(
+                        instance=instance,
+                        value=val,
+                        extra='This is an invalid Vector3 representation.',
+                    )
                 value[i] = VECTOR_DIRECTIONS[val.upper()]
 
         return super(Vector3Array, self).validate(instance, value)
@@ -487,7 +491,11 @@ class Vector2Array(BaseVector):
                             val.upper() not in VECTOR_DIRECTIONS or
                             val.upper() in ('Z', '-Z', 'UP', 'DOWN')
                     ):
-                        self.error(instance, value)
+                        self.error(
+                            instance=instance,
+                            value=val,
+                            extra='This is an invalid Vector2 representation.',
+                        )
                     value[i] = VECTOR_DIRECTIONS[val.upper()][:2]
 
         return super(Vector2Array, self).validate(instance, value)
