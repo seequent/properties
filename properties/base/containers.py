@@ -573,7 +573,7 @@ class Dictionary(basic.Property):
         if self.coerce:
             try:
                 value = self._class_container(value)
-            except TypeError:
+            except (TypeError, ValueError):
                 self.error(
                     instance=instance,
                     value=value,
