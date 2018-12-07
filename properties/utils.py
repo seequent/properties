@@ -146,12 +146,12 @@ class ValidationError(ValueError):
     """
 
     def __init__(self, message, reason=None, prop=None, instance=None,
-                 _error_tuples=None):
+                 _related_errors=None):
         super(ValidationError, self).__init__(message)
-        if _error_tuples is None:
-            self.error_tuples = []
+        if _related_errors is None:
+            self.related_errors = []
         else:
-            self.error_tuples = _error_tuples
+            self.related_errors = _related_errors
         if reason is not None and not isinstance(reason, string_types):
             raise TypeError('ValidationError reason must be a string')
         if prop is not None and not isinstance(prop, string_types):
@@ -159,11 +159,50 @@ class ValidationError(ValueError):
         if instance is not None and not hasattr(instance, '_error_hook'):
             raise TypeError('ValidationError instance must be a '
                             'HasProperties instance')
-        if reason or prop or instance:
-            error_tuple = ErrorTuple(message, reason, prop, instance)
-            self.error_tuples.append(error_tuple)
+        self.message = message
+        self.reason = reason
+        self.prop = prop
+        self.instance = instance
         if not getattr(instance, '_getting_validated', True):
             instance._error_hook(self.error_tuples)                           #pylint: disable=protected-access
+
+    def __str__(self, tab=1, prefix='- '):
+        """Verbose string representation of the error
+
+        Includes related error messages.
+        """
+        lines = [self.args[0]] + ['{indent}{prefix}{message}'.format(
+            indent=tab*4*' ',
+            prefix=prefix,
+            message=(
+                err.__str__(tab=tab+1) if isinstance(err, ValidationError)
+                else str(err)
+            ),
+        ) for err in self.related_errors]
+        return '\n'.join(lines)
+
+    @property
+    def error_tuples(self):
+        """Construct error tuples out of related errors"""
+        if self.related_errors:
+            error_tuples = [
+                ErrorTuple(
+                    message=str(err),
+                    reason=err.reason,
+                    prop=err.prop,
+                    instance=err.instance,
+                ) for err in self.related_errors
+            ]
+        else:
+            error_tuples = [
+                ErrorTuple(
+                    message=str(self),
+                    reason=self.reason,
+                    prop=self.prop,
+                    instance=self.instance,
+                )
+            ]
+        return error_tuples
 
 
 class Sentinel(object):                                                        #pylint: disable=too-few-public-methods

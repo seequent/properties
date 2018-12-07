@@ -278,7 +278,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
     def __init__(self, **kwargs):
         # Set the keyword arguments with change notifications
         self._getting_validated = True
-        self._validation_error_tuples = []
+        self._validation_errors = []
         self._non_validation_error = None
         try:
             for key, val in iteritems(kwargs):
@@ -296,24 +296,25 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                 try:
                     setattr(self, key, val)
                 except utils.ValidationError as val_err:
-                    self._validation_error_tuples += val_err.error_tuples
+                    self._validation_errors.append(val_err)
                 except GENERIC_ERRORS as err:
                     if not self._non_validation_error:
                         self._non_validation_error = err
-                    continue
-            if self._validation_error_tuples:
-                self._error_hook(self._validation_error_tuples)
-                msgs = ['Initialization failed:']
-                msgs += [val.message for val in self._validation_error_tuples]
+            if self._validation_errors:
+                self._error_hook(
+                    [err.error_tuples for err in self._validation_errors]
+                )
                 raise utils.ValidationError(
-                    message='\n- '.join(msgs),
-                    _error_tuples=self._validation_error_tuples,
+                    message='Error initializing {} instance:'.format(
+                        self.__class__.__name__
+                    ),
+                    _related_errors=self._validation_errors,
                 )
             elif self._non_validation_error:
                 raise self._non_validation_error                               #pylint: disable=raising-bad-type
         finally:
             self._getting_validated = False
-            self._validation_error_tuples = None
+            self._validation_errors = None
             self._non_validation_error = None
 
     def _get(self, name):
@@ -381,7 +382,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         if getattr(self, '_getting_validated', False):
             return True
         self._getting_validated = True
-        self._validation_error_tuples = []
+        self._validation_errors = []
         self._non_validation_error = None
         try:
             for val in itervalues(self._class_validators):
@@ -395,24 +396,26 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                             'Validation failed', None, None, self
                         )
                 except utils.ValidationError as val_err:
-                    self._validation_error_tuples += val_err.error_tuples
+                    self._validation_errors.append(val_err)
                 except GENERIC_ERRORS as err:
                     if not self._non_validation_error:
                         self._non_validation_error = err
-            if self._validation_error_tuples:
-                self._error_hook(self._validation_error_tuples)
-                msgs = ['Validation failed:']
-                msgs += [val.message for val in self._validation_error_tuples]
+            if self._validation_errors:
+                self._error_hook(
+                    [err.error_tuples for err in self._validation_errors]
+                )
                 raise utils.ValidationError(
-                    message='\n- '.join(msgs),
-                    _error_tuples=self._validation_error_tuples,
+                    message='Error validating {} instance:'.format(
+                        self.__class__.__name__
+                    ),
+                    _related_errors=self._validation_errors,
                 )
             elif self._non_validation_error:
                 raise self._non_validation_error                               #pylint: disable=raising-bad-type
             return True
         finally:
             self._getting_validated = False
-            self._validation_error_tuples = None
+            self._validation_errors = None
             self._non_validation_error = None
 
     @handlers.validator
@@ -421,20 +424,21 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
         for key, prop in iteritems(self._props):
             try:
                 value = self._get(key)
-                err_msg = 'Invalid value for property {}: {}'.format(key, value)
                 if value is not None:
                     change = dict(name=key, previous=value, value=value,
                                   mode='validate')
                     self._notify(change)
                     if not prop.equal(value, change['value']):
-                        raise utils.ValidationError(err_msg, 'invalid',
-                                                    prop.name, self)
+                        prop.error(
+                            instance=self,
+                            value=value,
+                            extra='Attempting to re-validate failed.',
+                        )
                 if not prop.assert_valid(self):
-                    raise utils.ValidationError(err_msg, 'invalid',
-                                                prop.name, self)
-            except utils.ValidationError as val_err:
-                if getattr(self, '_validation_error_tuples', None) is not None:
-                    self._validation_error_tuples += val_err.error_tuples
+                    prop.error(self, value)
+            except utils.ValidationError as err:
+                if getattr(self, '_validation_errors', None) is not None:
+                    self._validation_errors.append(err)
                 else:
                     raise
         return True

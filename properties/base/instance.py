@@ -102,13 +102,14 @@ class Instance(basic.Property):
                 return self.instance_class(**value)
             return self.instance_class(value)
         except GENERIC_ERRORS as err:
-            if hasattr(err, 'error_tuples'):
-                extra = '({})'.format(' & '.join(
-                    err_tup.message for err_tup in err.error_tuples
-                ))
-            else:
-                extra = ''
-            self.error(instance, value, extra=extra)
+            self.error(
+                instance=instance,
+                value=value,
+                error_class=InstanceValidationError,
+                _related_errors=(
+                    [err] if isinstance(err, utils.ValidationError) else None
+                ),
+            )
 
     def assert_valid(self, instance, value=None):
         """Checks if valid, including HasProperty instances pass validation"""
@@ -187,3 +188,11 @@ class Instance(basic.Property):
             pref=self.instance_class.__module__,
         )
         return classdoc
+
+
+class InstanceValidationError(utils.ValidationError):
+    """ValidationERror to be raised by Instance properties"""
+
+    def __str__(self, tab=1, prefix='- Cause: '):
+        return super(InstanceValidationError, self).__str__(tab, prefix)
+
