@@ -325,7 +325,7 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
         """Statically load a Property value from JSON value"""
         return value
 
-    def error(self, instance, value, error_class=None, extra=''):
+    def error(self, instance, value, error_class=None, extra='', **kwargs):
         """Generate a :code:`ValueError` for invalid value assignment
 
         The instance is the containing HasProperties instance, but it may
@@ -354,8 +354,13 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
                 extra=' {}'.format(extra) if extra else '',
             )
         )
+        kwargs.update({
+            'reason': 'invalid',
+            'prop': self.name,
+            'instance': instance,
+        })
         if issubclass(error_class, ValidationError):
-            raise error_class(message, 'invalid', self.name, instance)
+            raise error_class(message, **kwargs)
         raise error_class(message)
 
     def sphinx(self):
