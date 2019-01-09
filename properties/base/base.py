@@ -22,6 +22,15 @@ else:
 GENERIC_ERRORS = (ValueError, KeyError, TypeError, AttributeError)
 
 
+def _document_properties(header, keys, props, doc_format):
+    """Document given properties under a header"""
+    doc_str = '\n\n**{}:**\n\n'.format(header)
+    doc_str += '\n'.join(
+        ('* ' + getattr(props[key], doc_format)() for key in keys)
+    )
+    return doc_str
+
+
 class PropertyMetaclass(type):
     """Metaclass to establish behavior of **HasProperties** classes
 
@@ -122,70 +131,102 @@ class PropertyMetaclass(type):
             classdict[key] = handler.func
             handler.func = key
 
-        # Determine if private properties should be documented or just public
-        _doc_private = False
+        # Determine documentation formatting
+        _doc_format = 'sphinx'
         for base in reversed(bases):
-            _doc_private = getattr(base, '_doc_private', _doc_private)
-        _doc_private = classdict.get('_doc_private', _doc_private)
-
-        if not isinstance(_doc_private, bool):
-            raise AttributeError('_doc_private must be a boolean')
-
-        if _doc_private:
-            documented_props = sorted(_props)
-        else:
-            documented_props = sorted(p for p in _props if p[0] != '_')
-
-        # Order the properties for the docs (default is alphabetical)
-        _doc_order = None
-        for base in reversed(bases):
-            _doc_order = getattr(base, '_doc_order', _doc_order)
-            if (
-                    not isinstance(_doc_order, (list, tuple)) or
-                    sorted(list(_doc_order)) != documented_props
-            ):
-                _doc_order = None
-        _doc_order = classdict.get('_doc_order', _doc_order)
-        if _doc_order is None:
-            _doc_order = documented_props
-        elif not isinstance(_doc_order, (list, tuple)):
+            _doc_format = getattr(base, '_doc_format', _doc_format)
+        _doc_format = classdict.get('_doc_format', _doc_format)
+        if _doc_format and _doc_format not in ['sphinx', 'numpy']:
             raise AttributeError(
-                '_doc_order must be a list of property names'
+                "_doc_format must be 'sphinx', 'numpy', or None"
             )
-        elif sorted(list(_doc_order)) != documented_props:
-            raise AttributeError(
-                '_doc_order must be unspecified or contain ALL property names'
-            )
+        if _doc_format:
 
-        # Sort props into required, optional, and immutable
-        doc_str = classdict.get('__doc__', '')
-        req = [key for key in _doc_order
-               if key[0] != '_' and getattr(_props[key], 'required', False)]
-        opt = [key for key in _doc_order
-               if key[0] != '_' and not getattr(_props[key], 'required', True)]
-        imm = [key for key in _doc_order
-               if key[0] != '_' and not hasattr(_props[key], 'required')]
-        priv = [key for key in _doc_order
-                if key[0] == '_']
+            # Determine if private props should be documented or just public
+            _doc_private = False
+            for base in reversed(bases):
+                _doc_private = getattr(base, '_doc_private', _doc_private)
+            _doc_private = classdict.get('_doc_private', _doc_private)
 
-        # Build the documentation based on above sorting
-        if req:
-            doc_str += '\n\n**Required Properties:**\n\n' + '\n'.join(
-                ('* ' + _props[key].sphinx() for key in req)
-            )
-        if opt:
-            doc_str += '\n\n**Optional Properties:**\n\n' + '\n'.join(
-                ('* ' + _props[key].sphinx() for key in opt)
-            )
-        if imm:
-            doc_str += '\n\n**Other Properties:**\n\n' + '\n'.join(
-                ('* ' + _props[key].sphinx() for key in imm)
-            )
-        if priv:
-            doc_str += '\n\n**Private Properties:**\n\n' + '\n'.join(
-                ('* ' + _props[key].sphinx() for key in priv)
-            )
-        classdict['__doc__'] = doc_str
+            if not isinstance(_doc_private, bool):
+                raise AttributeError('_doc_private must be a boolean')
+
+            if _doc_private:
+                documented_props = sorted(_props)
+            else:
+                documented_props = sorted(p for p in _props if p[0] != '_')
+
+            # Order the properties for the docs (default is alphabetical)
+            _doc_order = None
+            for base in reversed(bases):
+                _doc_order = getattr(base, '_doc_order', _doc_order)
+                if (
+                        not isinstance(_doc_order, (list, tuple)) or
+                        sorted(list(_doc_order)) != documented_props
+                ):
+                    _doc_order = None
+            _doc_order = classdict.get('_doc_order', _doc_order)
+            if _doc_order is None:
+                _doc_order = documented_props
+            elif not isinstance(_doc_order, (list, tuple)):
+                raise AttributeError(
+                    '_doc_order must be a list of property names'
+                )
+            elif sorted(list(_doc_order)) != documented_props:
+                raise AttributeError(
+                    '_doc_order must be unspecified or contain ALL '
+                    'property names'
+                )
+
+            # Sort props into required, optional, and immutable
+            doc_str = classdict.get('__doc__', '')
+            req = [
+                key for key in _doc_order
+                if key[0] != '_' and getattr(_props[key], 'required', False)
+            ]
+            opt = [
+                key for key in _doc_order
+                if key[0] != '_' and not getattr(_props[key], 'required', True)
+            ]
+            imm = [
+                key for key in _doc_order
+                if key[0] != '_' and not hasattr(_props[key], 'required')
+            ]
+            priv = [
+                key for key in _doc_order
+                if key[0] == '_'
+            ]
+
+            # Build the documentation based on above sorting
+            if req:
+                doc_str += _document_properties(
+                    header='Required Properties',
+                    keys=req,
+                    props=_props,
+                    doc_format=_doc_format,
+                )
+            if opt:
+                doc_str += _document_properties(
+                    header='Optional Properties',
+                    keys=opt,
+                    props=_props,
+                    doc_format=_doc_format,
+                )
+            if imm:
+                doc_str += _document_properties(
+                    header='Other Properties',
+                    keys=imm,
+                    props=_props,
+                    doc_format=_doc_format,
+                )
+            if priv:
+                doc_str += _document_properties(
+                    header='Private Properties',
+                    keys=priv,
+                    props=_props,
+                    doc_format=_doc_format,
+                )
+            classdict['__doc__'] = doc_str
 
         # Create the new class
         newcls = super(PropertyMetaclass, mcs).__new__(
