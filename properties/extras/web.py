@@ -48,7 +48,7 @@ class URL(basic.String):
         value = super(URL, self).validate(instance, value)
         parsed_url = urlparse(value)
         if not parsed_url.scheme or not parsed_url.netloc:
-            self.error(instance, value)
+            self.error(instance, value, extra='URL needs scheme and netloc.')
         parse_result = ParseResult(
             scheme=parsed_url.scheme,
             netloc=parsed_url.netloc,

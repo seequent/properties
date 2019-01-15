@@ -289,10 +289,16 @@ class Tuple(basic.Property):
             value = instance._get(self.name)
             if value is None:
                 return True
-        if self.min_length is not None and len(value) < self.min_length:
-            self.error(instance, value)
-        if self.max_length is not None and len(value) > self.max_length:
-            self.error(instance, value)
+        if (
+                (self.min_length is not None and len(value) < self.min_length)
+                or
+                (self.max_length is not None and len(value) > self.max_length)
+        ):
+            self.error(
+                instance=instance,
+                value=value,
+                extra='(Length is {})'.format(len(value)),
+            )
         for val in value:
             if not self.prop.assert_valid(instance, val):
                 return False
@@ -567,8 +573,12 @@ class Dictionary(basic.Property):
         if self.coerce:
             try:
                 value = self._class_container(value)
-            except TypeError:
-                self.error(instance, value)
+            except (TypeError, ValueError):
+                self.error(
+                    instance=instance,
+                    value=value,
+                    extra='Cannot coerce to the correct type',
+                )
         out = value.__class__()
         for key, val in iteritems(value):
             if self.key_prop:
