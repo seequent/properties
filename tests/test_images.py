@@ -21,6 +21,7 @@ class TestImages(unittest.TestCase):
              '101011010100',
              '110010110101',
              '100010010011']
+        s = [[int(v) for v in val] for val in s]
         f = open(png_file, 'wb')
         w = png.Writer(len(s[0]), len(s), greyscale=True, bitdepth=16)
         w.write(f, s)
