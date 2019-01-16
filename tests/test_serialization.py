@@ -348,5 +348,20 @@ class TestSerialization(unittest.TestCase):
         assert properties.equal(dm1, dm3)
 
 
+    def test_instance_deserializer(self):
+
+        class DeserializeClass(object):
+
+            def __call__(self, value):
+                print('deserializing')
+
+        class HasDeserializer(properties.HasProperties):
+
+            my_int = properties.Integer(
+                'Int with deserializer',
+                deserializer=DeserializeClass(),
+            )
+
+
 if __name__ == '__main__':
     unittest.main()
