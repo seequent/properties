@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 import collections
 import datetime
-from functools import wraps
 import math
 import random
 import re
@@ -45,7 +44,6 @@ def accept_kwargs(func):
     functions always receive kwargs from serialize, but by using this,
     the original functions may simply take a single value.
     """
-    @wraps(func)
     def wrapped(val, **kwargs):
         """Perform a function on a value, ignoring kwargs if necessary"""
         try:
