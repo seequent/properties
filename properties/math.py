@@ -133,7 +133,7 @@ class Array(Property):
                 'subclasses of numpy.ndarray'
             )
         if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
-            self.error(instance, value)
+            self.error(instance, value, extra='Invalid dtype.')
         if self.shape is None:
             return value
         for shape in self.shape:
@@ -144,7 +144,7 @@ class Array(Property):
                     break
             else:
                 return value
-        self.error(instance, value)
+        self.error(instance, value, extra='Invalid shape.')
 
     def equal(self, value_a, value_b):
         try:
@@ -421,7 +421,11 @@ class Vector3Array(BaseVector):
         for i, val in enumerate(value):
             if isinstance(val, string_types):
                 if val.upper() not in VECTOR_DIRECTIONS:
-                    self.error(instance, val)
+                    self.error(
+                        instance=instance,
+                        value=val,
+                        extra='This is an invalid Vector3 representation.',
+                    )
                 value[i] = VECTOR_DIRECTIONS[val.upper()]
 
         return super(Vector3Array, self).validate(instance, value)
@@ -482,11 +486,16 @@ class Vector2Array(BaseVector):
             self.error(instance, value)
         if isinstance(value, (tuple, list)):
             for i, val in enumerate(value):
-                if (
-                        isinstance(val, string_types) and
-                        val.upper() in VECTOR_DIRECTIONS and
-                        val.upper() not in ('Z', '-Z', 'UP', 'DOWN')
-                ):
+                if isinstance(val, string_types):
+                    if (
+                            val.upper() not in VECTOR_DIRECTIONS or
+                            val.upper() in ('Z', '-Z', 'UP', 'DOWN')
+                    ):
+                        self.error(
+                            instance=instance,
+                            value=val,
+                            extra='This is an invalid Vector2 representation.',
+                        )
                     value[i] = VECTOR_DIRECTIONS[val.upper()][:2]
 
         return super(Vector2Array, self).validate(instance, value)

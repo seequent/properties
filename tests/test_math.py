@@ -221,6 +221,8 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ValueError):
             hv2.vec2 = 'east'
         with self.assertRaises(ValueError):
+            hv2.vec2 = ['diagonal']
+        with self.assertRaises(ValueError):
             hv2.vec2 = [[1., 2., 3.]]
 
         class HasLenVec2Arr(properties.HasProperties):
@@ -271,7 +273,7 @@ class TestMath(unittest.TestCase):
         hv3.vec3 = [1., 2., 3.]
         assert hv3.vec3.shape == (1, 3)
         with self.assertRaises(ValueError):
-            hv3.vec3 = 'diagonal'
+            hv3.vec3 = 'east'
         with self.assertRaises(ValueError):
             hv3.vec3 = ['diagonal']
         with self.assertRaises(ValueError):
