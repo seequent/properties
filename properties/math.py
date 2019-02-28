@@ -418,15 +418,16 @@ class Vector3Array(BaseVector):
         """
         if not isinstance(value, (tuple, list, np.ndarray)):
             self.error(instance, value)
-        for i, val in enumerate(value):
-            if isinstance(val, string_types):
-                if val.upper() not in VECTOR_DIRECTIONS:
-                    self.error(
-                        instance=instance,
-                        value=val,
-                        extra='This is an invalid Vector3 representation.',
-                    )
-                value[i] = VECTOR_DIRECTIONS[val.upper()]
+        if isinstance(value, (tuple, list)):
+            for i, val in enumerate(value):
+                if isinstance(val, string_types):
+                    if val.upper() not in VECTOR_DIRECTIONS:
+                        self.error(
+                            instance=instance,
+                            value=val,
+                            extra='This is an invalid Vector3 representation.',
+                        )
+                    value[i] = VECTOR_DIRECTIONS[val.upper()]
 
         return super(Vector3Array, self).validate(instance, value)
 
