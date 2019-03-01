@@ -309,7 +309,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     message='\n- '.join(msgs),
                     _error_tuples=self._validation_error_tuples,
                 )
-            elif self._non_validation_error:
+            if self._non_validation_error:
                 raise self._non_validation_error                               #pylint: disable=raising-bad-type
         finally:
             self._getting_validated = False
@@ -407,7 +407,7 @@ class HasProperties(with_metaclass(PropertyMetaclass, object)):
                     message='\n- '.join(msgs),
                     _error_tuples=self._validation_error_tuples,
                 )
-            elif self._non_validation_error:
+            if self._non_validation_error:
                 raise self._non_validation_error                               #pylint: disable=raising-bad-type
             return True
         finally:

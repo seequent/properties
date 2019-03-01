@@ -110,13 +110,12 @@ class stop_recursion_with(object):                                             #
                 if isinstance(output, Exception):
                     raise output
                 return output
-            else:
-                try:
-                    decorator.held_objects.append(self)
-                    output = func(self, *args, **kwargs)
-                finally:
-                    decorator.held_objects.remove(self)
-                return output
+            try:
+                decorator.held_objects.append(self)
+                output = func(self, *args, **kwargs)
+            finally:
+                decorator.held_objects.remove(self)
+            return output
 
         return run_once
 
