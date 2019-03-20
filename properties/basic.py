@@ -382,6 +382,10 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             pref = text_type(self.__module__)
         return classdoc.format(cls=self.__class__.__name__, pref=pref)
 
+    def numpy(self):
+        """Generate numpy-formatted documentation for the Property"""
+        raise NotImplementedError()
+
     def __call__(self, func):
         return DynamicProperty(self.doc, func=func, prop=self)
 
