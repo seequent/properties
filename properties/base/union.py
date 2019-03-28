@@ -167,22 +167,20 @@ class Union(basic.Property):
         This method gathers all errors and returns them at the end
         if the method on each of the props fails.
         """
-        error_messages = []
+        errors = []
         for prop in self.props:
             try:
                 return getattr(prop, method_name)(instance, value)
-            except GENERIC_ERRORS as err:
-                if hasattr(err, 'error_tuples'):
-                    error_messages += [
-                        err_tup.message for err_tup in err.error_tuples
-                    ]
-        if error_messages:
-            extra = 'Possible explanation:'
-            for message in error_messages:
-                extra += '\n    - {}'.format(message)
-        else:
-            extra = ''
-        self.error(instance, value, extra=extra)
+            except utils.ValidationError as err:
+                errors.append(err)
+            except GENERIC_ERRORS:
+                pass
+        self.error(
+            instance=instance,
+            value=value,
+            error_class=UnionValidationError,
+            _related_errors=errors or None,
+        )
 
     def validate(self, instance, value):
         """Check if value is a valid type of one of the Union props"""
@@ -264,3 +262,10 @@ class Union(basic.Property):
     def sphinx_class(self):
         """Redefine sphinx class to provide doc links to types of props"""
         return ', '.join(p.sphinx_class() for p in self.props)
+
+
+class UnionValidationError(utils.ValidationError):
+    """Validation error to be raised by Union properties"""
+
+    def __str__(self, tab=1, prefix='- Possible cause: '):
+        return super(UnionValidationError, self).__str__(tab, prefix)
