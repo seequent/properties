@@ -185,6 +185,29 @@ class TestBasic(unittest.TestCase):
 
         assert UndocPrivate().__doc__ == ''
 
+    def test_diamond_inheritance(self):
+
+        class CommonBase(properties.HasProperties):
+            a = properties.String('a')
+            b = properties.String('b')
+
+        class DifferentA(CommonBase):
+            a = properties.Integer('a')
+
+        class DifferentB(CommonBase):
+            b = properties.Integer('b')
+
+        class ABInheritance(DifferentA, DifferentB):
+            pass
+
+        class BAInheritance(DifferentB, DifferentA):
+            pass
+
+        assert ABInheritance._props['a'] is DifferentA._props['a']
+        assert ABInheritance._props['b'] is DifferentB._props['b']
+        assert BAInheritance._props['a'] is DifferentA._props['a']
+        assert BAInheritance._props['b'] is DifferentB._props['b']
+
 
     def test_bool(self):
 
