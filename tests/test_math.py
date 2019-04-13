@@ -131,6 +131,17 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ValueError):
             fa.flex_array = np.random.rand(3, 3, 3, 3)
 
+    def test_unsigned_int_array(self):
+        class ArrayOpts(properties.HasProperties):
+            myarrayint = properties.Array('my int array', dtype=int)
+
+        ao = ArrayOpts()
+        int_array = np.array([0, 1, 2, 3], dtype=np.int8)
+        uint_array = np.array([0, 1, 2, 3], dtype=np.uint8)
+        ao.myarrayint = int_array
+        ao.myarrayint = uint_array
+
+
     def test_vector2(self):
 
         with self.assertRaises(TypeError):
