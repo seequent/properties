@@ -66,29 +66,44 @@ class PropertyMetaclass(type):
             if isinstance(value, handlers.ClassValidator)
         }
 
-        # Get pointers to all inherited properties, observers, and validators
+        # Get pointers to all inherited properties, observers, and validators.
+        # Start with these empty.
         _props = dict()
         _prop_observers = OrderedDict()
         _class_validators = OrderedDict()
+        # Go through bases in reversed-MRO order
         for base in reversed(bases):
+            # Ignore bases that are not HasProperties
             if not all((hasattr(base, '_props'),
                         hasattr(base, '_prop_observers'),
                         hasattr(base, '_class_validators'))):
                 continue
+            # Copy values from the first valid base
+            if not _props:
+                _props = base._props.copy()
+                _prop_observers = base._prop_observers.copy()
+                _class_validators = base._class_validators.copy()
+                continue
+            # For additional bases, only override if key is re-defined
+            # on that base, i.e. in __dict__
             for key, val in iteritems(base._props):
-                if key not in prop_dict and key in classdict:
-                    continue
-                _props.update({key: val})
+                if key in base.__dict__:
+                    _props.update({key: val})
             for key, val in iteritems(base._prop_observers):
-                if key not in observer_dict and key in classdict:
-                    continue
-                _prop_observers.update({key: val})
+                if key in base.__dict__:
+                    _prop_observers.update({key: val})
             for key, val in iteritems(base._class_validators):
-                if key not in validator_dict and key in classdict:
-                    continue
-                _class_validators.update({key: val})
-
-        # Overwrite with this class's properties
+                if key in base.__dict__:
+                    _class_validators.update({key: val})
+        # Remove values that are redefined on the current class
+        for key in classdict:
+            if key in _props:
+                _props.pop(key)
+            if key in _prop_observers:
+                _prop_observers.pop(key)
+            if key in _class_validators:
+                _class_validators.pop(key)
+        # Update with new property values defined on the current class
         _props.update(prop_dict)
         _prop_observers.update(observer_dict)
         _class_validators.update(validator_dict)
