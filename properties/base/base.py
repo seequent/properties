@@ -25,13 +25,13 @@ GENERIC_ERRORS = (ValueError, KeyError, TypeError, AttributeError)
 def build_from_bases(bases, classdict, attr, attr_dict):
     """Helper function to build private HasProperties attributes"""
     output = OrderedDict()
-    output_keys = []
+    output_keys = set()
     all_bases = []
     # Go through the bases from furthest to nearest ancestor
     for base in reversed(bases):
         # Only keep the items that are still defined on the bases
         if base is not object and issubclass(base, HasProperties):
-            output_keys += list(getattr(base, attr).keys())
+            output_keys = output_keys.union(getattr(base, attr))
         # Collect all bases so we ensure overridden items are assigned
         # in the correct order
         for item in reversed(base.__mro__):
