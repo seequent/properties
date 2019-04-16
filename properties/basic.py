@@ -732,10 +732,7 @@ class Boolean(Property):
     def validate(self, instance, value):
         """Checks if value is a boolean"""
         if self.cast:
-            try:
-                value = bool(value)
-            except ValueError:
-                self.error(instance, value, extra='Cannot cast to boolean.')
+            value = bool(value)
         if not isinstance(value, BOOLEAN_TYPES):
             self.error(instance, value)
         return value
