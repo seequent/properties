@@ -12,7 +12,7 @@ from .basic import Property, TOL
 from .utils import ValidationError
 
 TYPE_MAPPINGS = {
-    int: 'i',
+    int: 'ui',
     float: 'f',
     bool: 'b',
     complex: 'c',
@@ -34,17 +34,21 @@ class Array(Property):
       The default value is ('*',).
     * **dtype** - Allowed data type for the array. May be float, int,
       bool, or a tuple containing any of these. The default is (float, int).
+    * **coerce** - If True, the class wrapper function is called on the
+      input to coerce it to the correct type. If False, the input must
+      be the correct type. Default value is True.
     """
 
     class_info = 'a list or numpy array'
 
     @property
     def wrapper(self):
-        """Class used to wrap the value in the validation call.
+        """Function used to wrap the value in the validation call.
 
         For the base Array class, this is a :func:`numpy.array` but
-        subclasses can use other wrappers such as :class:`tuple`,
-        :class:`list` or :class:`vectormath.vector.Vector3`
+        subclasses can use other wrappers such as
+        :class:`vectormath.vector.Vector3` or custom conversion
+        functions.
         """
         return np.array
 
@@ -107,6 +111,17 @@ class Array(Property):
         self._dtype = value
 
     @property
+    def coerce(self):
+        """Coerce sets/lists to tuples or other inputs to length-1 tuples"""
+        return getattr(self, '_coerce', True)
+
+    @coerce.setter
+    def coerce(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('coerce must be a boolean')
+        self._coerce = value
+
+    @property
     def info(self):
         if self.shape is None:
             shape_info = 'any shape'
@@ -126,13 +141,15 @@ class Array(Property):
         """Determine if array is valid based on shape and dtype"""
         if not isinstance(value, (tuple, list, np.ndarray)):
             self.error(instance, value)
-        value = self.wrapper(value)
-        if not isinstance(value, np.ndarray):
-            raise NotImplementedError(
-                'Array validation is only implmented for wrappers that are '
-                'subclasses of numpy.ndarray'
-            )
-        if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
+        if self.coerce:
+            value = self.wrapper(value)
+        valid_class = (
+            self.wrapper if isinstance(self.wrapper, type) else np.ndarray
+        )
+        if not isinstance(value, valid_class):
+            self.error(instance, value)
+        allowed_kinds = ''.join(TYPE_MAPPINGS[typ] for typ in self.dtype)
+        if value.dtype.kind not in allowed_kinds:
             self.error(instance, value, extra='Invalid dtype.')
         if self.shape is None:
             return value
@@ -288,6 +305,9 @@ class Vector3(BaseVector):
 
     * **length** - On validation, vectors are scaled to this length. If
       None (the default), vectors are not scaled
+    * **coerce** - If True, the class wrapper function is called on the
+      input to coerce it to the correct type. If False, the input must
+      be the correct type. Default value is True.
     """
 
     class_info = 'a 3D Vector'
@@ -333,6 +353,9 @@ class Vector2(BaseVector):
 
     * **length** - On validation, vectors are scaled to this length. If
       None (the default), vectors are not scaled
+    * **coerce** - If True, the class wrapper function is called on the
+      input to coerce it to the correct type. If False, the input must
+      be the correct type. Default value is True.
     """
 
     class_info = 'a 2D Vector'
@@ -382,6 +405,9 @@ class Vector3Array(BaseVector):
 
     * **length** - On validation, all vectors are scaled to this length. If
       None (the default), vectors are not scaled
+    * **coerce** - If True, the class wrapper function is called on the
+      input to coerce it to the correct type. If False, the input must
+      be the correct type. Default value is True.
     """
 
     class_info = 'a list of Vector3'
@@ -449,6 +475,9 @@ class Vector2Array(BaseVector):
 
     * **length** - On validation, all vectors are scaled to this length. If
       None (the default), vectors are not scaled
+    * **coerce** - If True, the class wrapper function is called on the
+      input to coerce it to the correct type. If False, the input must
+      be the correct type. Default value is True.
     """
 
     class_info = 'a list of Vector2'

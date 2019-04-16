@@ -131,6 +131,17 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ValueError):
             fa.flex_array = np.random.rand(3, 3, 3, 3)
 
+    def test_unsigned_int_array(self):
+        class ArrayOpts(properties.HasProperties):
+            myarrayint = properties.Array('my int array', dtype=int)
+
+        ao = ArrayOpts()
+        int_array = np.array([0, 1, 2, 3], dtype=np.int8)
+        uint_array = np.array([0, 1, 2, 3], dtype=np.uint8)
+        ao.myarrayint = int_array
+        ao.myarrayint = uint_array
+
+
     def test_vector2(self):
 
         with self.assertRaises(TypeError):
@@ -318,6 +329,29 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ValueError):
             hv3.vec3 = [[1., 2., 1.], [3., 4., 3.], [5., 6., 5.], [7., 8., 7.]]
 
+    def test_coerce(self):
+
+        class HasNoCoerceArray(properties.HasProperties):
+
+            arr = properties.Array('', coerce=False)
+            vec2 = properties.Vector2('', coerce=False)
+
+            @properties.Array('', coerce=False)
+            def dynamic_arr(self):
+                if getattr(self, '_dynamic_arr', None) is None:
+                    self._dynamic_arr = np.ones(5)
+                return self._dynamic_arr
+
+        no_coerce = HasNoCoerceArray()
+        no_coerce.arr = np.array([1, 2, 3])
+        with self.assertRaises(properties.ValidationError):
+            no_coerce.arr = [1, 2, 3]
+        assert no_coerce.dynamic_arr[0] == 1
+        no_coerce.dynamic_arr[0] = 0
+        assert no_coerce.dynamic_arr[0] == 0
+        no_coerce.vec2 = vmath.Vector2(0., 0.)
+        with self.assertRaises(properties.ValidationError):
+            no_coerce.vec2 = [0., 0.]
 
 if __name__ == '__main__':
     unittest.main()
