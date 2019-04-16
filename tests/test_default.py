@@ -360,6 +360,59 @@ class TestDefault(unittest.TestCase):
                 default=lambda: [[1., 2.], [3., 4.]],
             )
 
+    def test_default_override_dynamic(self):
+
+        class HasIntABase(properties.HasProperties):
+            a = properties.Integer(
+                'int a',
+                default=5,
+            )
+
+        class HasIntASub(HasIntABase):
+
+            @properties.Integer('int a')
+            def a(self):
+                return 10
+
+        class HasIntBBase(properties.HasProperties):
+            b = properties.Integer(
+                'int b',
+            )
+
+            _defaults = {'b': 2}
+
+        class HasIntBSub(HasIntBBase):
+
+            @properties.Integer('int b')
+            def b(self):
+                return 4
+
+        hi = HasIntABase()
+        assert hi.a == 5
+        del(hi.a)
+        assert hi.a is None
+        with self.assertRaises(ValueError):
+            hi.validate()
+
+        hid = HasIntASub()
+        assert hid.a == 10
+        with self.assertRaises(AttributeError):
+            del hid.a
+        hid.validate()
+
+        hi = HasIntBBase()
+        assert hi.b == 2
+        del(hi.b)
+        assert hi.b is None
+        with self.assertRaises(ValueError):
+            hi.validate()
+
+        hid = HasIntBSub()
+        assert hid.b == 4
+        with self.assertRaises(AttributeError):
+            del hid.b
+        hid.validate()
+
 
 if __name__ == '__main__':
     unittest.main()
