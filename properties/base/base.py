@@ -22,6 +22,40 @@ else:
 GENERIC_ERRORS = (ValueError, KeyError, TypeError, AttributeError)
 
 
+def build_from_bases(bases, classdict, attr, attr_dict):
+    """Helper function to build private HasProperties attributes"""
+    output = OrderedDict()
+    output_keys = set()
+    all_bases = []
+    # Go through the bases from furthest to nearest ancestor
+    for base in reversed(bases):
+        # Only keep the items that are still defined on the bases
+        if base is not object and issubclass(base, HasProperties):
+            output_keys = output_keys.union(getattr(base, attr))
+        # Collect all bases so we ensure overridden items are assigned
+        # in the correct order
+        for item in reversed(base.__mro__):
+            if item is object or not issubclass(item, HasProperties):
+                continue
+            if item not in all_bases:
+                all_bases.append(item)
+    # Update the items in reverse MRO order; only keep those that are
+    # defined on the bases
+    for base in all_bases:
+        for key, val in iteritems(getattr(base, attr)):
+            if key in base.__dict__ and key in output_keys:
+                output.update({key: val})
+    # Remove all items that were overridden by this class; this is
+    # potentially a superset of the items added back in the next step.
+    for key in classdict:
+        if key in output:
+            output.pop(key)
+    # Update the items with those defined on this class
+    output.update(attr_dict)
+    return output
+
+
+
 class PropertyMetaclass(type):
     """Metaclass to establish behavior of **HasProperties** classes
 
@@ -66,38 +100,31 @@ class PropertyMetaclass(type):
             if isinstance(value, handlers.ClassValidator)
         }
 
-        # Get pointers to all inherited properties, observers, and validators
-        _props = dict()
-        _prop_observers = OrderedDict()
-        _class_validators = OrderedDict()
-        for base in reversed(bases):
-            if not all((hasattr(base, '_props'),
-                        hasattr(base, '_prop_observers'),
-                        hasattr(base, '_class_validators'))):
-                continue
-            for key, val in iteritems(base._props):
-                if key not in prop_dict and key in classdict:
-                    continue
-                _props.update({key: val})
-            for key, val in iteritems(base._prop_observers):
-                if key not in observer_dict and key in classdict:
-                    continue
-                _prop_observers.update({key: val})
-            for key, val in iteritems(base._class_validators):
-                if key not in validator_dict and key in classdict:
-                    continue
-                _class_validators.update({key: val})
-
-        # Overwrite with this class's properties
-        _props.update(prop_dict)
-        _prop_observers.update(observer_dict)
-        _class_validators.update(validator_dict)
-
-        # Save these to the class
+        # Build dictionaries of properties, observers, and validators
+        # that are defined on the class or on it's bases, and add these
+        # dictionaries to the classdict. These respect standard class MRO.
+        _props = build_from_bases(
+            bases=bases,
+            classdict=classdict,
+            attr='_props',
+            attr_dict=prop_dict,
+        )
+        _prop_observers = build_from_bases(
+            bases=bases,
+            classdict=classdict,
+            attr='_prop_observers',
+            attr_dict=observer_dict,
+        )
+        _class_validators = build_from_bases(
+            bases=bases,
+            classdict=classdict,
+            attr='_class_validators',
+            attr_dict=validator_dict,
+        )
+        # Add these to the classdict
         classdict['_props'] = _props
         classdict['_prop_observers'] = _prop_observers
         classdict['_class_validators'] = _class_validators
-
         # Ensure prop names are valid and overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             if isinstance(prop, basic.Renamed) and prop.new_name not in _props:
