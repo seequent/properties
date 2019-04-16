@@ -143,9 +143,9 @@ class Array(Property):
             self.error(instance, value)
         if self.coerce:
             value = self.wrapper(value)
-        valid_class = np.ndarray
-        if isinstance(self.wrapper, type):
-            valid_class = self.wrapper
+        valid_class = (
+            self.wrapper if isinstance(self.wrapper, type) else np.ndarray
+        )
         if not isinstance(value, valid_class):
             self.error(instance, value)
         if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
