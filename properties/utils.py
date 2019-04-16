@@ -147,11 +147,11 @@ class ValidationError(ValueError):
     def __init__(self, message, reason=None, prop=None, instance=None,
                  _error_tuples=None):
         super(ValidationError, self).__init__(message)
-        if reason and not isinstance(reason, string_types):
+        if reason is not None and not isinstance(reason, string_types):
             raise TypeError('ValidationError reason must be a string')
-        if prop and not isinstance(prop, string_types):
+        if prop is not None and not isinstance(prop, string_types):
             raise TypeError('ValidationError prop must be a string')
-        if instance and not hasattr(instance, '_error_hook'):
+        if instance is not None and not hasattr(instance, '_error_hook'):
             raise TypeError('ValidationError instance must be a '
                             'HasProperties instance')
         error_tuple = ErrorTuple(message, reason, prop, instance)
