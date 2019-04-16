@@ -22,6 +22,42 @@ else:
 GENERIC_ERRORS = (ValueError, KeyError, TypeError, AttributeError)
 
 
+def build_from_bases(bases, classdict, attr, attr_dict):
+    """Helper function to build private HasProperties attributes"""
+    output = OrderedDict()
+    output_keys = []
+    all_bases = []
+    # Go through the bases from furthest to nearest ancestor
+    for base in reversed(bases):
+        # Only keep the items that are still defined on the bases
+        if base is not object and issubclass(base, HasProperties):
+            output_keys += list(getattr(base, attr).keys())
+        # Collect all bases so we ensure overridden items are assigned
+        # in the correct order
+        for item in reversed(base.__mro__):
+            if item is object or not issubclass(item, HasProperties):
+                continue
+            if item not in all_bases:
+                all_bases.append(item)
+    # Update the items in reverse MRO order; only keep those that are
+    # defined on the bases
+    for base in all_bases:
+        for key, val in iteritems(getattr(base, attr)):
+            if key in base.__dict__ and key in output_keys:
+                output.update({key: val})
+    # Remove all items that were overridden by this class; this is
+    # potentially a superset of the items added back in the next step.
+    for key in classdict:
+        if key in output:
+            output.pop(key)
+    # Update the items with those defined on this class
+    output.update(attr_dict)
+    # Add this to the classdict
+    classdict[attr] = output
+    return output
+
+
+
 class PropertyMetaclass(type):
     """Metaclass to establish behavior of **HasProperties** classes
 
@@ -66,53 +102,27 @@ class PropertyMetaclass(type):
             if isinstance(value, handlers.ClassValidator)
         }
 
-        # Get pointers to all inherited properties, observers, and validators.
-        # Start with these empty.
-        _props = dict()
-        _prop_observers = OrderedDict()
-        _class_validators = OrderedDict()
-        # Go through bases in reversed-MRO order
-        for base in reversed(bases):
-            # Ignore bases that are not HasProperties
-            if not all((hasattr(base, '_props'),
-                        hasattr(base, '_prop_observers'),
-                        hasattr(base, '_class_validators'))):
-                continue
-            # Copy values from the first valid base
-            if not _props:
-                _props = base._props.copy()
-                _prop_observers = base._prop_observers.copy()
-                _class_validators = base._class_validators.copy()
-                continue
-            # For additional bases, only override if key is re-defined
-            # on that base, i.e. in __dict__
-            for key, val in iteritems(base._props):
-                if key in base.__dict__:
-                    _props.update({key: val})
-            for key, val in iteritems(base._prop_observers):
-                if key in base.__dict__:
-                    _prop_observers.update({key: val})
-            for key, val in iteritems(base._class_validators):
-                if key in base.__dict__:
-                    _class_validators.update({key: val})
-        # Remove values that are redefined on the current class
-        for key in classdict:
-            if key in _props:
-                _props.pop(key)
-            if key in _prop_observers:
-                _prop_observers.pop(key)
-            if key in _class_validators:
-                _class_validators.pop(key)
-        # Update with new property values defined on the current class
-        _props.update(prop_dict)
-        _prop_observers.update(observer_dict)
-        _class_validators.update(validator_dict)
-
-        # Save these to the class
-        classdict['_props'] = _props
-        classdict['_prop_observers'] = _prop_observers
-        classdict['_class_validators'] = _class_validators
-
+        # Build dictionaries of properties, observers, and validators
+        # that are defined on the class or on it's bases, and add these
+        # dictionaries to the classdict. These respect standard class MRO.
+        _props = build_from_bases(
+            bases=bases,
+            classdict=classdict,
+            attr='_props',
+            attr_dict=prop_dict,
+        )
+        _prop_observers = build_from_bases(
+            bases=bases,
+            classdict=classdict,
+            attr='_prop_observers',
+            attr_dict=observer_dict,
+        )
+        _class_validators = build_from_bases(
+            bases=bases,
+            classdict=classdict,
+            attr='_class_validators',
+            attr_dict=validator_dict,
+        )
         # Ensure prop names are valid and overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             if isinstance(prop, basic.Renamed) and prop.new_name not in _props:
