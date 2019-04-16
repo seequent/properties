@@ -283,6 +283,18 @@ class TestErrors(unittest.TestCase):
         assert len(str(context.exception)) < 1000
         assert '  ...  ' in str(context.exception)
 
+    def test_no_error_tuple_info(self):
+
+        class RaisesError(properties.HasProperties):
+
+            @properties.validator
+            def raise_error(self):
+                raise properties.ValidationError('')
+
+        errorer = RaisesError()
+        with self.assertRaises(properties.ValidationError):
+            errorer.validate()
+
 
 if __name__ == '__main__':
     unittest.main()
