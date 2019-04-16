@@ -12,7 +12,7 @@ from .basic import Property, TOL
 from .utils import ValidationError
 
 TYPE_MAPPINGS = {
-    int: 'i',
+    int: 'ui',
     float: 'f',
     bool: 'b',
     complex: 'c',
@@ -148,7 +148,8 @@ class Array(Property):
         )
         if not isinstance(value, valid_class):
             self.error(instance, value)
-        if value.dtype.kind not in (TYPE_MAPPINGS[typ] for typ in self.dtype):
+        allowed_kinds = ''.join(TYPE_MAPPINGS[typ] for typ in self.dtype)
+        if value.dtype.kind not in allowed_kinds:
             self.error(instance, value, extra='Invalid dtype.')
         if self.shape is None:
             return value
