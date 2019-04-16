@@ -52,8 +52,6 @@ def build_from_bases(bases, classdict, attr, attr_dict):
             output.pop(key)
     # Update the items with those defined on this class
     output.update(attr_dict)
-    # Add this to the classdict
-    classdict[attr] = output
     return output
 
 
@@ -123,6 +121,10 @@ class PropertyMetaclass(type):
             attr='_class_validators',
             attr_dict=validator_dict,
         )
+        # Add these to the classdict
+        classdict['_props'] = _props
+        classdict['_prop_observers'] = _prop_observers
+        classdict['_class_validators'] = _class_validators
         # Ensure prop names are valid and overwrite properties with @property
         for key, prop in iteritems(prop_dict):
             if isinstance(prop, basic.Renamed) and prop.new_name not in _props:
