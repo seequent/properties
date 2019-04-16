@@ -208,6 +208,15 @@ class TestBasic(unittest.TestCase):
         assert BAInheritance._props['a'] is DifferentA._props['a']
         assert BAInheritance._props['b'] is DifferentB._props['b']
 
+        class ExtraEmptyClass(DifferentA):
+            pass
+
+        class AnotherABInheritance(ExtraEmptyClass, DifferentB):
+            pass
+
+        assert AnotherABInheritance._props['a'] is DifferentA._props['a']
+        assert AnotherABInheritance._props['b'] is DifferentB._props['b']
+
 
     def test_bool(self):
 
