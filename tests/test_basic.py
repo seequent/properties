@@ -219,7 +219,9 @@ class TestBasic(unittest.TestCase):
 
 
     def test_propertymetaclass_mixin(self):
-        class _StructuredMixinBaseClass(six.with_metaclass(properties.base.PropertyMetaclass, object)):
+        class MixinBaseClass(six.with_metaclass(
+                properties.base.PropertyMetaclass, object
+        )):
             _defaults = dict()
             _REGISTRY = dict()
 
@@ -229,14 +231,14 @@ class TestBasic(unittest.TestCase):
         a = TestA()
         assert a.a is False
 
-        class BMixin(_StructuredMixinBaseClass):
+        class MixinB(MixinBaseClass):
             b = properties.Boolean("test", default=False)
 
-        class C(BMixin, TestA):
+        class TestC(MixinB, TestA):
             pass
 
 
-        c = C()
+        c = TestC()
         assert c.a is False
         assert c.b is False
 
