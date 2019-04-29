@@ -218,6 +218,31 @@ class TestBasic(unittest.TestCase):
         assert AnotherABInheritance._props['b'] is DifferentB._props['b']
 
 
+    def test_propertymetaclass_mixin(self):
+        class MixinBaseClass(six.with_metaclass(
+                properties.base.PropertyMetaclass, object
+        )):
+            _defaults = dict()
+            _REGISTRY = dict()
+
+        class TestA(properties.HasProperties):
+            a = properties.Boolean("test", default=False)
+
+        a = TestA()
+        assert a.a is False
+
+        class MixinB(MixinBaseClass):
+            b = properties.Boolean("test", default=False)
+
+        class TestC(MixinB, TestA):
+            pass
+
+
+        c = TestC()
+        assert c.a is False
+        assert c.b is False
+
+
     def test_bool(self):
 
         for boolean in (properties.Bool, properties.Boolean):

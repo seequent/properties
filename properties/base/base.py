@@ -30,12 +30,12 @@ def build_from_bases(bases, classdict, attr, attr_dict):
     # Go through the bases from furthest to nearest ancestor
     for base in reversed(bases):
         # Only keep the items that are still defined on the bases
-        if base is not object and issubclass(base, HasProperties):
+        if base is not object and isinstance(base, PropertyMetaclass):
             output_keys = output_keys.union(getattr(base, attr))
         # Collect all bases so we ensure overridden items are assigned
         # in the correct order
         for item in reversed(base.__mro__):
-            if item is object or not issubclass(item, HasProperties):
+            if item is object or not isinstance(item, PropertyMetaclass):
                 continue
             if item not in all_bases:
                 all_bases.append(item)
