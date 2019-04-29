@@ -35,7 +35,7 @@ def build_from_bases(bases, classdict, attr, attr_dict):
         # Collect all bases so we ensure overridden items are assigned
         # in the correct order
         for item in reversed(base.__mro__):
-            if item is object or not issubclass(item, HasProperties):
+            if item is object or not isinstance(item, PropertyMetaclass):
                 continue
             if item not in all_bases:
                 all_bases.append(item)
