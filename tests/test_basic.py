@@ -234,13 +234,17 @@ class TestBasic(unittest.TestCase):
         class MixinB(MixinBaseClass):
             b = properties.Boolean("test", default=False)
 
-        class TestC(MixinB, TestA):
+        class OtherMixin(object):
+            another_attribute = 'not a property'
+
+        class TestC(OtherMixin, MixinB, TestA):
             pass
 
 
         c = TestC()
         assert c.a is False
         assert c.b is False
+        assert c.another_attribute == 'not a property'
 
 
     def test_bool(self):
