@@ -256,6 +256,7 @@ class TestBasic(unittest.TestCase):
 
         class BoolOpts(properties.HasProperties):
             mybool = boolean('My bool')
+            mybool_cast = boolean('My casted bool', cast=True, required=False)
 
         opt = BoolOpts(mybool=True)
         assert opt.mybool is True
@@ -295,12 +296,20 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(ValueError):
             BoolOpts._props['mybool'].assert_valid(opt, 'true')
 
-        opt.validate()
+        assert opt.validate()
         opt._backend['mybool'] = 'true'
         with self.assertRaises(ValueError):
             opt.validate()
 
         opt.mybool = np.True_
+
+        opt.mybool_cast = True
+        assert opt.validate()
+        with self.assertRaises(properties.ValidationError):
+            opt.mybool = 'not a bool'
+        opt.mybool_cast = 'not a bool'
+        assert opt.validate()
+        assert opt.mybool_cast is True
 
     def test_numbers(self):
 
