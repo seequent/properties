@@ -147,10 +147,6 @@ class ValidationError(ValueError):
     def __init__(self, message, reason=None, prop=None, instance=None,
                  _error_tuples=None):
         super(ValidationError, self).__init__(message)
-        if _error_tuples is None:
-            self.error_tuples = []
-        else:
-            self.error_tuples = _error_tuples
         if reason is not None and not isinstance(reason, string_types):
             raise TypeError('ValidationError reason must be a string')
         if prop is not None and not isinstance(prop, string_types):
@@ -158,9 +154,13 @@ class ValidationError(ValueError):
         if instance is not None and not hasattr(instance, '_error_hook'):
             raise TypeError('ValidationError instance must be a '
                             'HasProperties instance')
-        if reason or prop or instance:
-            error_tuple = ErrorTuple(message, reason, prop, instance)
-            self.error_tuples.append(error_tuple)
+        error_tuple = ErrorTuple(message, reason, prop, instance)
+        if _error_tuples is None:
+            self.error_tuples = [error_tuple]
+        else:
+            self.error_tuples = _error_tuples
+            if reason or prop or instance:
+                self.error_tuples.append(error_tuple)
         if not getattr(instance, '_getting_validated', True):
             instance._error_hook(self.error_tuples)                           #pylint: disable=protected-access
 

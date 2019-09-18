@@ -185,6 +185,67 @@ class TestBasic(unittest.TestCase):
 
         assert UndocPrivate().__doc__ == ''
 
+    def test_diamond_inheritance(self):
+
+        class CommonBase(properties.HasProperties):
+            a = properties.String('a')
+            b = properties.String('b')
+
+        class DifferentA(CommonBase):
+            a = properties.Integer('a')
+
+        class DifferentB(CommonBase):
+            b = properties.Integer('b')
+
+        class ABInheritance(DifferentA, DifferentB):
+            pass
+
+        class BAInheritance(DifferentB, DifferentA):
+            pass
+
+        assert ABInheritance._props['a'] is DifferentA._props['a']
+        assert ABInheritance._props['b'] is DifferentB._props['b']
+        assert BAInheritance._props['a'] is DifferentA._props['a']
+        assert BAInheritance._props['b'] is DifferentB._props['b']
+
+        class ExtraEmptyClass(DifferentA):
+            pass
+
+        class AnotherABInheritance(ExtraEmptyClass, DifferentB):
+            pass
+
+        assert AnotherABInheritance._props['a'] is DifferentA._props['a']
+        assert AnotherABInheritance._props['b'] is DifferentB._props['b']
+
+
+    def test_propertymetaclass_mixin(self):
+        class MixinBaseClass(six.with_metaclass(
+                properties.base.PropertyMetaclass, object
+        )):
+            _defaults = dict()
+            _REGISTRY = dict()
+
+        class TestA(properties.HasProperties):
+            a = properties.Boolean("test", default=False)
+
+        a = TestA()
+        assert a.a is False
+
+        class MixinB(MixinBaseClass):
+            b = properties.Boolean("test", default=False)
+
+        class OtherMixin(object):
+            another_attribute = 'not a property'
+
+        class TestC(OtherMixin, MixinB, TestA):
+            pass
+
+
+        c = TestC()
+        assert c.a is False
+        assert c.b is False
+        assert c.another_attribute == 'not a property'
+
 
     def test_bool(self):
 
@@ -195,6 +256,7 @@ class TestBasic(unittest.TestCase):
 
         class BoolOpts(properties.HasProperties):
             mybool = boolean('My bool')
+            mybool_cast = boolean('My casted bool', cast=True, required=False)
 
         opt = BoolOpts(mybool=True)
         assert opt.mybool is True
@@ -234,12 +296,20 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(ValueError):
             BoolOpts._props['mybool'].assert_valid(opt, 'true')
 
-        opt.validate()
+        assert opt.validate()
         opt._backend['mybool'] = 'true'
         with self.assertRaises(ValueError):
             opt.validate()
 
         opt.mybool = np.True_
+
+        opt.mybool_cast = True
+        assert opt.validate()
+        with self.assertRaises(properties.ValidationError):
+            opt.mybool = 'not a bool'
+        opt.mybool_cast = 'not a bool'
+        assert opt.validate()
+        assert opt.mybool_cast is True
 
     def test_numbers(self):
 
