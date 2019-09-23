@@ -73,7 +73,7 @@ class ImagePNG(File):
         output.name = self.filename
         output.__valid__ = True
         if isinstance(value, png.Image):
-            value.save(output)
+            value.write(output)
         else:
             fid = value
             fid.seek(0)

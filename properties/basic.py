@@ -751,6 +751,8 @@ class Boolean(Property):
                 return False
         if isinstance(value, int):
             return value
+        if isinstance(value, BOOLEAN_TYPES):
+            return value
         raise ValueError('Could not load boolean from JSON: {}'.format(value))
 
 
