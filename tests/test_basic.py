@@ -279,10 +279,12 @@ class TestBasic(unittest.TestCase):
         assert boolean.from_json('y')
         assert boolean.from_json('Yes')
         assert boolean.from_json('ON')
+        assert boolean.from_json(np.bool_(True))
         assert not boolean.from_json('false')
         assert not boolean.from_json('N')
         assert not boolean.from_json('no')
         assert not boolean.from_json('OFF')
+        assert not boolean.from_json(np.bool_(False))
 
         self.assertEqual(opt.serialize(include_class=False), {'mybool': False})
 
