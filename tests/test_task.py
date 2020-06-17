@@ -27,7 +27,7 @@ class TestTask(unittest.TestCase):
                 value = properties.Float('Result of add operation')
 
             def run(self, input_obj):
-                self.report_status({'progress': 0., 'message': 'Starting'})
+                self.report_status(progress=0., message='Starting')
                 if input_obj.addend_a == input_obj.addend_b:
                     raise PermanentTaskFailure()
                 out = self.Output(
@@ -49,7 +49,7 @@ class TestTask(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             BaseTask()()
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             BaseTask().report_status(.5)
 
         class BrokenTask(AddTask):
