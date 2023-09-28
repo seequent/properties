@@ -269,7 +269,10 @@ class GettableProperty(with_metaclass(ArgumentWrangler, object)):              #
             This method assumes that :code:`None` and
             :code:`properties.undefined` are never passed in as values
         """
-        equal = value_a == value_b
+        try:
+            equal = value_a == value_b
+        except:
+            return False
         if hasattr(equal, '__iter__'):
             return all(equal)
         return equal
